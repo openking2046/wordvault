@@ -53,6 +53,7 @@ export default function VocabApp() {
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wordvault_notif_time") || "09:00");
   const [notifEnabled, setNotifEnabled] = useState(() => localStorage.getItem("wordvault_notif_enabled") === "true");
+  const [importMsg, setImportMsg] = useState("");
 
   useEffect(() => { try { localStorage.setItem("wordvault_words", JSON.stringify(words)); } catch {} }, [words]);
   useEffect(() => { try { localStorage.setItem("wordvault_score", JSON.stringify(score)); } catch {} }, [score]);
@@ -158,6 +159,69 @@ Respond ONLY in this exact JSON format, no other text:
       setAddMsg("✅ 提醒设置已保存！已发送一条测试通知");
       setTimeout(() => setAddMsg(""), 3000);
     }
+  }
+
+  // ── Export ──────────────────────────────────────────────
+  function exportJSON() {
+    const data = JSON.stringify(words, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "wordvault_words.json"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportCSV() {
+    const header = "word,meaning,example,tags,mastery";
+    const rows = words.map(w =>
+      [`"${w.word}"`, `"${w.meaning}"`, `"${(w.example||"").replace(/"/g,'""')}"`, `"${(w.tags||[]).join(';')}"`, w.mastery].join(",")
+    );
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob(["﻿"+csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "wordvault_words.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        let imported = [];
+        if (file.name.endsWith(".json")) {
+          const parsed = JSON.parse(text);
+          imported = Array.isArray(parsed) ? parsed : [];
+        } else if (file.name.endsWith(".csv")) {
+          const lines = text.split("\n").filter(Boolean);
+          lines.slice(1).forEach(line => {
+            const cols = line.match(/(".*?"|[^,]+)(?=,|$)/g) || [];
+            const clean = cols.map(c => c.replace(/^"|"$/g,"").replace(/""/g,'"'));
+            if (clean[0]) imported.push({
+              id: Date.now() + Math.random(),
+              word: clean[0]||"", meaning: clean[1]||"", example: clean[2]||"",
+              tags: clean[3] ? clean[3].split(";").filter(Boolean) : [],
+              mastery: parseInt(clean[4])||0
+            });
+          });
+        } else {
+          setImportMsg("❌ 只支持 .json 或 .csv 文件"); return;
+        }
+        if (imported.length === 0) { setImportMsg("❌ 没有找到有效单词"); return; }
+        const existingWords = words.map(w => w.word.toLowerCase());
+        const newWords = imported.filter(w => w.word && !existingWords.includes(w.word.toLowerCase()))
+          .map(w => ({ ...w, id: Date.now() + Math.random(), mastery: w.mastery||0, tags: w.tags||[] }));
+        if (newWords.length === 0) { setImportMsg("⚠️ 所有单词都已存在，没有新增"); return; }
+        setWords(ws => [...ws, ...newWords]);
+        setImportMsg(`✅ 成功导入 ${newWords.length} 个新单词！`);
+        setTimeout(() => setImportMsg(""), 4000);
+      } catch { setImportMsg("❌ 文件格式有误，请检查后重试"); }
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
   }
 
   const masteryColor = (m) => ["#e2e8f0","#fde68a","#fbbf24","#fb923c","#4ade80","#22c55e"][m];
@@ -433,6 +497,29 @@ Respond ONLY in this exact JSON format, no other text:
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="card" style={{ padding: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#e0c3fc", marginBottom: 4, fontFamily: "'Playfair Display',serif" }}>📤 导出单词</div>
+              <div style={{ fontSize: 13, color: "rgba(240,234,255,0.5)", marginBottom: 16 }}>把所有单词导出，方便备份或分享给别人</div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button className="btn-primary" onClick={exportJSON} style={{ fontSize: 13 }}>⬇️ 导出 JSON</button>
+                <button className="btn-ghost" onClick={exportCSV} style={{ fontSize: 13 }}>⬇️ 导出 CSV（Excel可打开）</button>
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#e0c3fc", marginBottom: 4, fontFamily: "'Playfair Display',serif" }}>📥 导入单词</div>
+              <div style={{ fontSize: 13, color: "rgba(240,234,255,0.5)", marginBottom: 8 }}>支持导入 JSON 或 CSV 文件，重复单词会自动跳过</div>
+              <div style={{ fontSize: 12, color: "rgba(240,234,255,0.35)", marginBottom: 14, lineHeight: 1.6 }}>
+                CSV 格式：第一行为标题行，列顺序为 word, meaning, example, tags, mastery<br/>
+                tags 多个标签用分号分隔，例如：形容词;学术
+              </div>
+              <label style={{ display: "inline-block", background: "linear-gradient(135deg,#a78bfa,#7c3aed)", color: "white", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontSize: 13 }}>
+                📂 选择文件导入
+                <input type="file" accept=".json,.csv" onChange={handleImportFile} style={{ display: "none" }} />
+              </label>
+              {importMsg && <div style={{ marginTop: 12, fontSize: 13, color: importMsg.startsWith("✅") ? "#4ade80" : importMsg.startsWith("⚠️") ? "#fbbf24" : "#f87171" }}>{importMsg}</div>}
             </div>
 
             <div className="card" style={{ padding: 24 }}>
