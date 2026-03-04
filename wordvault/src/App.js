@@ -1,0 +1,263 @@
+import { useState, useEffect, useCallback } from "react";
+
+const SAMPLE_WORDS = [
+  { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0 },
+  { id: 2, word: "Ephemeral", meaning: "短暂的，转瞬即逝的", example: "Fame can be ephemeral.", mastery: 0 },
+  { id: 3, word: "Resilient", meaning: "有弹性的，能快速恢复的", example: "She is remarkably resilient.", mastery: 0 },
+  { id: 4, word: "Eloquent", meaning: "口才流利的，雄辩的", example: "He gave an eloquent speech.", mastery: 0 },
+  { id: 5, word: "Ambiguous", meaning: "模棱两可的，含糊不清的", example: "The instructions were ambiguous.", mastery: 0 },
+];
+
+const TABS = ["📚 单词库", "➕ 添加单词", "🧠 测验", "📊 进度"];
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function generateMCQ(words, targetWord) {
+  const distractors = shuffle(words.filter(w => w.id !== targetWord.id)).slice(0, 3);
+  const options = shuffle([targetWord, ...distractors]);
+  return { question: targetWord.word, correct: targetWord.meaning, options: options.map(o => o.meaning), example: targetWord.example };
+}
+
+function generateFillIn(words, targetWord) {
+  const blanked = targetWord.example.replace(new RegExp(targetWord.word, "gi"), "______");
+  return { sentence: blanked, answer: targetWord.word, hint: targetWord.meaning };
+}
+
+export default function VocabApp() {
+  const [tab, setTab] = useState(0);
+  const [words, setWords] = useState(() => {
+    try { const saved = localStorage.getItem("wordvault_words"); return saved ? JSON.parse(saved) : SAMPLE_WORDS; } catch { return SAMPLE_WORDS; }
+  });
+  const [score, setScore] = useState(() => {
+    try { const saved = localStorage.getItem("wordvault_score"); return saved ? JSON.parse(saved) : { correct: 0, total: 0 }; } catch { return { correct: 0, total: 0 }; }
+  });
+  const [newWord, setNewWord] = useState("");
+  const [newMeaning, setNewMeaning] = useState("");
+  const [newExample, setNewExample] = useState("");
+  const [addMsg, setAddMsg] = useState("");
+  const [quizType, setQuizType] = useState("mcq");
+  const [quizState, setQuizState] = useState(null);
+  const [quizResult, setQuizResult] = useState(null);
+  const [fillAnswer, setFillAnswer] = useState("");
+  const [streak, setStreak] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
+  useEffect(() => { try { localStorage.setItem("wordvault_words", JSON.stringify(words)); } catch {} }, [words]);
+  useEffect(() => { try { localStorage.setItem("wordvault_score", JSON.stringify(score)); } catch {} }, [score]);
+
+  const startQuiz = useCallback(() => {
+    if (words.length < 4) return;
+    const target = shuffle(words)[0];
+    if (quizType === "mcq") setQuizState(generateMCQ(words, target));
+    else if (quizType === "fillin") setQuizState(generateFillIn(words, target));
+    else { setQuizState({ word: target }); setFlipped(false); }
+    setQuizResult(null); setFillAnswer("");
+  }, [words, quizType]);
+
+  useEffect(() => { if (tab === 2) startQuiz(); }, [tab, quizType]);
+
+  function handleMCQ(option) {
+    const correct = option === quizState.correct;
+    setQuizResult(correct ? "correct" : "wrong");
+    setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+    setStreak(s => correct ? s + 1 : 0);
+    if (correct) setWords(ws => ws.map(w => w.meaning === quizState.correct ? { ...w, mastery: Math.min(5, w.mastery + 1) } : w));
+  }
+
+  function handleFillIn() {
+    const correct = fillAnswer.trim().toLowerCase() === quizState.answer.toLowerCase();
+    setQuizResult(correct ? "correct" : "wrong");
+    setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+    setStreak(s => correct ? s + 1 : 0);
+  }
+
+  function handleAddWord() {
+    if (!newWord.trim() || !newMeaning.trim()) { setAddMsg("请填写单词和释义！"); return; }
+    if (words.find(w => w.word.toLowerCase() === newWord.trim().toLowerCase())) { setAddMsg("这个单词已经存在了！"); return; }
+    setWords(ws => [...ws, { id: Date.now(), word: newWord.trim(), meaning: newMeaning.trim(), example: newExample.trim() || `${newWord.trim()} is a great word.`, mastery: 0 }]);
+    setNewWord(""); setNewMeaning(""); setNewExample("");
+    setAddMsg("✅ 添加成功！");
+    setTimeout(() => setAddMsg(""), 2000);
+  }
+
+  function deleteWord(id) { setWords(ws => ws.filter(w => w.id !== id)); }
+  const masteryColor = (m) => ["#e2e8f0","#fde68a","#fbbf24","#fb923c","#4ade80","#22c55e"][m];
+  const masteryLabel = (m) => ["未学","初识","认识","熟悉","掌握","精通"][m];
+
+  return (
+    <div style={{ fontFamily: "'Noto Serif SC', 'Georgia', serif", minHeight: "100vh", background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)", color: "#f0eaff", padding: "0 0 40px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Playfair+Display:wght@700;900&display=swap');
+        * { box-sizing: border-box; }
+        .card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; backdrop-filter: blur(10px); }
+        .btn-primary { background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white; border: none; border-radius: 10px; padding: 10px 22px; cursor: pointer; font-size: 15px; font-family: inherit; transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139,92,246,0.4); }
+        .btn-ghost { background: rgba(255,255,255,0.08); color: #d4c5ff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 18px; cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.2s; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.14); }
+        input, textarea { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #f0eaff; padding: 10px 14px; font-family: inherit; font-size: 14px; outline: none; width: 100%; transition: border 0.2s; }
+        input:focus, textarea:focus { border-color: #a78bfa; }
+        input::placeholder, textarea::placeholder { color: rgba(240,234,255,0.35); }
+        .flip-card { perspective: 800px; cursor: pointer; }
+        .flip-inner { transition: transform 0.6s; transform-style: preserve-3d; position: relative; }
+        .flip-inner.flipped { transform: rotateY(180deg); }
+        .flip-front, .flip-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .flip-back { transform: rotateY(180deg); position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.4); border-radius: 3px; }
+      `}</style>
+
+      <div style={{ textAlign: "center", padding: "36px 20px 20px" }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(28px,5vw,42px)", fontWeight: 900, background: "linear-gradient(135deg, #e0c3fc, #8ec5fc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "-1px" }}>WordVault</div>
+        <div style={{ color: "rgba(240,234,255,0.5)", fontSize: "13px", marginTop: 4 }}>你的英语单词宝库</div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "12px", color: "#a78bfa" }}>📖 {words.length} 个单词</span>
+          <span style={{ fontSize: "12px", color: "#34d399" }}>✅ {score.correct}/{score.total} 答题</span>
+          {streak > 1 && <span style={{ fontSize: "12px", color: "#fbbf24" }}>🔥 连续 {streak} 题正确</span>}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 16px 24px", flexWrap: "wrap" }}>
+        {TABS.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)} style={{ background: tab === i ? "linear-gradient(135deg,#a78bfa,#7c3aed)" : "rgba(255,255,255,0.07)", color: tab === i ? "white" : "#c4b5fd", border: "1px solid " + (tab === i ? "transparent" : "rgba(255,255,255,0.12)"), borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", transition: "all 0.2s" }}>{t}</button>
+        ))}
+      </div>
+
+      <div style={{ maxWidth: 620, margin: "0 auto", padding: "0 16px" }}>
+        {tab === 0 && (
+          <div>
+            <div style={{ marginBottom: 14, color: "rgba(240,234,255,0.5)", fontSize: 13 }}>共 {words.length} 个单词 · 点击单词可翻转卡片</div>
+            {words.length === 0 && <div className="card" style={{ padding: 32, textAlign: "center", color: "rgba(240,234,255,0.4)" }}>还没有单词，去添加吧！</div>}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {words.map(w => (
+                <div key={w.id} className="card flip-card" style={{ minHeight: 90 }} onClick={e => { if (e.target.closest('.del-btn')) return; e.currentTarget.querySelector('.flip-inner').classList.toggle('flipped'); }}>
+                  <div className="flip-inner" style={{ minHeight: 90 }}>
+                    <div className="flip-front" style={{ padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 90 }}>
+                      <div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#e0c3fc", fontFamily: "'Playfair Display', serif" }}>{w.word}</div>
+                        <div style={{ fontSize: 12, color: "rgba(240,234,255,0.4)", marginTop: 2 }}>点击查看释义</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span className="tag" style={{ background: masteryColor(w.mastery) + "33", color: masteryColor(w.mastery), border: `1px solid ${masteryColor(w.mastery)}55` }}>{masteryLabel(w.mastery)}</span>
+                        <button className="del-btn" onClick={() => deleteWord(w.id)} style={{ background: "rgba(255,100,100,0.15)", border: "1px solid rgba(255,100,100,0.3)", color: "#fca5a5", borderRadius: 8, width: 28, height: 28, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                      </div>
+                    </div>
+                    <div className="flip-back card" style={{ padding: "16px 18px", minHeight: 90, display: "flex", flexDirection: "column", justifyContent: "center", background: "rgba(167,139,250,0.12)", borderRadius: 16 }}>
+                      <div style={{ color: "#c4b5fd", fontSize: 15, fontWeight: 600 }}>{w.meaning}</div>
+                      {w.example && <div style={{ color: "rgba(240,234,255,0.5)", fontSize: 12, marginTop: 6, fontStyle: "italic" }}>{w.example}</div>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 1 && (
+          <div className="card" style={{ padding: 28 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, color: "#e0c3fc", fontFamily: "'Playfair Display',serif" }}>添加新单词</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div><div style={{ fontSize: 12, color: "rgba(240,234,255,0.5)", marginBottom: 6 }}>英文单词 *</div><input value={newWord} onChange={e => setNewWord(e.target.value)} placeholder="e.g. Tenacious" onKeyDown={e => e.key === "Enter" && handleAddWord()} /></div>
+              <div><div style={{ fontSize: 12, color: "rgba(240,234,255,0.5)", marginBottom: 6 }}>中文释义 *</div><input value={newMeaning} onChange={e => setNewMeaning(e.target.value)} placeholder="e.g. 坚韧的，顽强的" onKeyDown={e => e.key === "Enter" && handleAddWord()} /></div>
+              <div><div style={{ fontSize: 12, color: "rgba(240,234,255,0.5)", marginBottom: 6 }}>例句（可选）</div><textarea value={newExample} onChange={e => setNewExample(e.target.value)} placeholder="e.g. She was tenacious in pursuing her goals." rows={3} style={{ resize: "vertical" }} /></div>
+              {addMsg && <div style={{ color: addMsg.startsWith("✅") ? "#4ade80" : "#f87171", fontSize: 13 }}>{addMsg}</div>}
+              <button className="btn-primary" onClick={handleAddWord} style={{ marginTop: 4 }}>添加单词 ＋</button>
+            </div>
+          </div>
+        )}
+
+        {tab === 2 && (
+          <div>
+            {words.length < 4 ? (
+              <div className="card" style={{ padding: 32, textAlign: "center", color: "rgba(240,234,255,0.5)" }}>至少需要 4 个单词才能开始测验。<br /><button className="btn-primary" style={{ marginTop: 16 }} onClick={() => setTab(1)}>去添加单词</button></div>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "center" }}>
+                  {[["mcq","选择题"],["fillin","填空题"],["flash","记忆卡"]].map(([type, label]) => (
+                    <button key={type} onClick={() => setQuizType(type)} style={{ background: quizType === type ? "linear-gradient(135deg,#a78bfa,#7c3aed)" : "rgba(255,255,255,0.07)", color: quizType === type ? "white" : "#c4b5fd", border: "1px solid " + (quizType === type ? "transparent" : "rgba(255,255,255,0.15)"), borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}>{label}</button>
+                  ))}
+                </div>
+
+                {quizType === "mcq" && quizState && (
+                  <div className="card" style={{ padding: 28 }}>
+                    <div style={{ fontSize: 12, color: "rgba(240,234,255,0.4)", marginBottom: 8 }}>这个单词是什么意思？</div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 900, color: "#e0c3fc", marginBottom: 8 }}>{quizState.question}</div>
+                    {quizState.example && <div style={{ fontSize: 12, color: "rgba(240,234,255,0.4)", fontStyle: "italic", marginBottom: 20 }}>{quizState.example}</div>}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {quizState.options.map((opt, i) => {
+                        let bg = "rgba(255,255,255,0.06)"; let border = "rgba(255,255,255,0.12)";
+                        if (quizResult) { if (opt === quizState.correct) { bg = "rgba(74,222,128,0.15)"; border = "#4ade80"; } else if (quizResult === "wrong") { bg = "rgba(248,113,113,0.1)"; } }
+                        return <button key={i} disabled={!!quizResult} onClick={() => handleMCQ(opt)} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: "12px 16px", color: "#f0eaff", cursor: quizResult ? "default" : "pointer", fontFamily: "inherit", fontSize: 14, textAlign: "left", transition: "all 0.2s" }}>{String.fromCharCode(65 + i)}. {opt}</button>;
+                      })}
+                    </div>
+                    {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}><div style={{ fontSize: 20, marginBottom: 12 }}>{quizResult === "correct" ? "🎉 正确！" : `❌ 答案是：${quizState.correct}`}</div><button className="btn-primary" onClick={startQuiz}>下一题 →</button></div>}
+                  </div>
+                )}
+
+                {quizType === "fillin" && quizState && (
+                  <div className="card" style={{ padding: 28 }}>
+                    <div style={{ fontSize: 12, color: "rgba(240,234,255,0.4)", marginBottom: 8 }}>填入正确单词</div>
+                    <div style={{ fontSize: 16, color: "#e0c3fc", lineHeight: 1.8, marginBottom: 6 }}>{quizState.sentence}</div>
+                    <div style={{ fontSize: 12, color: "rgba(240,234,255,0.4)", marginBottom: 20 }}>提示：{quizState.hint}</div>
+                    {!quizResult ? (
+                      <div style={{ display: "flex", gap: 10 }}><input value={fillAnswer} onChange={e => setFillAnswer(e.target.value)} placeholder="输入答案..." onKeyDown={e => e.key === "Enter" && fillAnswer && handleFillIn()} /><button className="btn-primary" onClick={handleFillIn} disabled={!fillAnswer} style={{ whiteSpace: "nowrap" }}>确认</button></div>
+                    ) : (
+                      <div style={{ textAlign: "center" }}><div style={{ fontSize: 20, marginBottom: 4 }}>{quizResult === "correct" ? "🎉 正确！" : `❌ 答案是：${quizState.answer}`}</div><div style={{ fontSize: 13, color: "rgba(240,234,255,0.5)", marginBottom: 16 }}>你的答案：{fillAnswer}</div><button className="btn-primary" onClick={startQuiz}>下一题 →</button></div>
+                    )}
+                  </div>
+                )}
+
+                {quizType === "flash" && quizState && (
+                  <div>
+                    <div className="flip-card" style={{ height: 200 }} onClick={() => setFlipped(f => !f)}>
+                      <div className={`flip-inner ${flipped ? "flipped" : ""}`} style={{ height: 200 }}>
+                        <div className="flip-front card" style={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+                          <div style={{ fontSize: 11, color: "rgba(240,234,255,0.4)", marginBottom: 8 }}>点击翻转</div>
+                          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 900, color: "#e0c3fc" }}>{quizState.word.word}</div>
+                        </div>
+                        <div className="flip-back card" style={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, background: "rgba(167,139,250,0.12)", borderRadius: 16 }}>
+                          <div style={{ fontSize: 18, color: "#c4b5fd", fontWeight: 700, marginBottom: 8 }}>{quizState.word.meaning}</div>
+                          <div style={{ fontSize: 12, color: "rgba(240,234,255,0.45)", fontStyle: "italic", textAlign: "center" }}>{quizState.word.example}</div>
+                        </div>
+                      </div>
+                    </div>
+                    {flipped && (
+                      <div style={{ display: "flex", gap: 10, marginTop: 16, justifyContent: "center" }}>
+                        <button className="btn-ghost" onClick={() => { setWords(ws => ws.map(w => w.id === quizState.word.id ? { ...w, mastery: Math.max(0, w.mastery - 1) } : w)); startQuiz(); }}>😅 还不熟</button>
+                        <button className="btn-primary" onClick={() => { setWords(ws => ws.map(w => w.id === quizState.word.id ? { ...w, mastery: Math.min(5, w.mastery + 1) } : w)); startQuiz(); }}>✅ 记住了</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {tab === 3 && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              {[["📖 单词总数", words.length], ["✅ 答题总数", score.total], ["🎯 正确率", score.total ? Math.round(score.correct / score.total * 100) + "%" : "—"], ["🔥 连击记录", streak]].map(([label, val]) => (
+                <div key={label} className="card" style={{ padding: "18px 16px", textAlign: "center" }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: "#e0c3fc", fontFamily: "'Playfair Display',serif" }}>{val}</div>
+                  <div style={{ fontSize: 11, color: "rgba(240,234,255,0.45)", marginTop: 4 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="card" style={{ padding: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#c4b5fd", marginBottom: 14 }}>单词掌握情况</div>
+              {words.length === 0 ? <div style={{ color: "rgba(240,234,255,0.4)", fontSize: 13 }}>还没有单词</div> : words.map(w => (
+                <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 100, fontSize: 13, color: "#e0c3fc", fontFamily: "'Playfair Display',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.word}</div>
+                  <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.08)", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${w.mastery / 5 * 100}%`, background: `linear-gradient(90deg, #a78bfa, ${masteryColor(w.mastery)})`, borderRadius: 4, transition: "width 0.4s" }} />
+                  </div>
+                  <span className="tag" style={{ background: masteryColor(w.mastery) + "22", color: masteryColor(w.mastery), border: `1px solid ${masteryColor(w.mastery)}44`, minWidth: 32, textAlign: "center" }}>{masteryLabel(w.mastery)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
