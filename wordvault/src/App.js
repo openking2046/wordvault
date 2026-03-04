@@ -54,6 +54,7 @@ export default function VocabApp() {
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wordvault_notif_time") || "09:00");
   const [notifEnabled, setNotifEnabled] = useState(() => localStorage.getItem("wordvault_notif_enabled") === "true");
   const [importMsg, setImportMsg] = useState("");
+  const [importSnapshot, setImportSnapshot] = useState(null); // words before last import
 
   useEffect(() => { try { localStorage.setItem("wordvault_words", JSON.stringify(words)); } catch {} }, [words]);
   useEffect(() => { try { localStorage.setItem("wordvault_score", JSON.stringify(score)); } catch {} }, [score]);
@@ -215,6 +216,7 @@ Respond ONLY in this exact JSON format, no other text:
         const newWords = imported.filter(w => w.word && !existingWords.includes(w.word.toLowerCase()))
           .map(w => ({ ...w, id: Date.now() + Math.random(), mastery: w.mastery||0, tags: w.tags||[] }));
         if (newWords.length === 0) { setImportMsg("⚠️ 所有单词都已存在，没有新增"); return; }
+        setImportSnapshot(words);
         setWords(ws => [...ws, ...newWords]);
         setImportMsg(`✅ 成功导入 ${newWords.length} 个新单词！`);
         setTimeout(() => setImportMsg(""), 4000);
@@ -520,6 +522,12 @@ Respond ONLY in this exact JSON format, no other text:
                 <input type="file" accept=".json,.csv" onChange={handleImportFile} style={{ display: "none" }} />
               </label>
               {importMsg && <div style={{ marginTop: 12, fontSize: 13, color: importMsg.startsWith("✅") ? "#4ade80" : importMsg.startsWith("⚠️") ? "#fbbf24" : "#f87171" }}>{importMsg}</div>}
+              {importSnapshot && (
+                <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "10px 14px" }}>
+                  <span style={{ fontSize: 13, color: "#fbbf24", flex: 1 }}>↩️ 上次导入了 {words.length - importSnapshot.length} 个单词</span>
+                  <button className="btn-ghost" style={{ fontSize: 12, padding: "6px 14px", color: "#fbbf24", borderColor: "rgba(251,191,36,0.4)" }} onClick={() => { if (window.confirm("确定撤销上次导入吗？新导入的单词将被删除。")) { setWords(importSnapshot); setImportSnapshot(null); setImportMsg("✅ 已撤销导入"); setTimeout(() => setImportMsg(""), 2000); } }}>撤销导入</button>
+                </div>
+              )}
             </div>
 
             <div className="card" style={{ padding: 24 }}>
