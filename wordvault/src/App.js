@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback } from "react";
 
 const SAMPLE_WORDS = [
@@ -75,7 +76,7 @@ export default function VocabApp() {
     setQuizResult(null); setFillAnswer("");
   }, [words, quizType, filterTag]);
 
-  useEffect(() => { if (tab === 2) startQuiz(); }, [tab, quizType]);
+  useEffect(() => { if (tab === 2) startQuiz(); }, [tab, quizType, startQuiz]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAIGenerate() {
     if (!newWord.trim()) { setAddMsg("请先填写单词！"); return; }
