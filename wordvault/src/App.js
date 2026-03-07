@@ -160,7 +160,7 @@ export default function VocabApp() {
     reader.readAsText(file, "utf-8"); e.target.value = "";
   }
 
-  const masteryColor = (m) => ["#ccc","#d4a017","#c47a1e","#b05a10","#2d8a4e","#1a6e3c"][m];
+  const masteryColor = (m) => ["#888","#d4a017","#c47a1e","#b05a10","#2d8a4e","#1a6e3c"][m];
   const masteryLabel = (m) => ["未学","初识","认识","熟悉","掌握","精通"][m];
   const correctRate = score.total ? Math.round(score.correct / score.total * 100) : 0;
 
@@ -171,11 +171,11 @@ export default function VocabApp() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         input, textarea { background: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px; color: #111; padding: 10px 14px; font-family: inherit; font-size: 14px; outline: none; width: 100%; transition: border 0.15s; }
         input:focus, textarea:focus { border-color: #111; background: #fff; }
-        input::placeholder, textarea::placeholder { color: #bbb; }
+        input::placeholder, textarea::placeholder { color: #777; }
         .btn { border-radius: 8px; padding: 10px 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; border: none; transition: all 0.15s; display: inline-block; }
         .btn-dark { background: #111; color: #fff; }
         .btn-dark:hover { background: #333; }
-        .btn-dark:disabled { background: #bbb; cursor: not-allowed; }
+        .btn-dark:disabled { background: #777; cursor: not-allowed; }
         .btn-outline { background: #fff; color: #111; border: 1.5px solid #ddd; }
         .btn-outline:hover { background: #f5f5f5; }
         .btn-sm { padding: 7px 14px; font-size: 13px; }
@@ -189,11 +189,11 @@ export default function VocabApp() {
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
-        .nav-icon { font-size: 17px; line-height: 1; color: #ccc; font-style: normal; }
-        .nav-label { font-size: 10px; color: #ccc; font-weight: 400; }
+        .nav-icon { font-size: 17px; line-height: 1; color: #888; font-style: normal; }
+        .nav-label { font-size: 10px; color: #888; font-weight: 400; }
         .nav-item.active .nav-icon, .nav-item.active .nav-label { color: #111; font-weight: 600; }
         .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; }
-        .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #aaa; margin-bottom: 14px; }
+        .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
       `}</style>
@@ -205,13 +205,13 @@ export default function VocabApp() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
             <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
-            <div style={{ fontSize: 12, color: "#bbb", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>
               {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""}{streak > 1 ? ` · 🔥${streak}` : ""}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 11, color: "#ccc", marginBottom: 1 }}>已掌握</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>{words.filter(w => w.mastery >= 4).length}<span style={{ fontSize: 12, color: "#bbb", fontWeight: 400 }}>/{words.length}</span></div>
+            <div style={{ fontSize: 11, color: "#888", marginBottom: 1 }}>已掌握</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>{words.filter(w => w.mastery >= 4).length}<span style={{ fontSize: 12, color: "#777", fontWeight: 400 }}>/{words.length}</span></div>
           </div>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function VocabApp() {
               {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
             </div>
             {filteredWords.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#ccc" }}>
+              <div style={{ textAlign: "center", padding: "60px 0", color: "#888" }}>
                 <div style={{ fontSize: 36, marginBottom: 10 }}>—</div>
                 <div style={{ fontSize: 14 }}>暂无单词</div>
               </div>
@@ -237,25 +237,25 @@ export default function VocabApp() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: "#111" }}>{w.word}</span>
-                      <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#ccc", padding: 0 }}>♪</button>
+                      <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#888", padding: 0 }}>♪</button>
                     </div>
                     {expandedWord === w.id ? (
                       <div style={{ marginTop: 8 }}>
                         <div style={{ fontSize: 14, color: "#333", marginBottom: 5 }}>{w.meaning}</div>
-                        {w.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{w.example}</div>}
+                        {w.example && <div style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{w.example}</div>}
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                           {(w.tags || []).map(t => <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f5f5f5", color: "#888" }}>{t}</span>)}
                         </div>
                       </div>
                     ) : (
-                      <div style={{ fontSize: 12, color: "#bbb", marginTop: 2 }}>{w.meaning}</div>
+                      <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>{w.meaning}</div>
                     )}
                     <div className="mastery-bar">
                       <div style={{ height: "100%", width: `${w.mastery/5*100}%`, background: masteryColor(w.mastery), transition: "width 0.3s" }} />
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 12, flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, color: "#bbb" }}>{masteryLabel(w.mastery)}</span>
+                    <span style={{ fontSize: 11, color: "#777" }}>{masteryLabel(w.mastery)}</span>
                     {expandedWord === w.id && (
                       <button onClick={e => { e.stopPropagation(); deleteWord(w.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#ddd", padding: 0, lineHeight: 1 }}>×</button>
                     )}
@@ -272,7 +272,7 @@ export default function VocabApp() {
             <div className="sec-title">新建单词</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>英文单词</div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>英文单词</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input value={newWord} onChange={e => setNewWord(e.target.value)} placeholder="e.g. Tenacious" />
                   <button className="btn btn-dark btn-sm" onClick={handleAIGenerate} disabled={aiLoading || !newWord.trim()} style={{ whiteSpace: "nowrap" }}>
@@ -281,15 +281,15 @@ export default function VocabApp() {
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>中文释义</div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>中文释义</div>
                 <input value={newMeaning} onChange={e => setNewMeaning(e.target.value)} placeholder="e.g. 坚韧的，顽强的" />
               </div>
               <div>
-                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>例句（可选）</div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>例句（可选）</div>
                 <textarea value={newExample} onChange={e => setNewExample(e.target.value)} placeholder="e.g. She was tenacious in pursuing her goals." rows={3} style={{ resize: "none" }} />
               </div>
               <div>
-                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 8 }}>标签</div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>标签</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                   {PRESET_TAGS.map(tag => <span key={tag} className={`tag-pill ${newTags.includes(tag) ? "active" : ""}`} onClick={() => toggleNewTag(tag)}>{tag}</span>)}
                 </div>
@@ -315,19 +315,19 @@ export default function VocabApp() {
               {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
             </div>
             {(filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 ? (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#bbb" }}>
+              <div style={{ textAlign: "center", padding: "60px 0", color: "#777" }}>
                 <div style={{ fontSize: 14, marginBottom: 16 }}>至少需要 4 个单词才能测验</div>
                 <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
               </div>
             ) : quizState && (
               <div>
                 <div style={{ marginBottom: 28 }}>
-                  <div style={{ fontSize: 11, color: "#bbb", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
+                  <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
-                    <button onClick={() => speak(quizState.question)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#ccc", padding: 0 }}>♪</button>
+                    <button onClick={() => speak(quizState.question)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#888", padding: 0 }}>♪</button>
                   </div>
-                  {quizState.example && <div style={{ fontSize: 13, color: "#bbb", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
+                  {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
                 </div>
                 <div>
                   {quizState.options.map((opt, i) => {
@@ -335,7 +335,7 @@ export default function VocabApp() {
                     if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
                     return (
                       <button key={i} className={cls} disabled={!!quizResult} onClick={() => handleMCQ(opt)}>
-                        <span style={{ color: "#bbb", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
+                        <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
                       </button>
                     );
                   })}
@@ -361,12 +361,12 @@ export default function VocabApp() {
               {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连击记录", streak]].map(([label, val]) => (
                 <div key={label} style={{ border: "1px solid #ebebeb", borderRadius: 10, padding: 16 }}>
                   <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 30, color: "#111" }}>{val}</div>
-                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 4, fontWeight: 500, letterSpacing: "0.3px" }}>{label}</div>
+                  <div style={{ fontSize: 11, color: "#666", marginTop: 4, fontWeight: 500, letterSpacing: "0.3px" }}>{label}</div>
                 </div>
               ))}
             </div>
             <div className="sec-title">掌握情况</div>
-            {words.length === 0 ? <div style={{ color: "#ccc", fontSize: 14 }}>还没有单词</div> : words.map(w => (
+            {words.length === 0 ? <div style={{ color: "#888", fontSize: 14 }}>还没有单词</div> : words.map(w => (
               <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
                 <div style={{ width: 120, fontSize: 13, fontFamily: "'DM Serif Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#111", flexShrink: 0 }}>{w.word}</div>
                 <div style={{ flex: 1 }}>
@@ -374,7 +374,7 @@ export default function VocabApp() {
                     <div style={{ height: "100%", width: `${w.mastery/5*100}%`, background: "#111", transition: "width 0.3s" }} />
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: "#bbb", width: 28, textAlign: "right" }}>{masteryLabel(w.mastery)}</div>
+                <div style={{ fontSize: 11, color: "#777", width: 28, textAlign: "right" }}>{masteryLabel(w.mastery)}</div>
               </div>
             ))}
           </div>
@@ -391,7 +391,7 @@ export default function VocabApp() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   <div style={{ fontSize: 13, color: "#2d8a4e" }}>通知已开启 ✓</div>
                   <div>
-                    <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>提醒时间</div>
+                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>提醒时间</div>
                     <input type="time" value={notifTime} onChange={e => setNotifTime(e.target.value)} style={{ width: "auto" }} />
                   </div>
                   <button className="btn btn-dark btn-sm" onClick={() => { localStorage.setItem("wv_ntime", notifTime); showMsg("已保存"); }}>保存</button>
@@ -407,7 +407,7 @@ export default function VocabApp() {
             </div>
             <div>
               <div className="sec-title">导入单词</div>
-              <div style={{ fontSize: 13, color: "#aaa", marginBottom: 12, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 12, lineHeight: 1.7 }}>
                 支持 .json 或 .csv，重复单词自动跳过<br/>
                 CSV 列：word, meaning, example, tags（分号分隔）, mastery
               </div>
@@ -418,7 +418,7 @@ export default function VocabApp() {
               {importMsg && <div style={{ marginTop: 10, fontSize: 13, color: importMsg.includes("已导入") ? "#2d8a4e" : "#e53e3e" }}>{importMsg}</div>}
               {importSnapshot && (
                 <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 13, color: "#aaa" }}>已导入 {words.length - importSnapshot.length} 个单词</span>
+                  <span style={{ fontSize: 13, color: "#666" }}>已导入 {words.length - importSnapshot.length} 个单词</span>
                   <button className="btn btn-outline btn-sm" onClick={() => { if (window.confirm("确定撤销导入？")) { setWords(importSnapshot); setImportSnapshot(null); showMsg("已撤销"); } }}>撤销</button>
                 </div>
               )}
