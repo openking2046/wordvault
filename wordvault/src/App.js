@@ -512,15 +512,27 @@ export default function VocabApp() {
                   <button className="btn btn-outline btn-sm" onClick={() => { setTempGoal(dailyGoal); setEditingGoal(true); }}>修改目标</button>
                 ) : (
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input type="number" min="1" max="50" value={tempGoal} onChange={e => setTempGoal(parseInt(e.target.value)||1)}
-                      style={{ width: 56, textAlign: "center", padding: "6px 8px", fontSize: 14 }} />
+                    <input
+                      type="number" min="1" max="50"
+                      value={tempGoal === 0 ? "" : tempGoal}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === "" || val === "0") { setTempGoal(0); return; }
+                        const n = parseInt(val);
+                        if (!isNaN(n)) setTempGoal(Math.min(50, n));
+                      }}
+                      onBlur={e => { if (!tempGoal || tempGoal < 1) setTempGoal(1); }}
+                      style={{ width: 64, textAlign: "center", padding: "6px 8px", fontSize: 16, fontWeight: 500 }}
+                    />
                     <button className="btn btn-dark btn-sm" onClick={() => {
-                      const g = Math.max(1, Math.min(50, tempGoal));
+                      const g = Math.max(1, Math.min(50, tempGoal || 1));
                       setDailyGoal(g);
+                      setTempGoal(g);
                       localStorage.setItem("wv_daily_goal", g);
                       setEditingGoal(false);
                       showMsg("目标已保存");
                     }}>保存</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => { setTempGoal(dailyGoal); setEditingGoal(false); }}>取消</button>
                   </div>
                 )}
               </div>
