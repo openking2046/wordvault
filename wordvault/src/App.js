@@ -45,7 +45,8 @@ export default function VocabApp() {
   const [newExample, setNewExample] = useState("");
   const [newTags, setNewTags] = useState([]);
   const [customTag, setCustomTag] = useState("");
-  const [editingTag, setEditingTag] = useState(null); // { old, new }
+  const [editingTag, setEditingTag] = useState(null);
+  const [editingWordTags, setEditingWordTags] = useState(null); // word id being tag-edited
   const [userTags, setUserTags] = useState(() => { try { const s = localStorage.getItem("wv_user_tags"); return s ? JSON.parse(s) : [...DEFAULT_TAGS]; } catch { return [...DEFAULT_TAGS]; } });
   const [msg, setMsg] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -137,6 +138,8 @@ export default function VocabApp() {
   function deleteUserTag(tag) {
     setUserTags(ts => ts.filter(t => t !== tag));
     setNewTags(ts => ts.filter(t => t !== tag));
+    setWords(ws => ws.map(w => ({ ...w, tags: (w.tags || []).filter(t => t !== tag) })));
+    showMsg("标签已删除");
   }
   function renameTag(oldTag, newTag) {
     const t = newTag.trim();
@@ -341,8 +344,34 @@ export default function VocabApp() {
                         <div style={{ marginTop: 8 }}>
                           <div style={{ fontSize: 14, color: "#333", marginBottom: 5 }}>{w.meaning}</div>
                           {w.example && <div style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{w.example}</div>}
-                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                            {(w.tags || []).map(t => <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f5f5f5", color: "#888" }}>{t}</span>)}
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                            {(w.tags || []).map(t => (
+                              <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f0f0f0", color: "#555", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                {t}
+                                <span onClick={e => { e.stopPropagation(); setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: x.tags.filter(tg => tg !== t) } : x)); }} style={{ cursor: "pointer", fontSize: 12, opacity: 0.5, lineHeight: 1 }}>×</span>
+                              </span>
+                            ))}
+                            {editingWordTags === w.id ? (
+                              <select
+                                defaultValue=""
+                                autoFocus
+                                onClick={e => e.stopPropagation()}
+                                onChange={e => {
+                                  const tag = e.target.value;
+                                  if (tag && !(w.tags || []).includes(tag)) {
+                                    setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: [...(x.tags||[]), tag] } : x));
+                                  }
+                                  setEditingWordTags(null);
+                                }}
+                                onBlur={() => setEditingWordTags(null)}
+                                style={{ fontSize: 11, padding: "2px 6px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", color: "#111", fontFamily: "inherit", cursor: "pointer" }}
+                              >
+                                <option value="">+ 选择标签</option>
+                                {userTags.filter(t => !(w.tags||[]).includes(t)).map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                            ) : (
+                              <span onClick={e => { e.stopPropagation(); setEditingWordTags(w.id); }} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, border: "1px dashed #ccc", color: "#aaa", cursor: "pointer" }}>+ 添加标签</span>
+                            )}
                           </div>
                         </div>
                       ) : (
