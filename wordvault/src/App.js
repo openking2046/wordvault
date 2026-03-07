@@ -48,12 +48,20 @@ export default function VocabApp() {
   const [quizState, setQuizState] = useState(null);
   const [quizResult, setQuizResult] = useState(null);
   const [streak, setStreak] = useState(0);
+  const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0, wrongWords: [] });
+  const [showSummary, setShowSummary] = useState(false);
   const [filterTag, setFilterTag] = useState("全部");
+  const [searchQuery, setSearchQuery] = useState("");
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
+  const [dailyGoal, setDailyGoal] = useState(() => parseInt(localStorage.getItem("wv_daily_goal") || "5"));
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [tempGoal, setTempGoal] = useState(5);
   const [expandedWord, setExpandedWord] = useState(null);
+  const [swipedWord, setSwipedWord] = useState(null);
+  const touchStartX = { current: 0 };
 
   useEffect(() => { try { localStorage.setItem("wv_words", JSON.stringify(words)); } catch {} }, [words]);
   useEffect(() => { try { localStorage.setItem("wv_score", JSON.stringify(score)); } catch {} }, [score]);
@@ -61,7 +69,9 @@ export default function VocabApp() {
   useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
 
   const allTags = ["全部", ...Array.from(new Set(words.flatMap(w => w.tags || [])))];
-  const filteredWords = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
+  const filteredWords = words
+    .filter(w => filterTag === "全部" || (w.tags || []).includes(filterTag))
+    .filter(w => !searchQuery.trim() || w.word.toLowerCase().includes(searchQuery.toLowerCase()) || w.meaning.includes(searchQuery));
 
   const startQuiz = useCallback(() => {
     const pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
@@ -114,9 +124,30 @@ export default function VocabApp() {
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
     setStreak(s => correct ? s + 1 : 0);
     if (correct) setWords(ws => ws.map(w => w.meaning === quizState.correct ? { ...w, mastery: Math.min(5, w.mastery + 1) } : w));
+    // Track daily quiz count
+    try {
+      const d = JSON.parse(localStorage.getItem("wv_daily_quiz") || "{}");
+      d[todayKey] = (d[todayKey] || 0) + 1;
+      localStorage.setItem("wv_daily_quiz", JSON.stringify(d));
+    } catch {}
+    setSessionStats(s => {
+      const newTotal = s.total + 1;
+      const newCorrect = s.correct + (correct ? 1 : 0);
+      const newWrong = correct ? s.wrongWords : [...new Set([...s.wrongWords, quizState.question])];
+      if (newTotal % 10 === 0) {
+        setTimeout(() => setShowSummary(true), 600);
+      }
+      return { correct: newCorrect, total: newTotal, wrongWords: newWrong };
+    });
   }
 
   function deleteWord(id) { setWords(ws => ws.filter(w => w.id !== id)); }
+
+  function resetSession() {
+    setSessionStats({ correct: 0, total: 0, wrongWords: [] });
+    setShowSummary(false);
+    startQuiz();
+  }
 
   async function requestNotification() {
     if (!("Notification" in window)) { showMsg("浏览器不支持通知"); return; }
@@ -160,6 +191,11 @@ export default function VocabApp() {
     reader.readAsText(file, "utf-8"); e.target.value = "";
   }
 
+  // Today's date key for tracking daily progress
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayWords = words.filter(w => w.id && new Date(w.id).toISOString().slice(0, 10) === todayKey).length;
+  const todayQuizzes = (() => { try { const d = JSON.parse(localStorage.getItem("wv_daily_quiz") || "{}"); return d[todayKey] || 0; } catch { return 0; } })();
+
   const masteryColor = (m) => ["#888","#d4a017","#c47a1e","#b05a10","#2d8a4e","#1a6e3c"][m];
   const masteryLabel = (m) => ["未学","初识","认识","熟悉","掌握","精通"][m];
   const correctRate = score.total ? Math.round(score.correct / score.total * 100) : 0;
@@ -195,6 +231,10 @@ export default function VocabApp() {
         .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; }
         .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
+        .swipe-container { position: relative; overflow: hidden; }
+        .swipe-content { transition: transform 0.25s ease; }
+        .swipe-content.swiped { transform: translateX(-72px); }
+        .swipe-delete { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #e53e3e; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 0 0 0 0; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
       `}</style>
 
@@ -222,6 +262,18 @@ export default function VocabApp() {
         {/* Tab 0 */}
         {tab === 0 && (
           <div>
+            <div style={{ position: "relative", marginBottom: 14 }}>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="搜索单词或释义…"
+                style={{ paddingLeft: 36, background: "#f7f7f7", border: "1px solid #ebebeb" }}
+              />
+              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 15, pointerEvents: "none" }}>⌕</span>
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, lineHeight: 1 }}>×</button>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
               {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
             </div>
@@ -232,35 +284,48 @@ export default function VocabApp() {
               </div>
             )}
             {filteredWords.map(w => (
-              <div key={w.id} className="word-row" onClick={() => setExpandedWord(expandedWord === w.id ? null : w.id)}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: "#111" }}>{w.word}</span>
-                      <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#888", padding: 0 }}>♪</button>
-                    </div>
-                    {expandedWord === w.id ? (
-                      <div style={{ marginTop: 8 }}>
-                        <div style={{ fontSize: 14, color: "#333", marginBottom: 5 }}>{w.meaning}</div>
-                        {w.example && <div style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{w.example}</div>}
-                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                          {(w.tags || []).map(t => <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f5f5f5", color: "#888" }}>{t}</span>)}
-                        </div>
+              <div key={w.id} className="word-row swipe-container"
+                onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={e => {
+                  const diff = touchStartX.current - e.changedTouches[0].clientX;
+                  if (diff > 50) { setSwipedWord(w.id); setExpandedWord(null); }
+                  else if (diff < -20) { setSwipedWord(null); }
+                }}
+              >
+                <div
+                  className={`swipe-content ${swipedWord === w.id ? "swiped" : ""}`}
+                  onClick={() => { if (swipedWord === w.id) { setSwipedWord(null); return; } setExpandedWord(expandedWord === w.id ? null : w.id); }}
+                  style={{ padding: "14px 0", background: "#fff" }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: "#111" }}>{w.word}</span>
+                        <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#888", padding: 0 }}>♪</button>
                       </div>
-                    ) : (
-                      <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>{w.meaning}</div>
-                    )}
-                    <div className="mastery-bar">
-                      <div style={{ height: "100%", width: `${w.mastery/5*100}%`, background: masteryColor(w.mastery), transition: "width 0.3s" }} />
+                      {expandedWord === w.id ? (
+                        <div style={{ marginTop: 8 }}>
+                          <div style={{ fontSize: 14, color: "#333", marginBottom: 5 }}>{w.meaning}</div>
+                          {w.example && <div style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{w.example}</div>}
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                            {(w.tags || []).map(t => <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f5f5f5", color: "#888" }}>{t}</span>)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>{w.meaning}</div>
+                      )}
+                      <div className="mastery-bar">
+                        <div style={{ height: "100%", width: `${w.mastery/5*100}%`, background: masteryColor(w.mastery), transition: "width 0.3s" }} />
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 12, flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, color: "#777" }}>{masteryLabel(w.mastery)}</span>
-                    {expandedWord === w.id && (
-                      <button onClick={e => { e.stopPropagation(); deleteWord(w.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#ddd", padding: 0, lineHeight: 1 }}>×</button>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 12, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: "#777" }}>{masteryLabel(w.mastery)}</span>
+                    </div>
                   </div>
                 </div>
+                {swipedWord === w.id && (
+                  <div className="swipe-delete" onClick={() => { deleteWord(w.id); setSwipedWord(null); }}>删除</div>
+                )}
               </div>
             ))}
           </div>
@@ -356,6 +421,64 @@ export default function VocabApp() {
         {/* Tab 3 */}
         {tab === 3 && (
           <div style={{ maxWidth: 480 }}>
+
+            {/* Today's Goal */}
+            <div className="sec-title">今日目标</div>
+            <div style={{ border: "1px solid #ebebeb", borderRadius: 12, padding: 20, marginBottom: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: "#111" }}>
+                    {todayWords >= dailyGoal ? "目标完成 ✓" : `今天还差 ${Math.max(0, dailyGoal - todayWords)} 个单词`}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>已添加 {todayWords} / 目标 {dailyGoal} 个新单词</div>
+                </div>
+                {!editingGoal ? (
+                  <button className="btn btn-outline btn-sm" onClick={() => { setTempGoal(dailyGoal); setEditingGoal(true); }}>修改目标</button>
+                ) : (
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <input type="number" min="1" max="50" value={tempGoal} onChange={e => setTempGoal(parseInt(e.target.value)||1)}
+                      style={{ width: 56, textAlign: "center", padding: "6px 8px", fontSize: 14 }} />
+                    <button className="btn btn-dark btn-sm" onClick={() => {
+                      const g = Math.max(1, Math.min(50, tempGoal));
+                      setDailyGoal(g);
+                      localStorage.setItem("wv_daily_goal", g);
+                      setEditingGoal(false);
+                      showMsg("目标已保存");
+                    }}>保存</button>
+                  </div>
+                )}
+              </div>
+
+              {/* Word goal progress bar */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 6 }}>
+                  <span>新增单词</span>
+                  <span>{todayWords}/{dailyGoal}</span>
+                </div>
+                <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, todayWords / dailyGoal * 100)}%`, background: todayWords >= dailyGoal ? "#2d8a4e" : "#111", borderRadius: 4, transition: "width 0.4s" }} />
+                </div>
+              </div>
+
+              {/* Quiz goal progress bar */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 6 }}>
+                  <span>今日答题</span>
+                  <span>{todayQuizzes}/{dailyGoal * 4}</span>
+                </div>
+                <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, todayQuizzes / (dailyGoal * 4) * 100)}%`, background: todayQuizzes >= dailyGoal * 4 ? "#2d8a4e" : "#111", borderRadius: 4, transition: "width 0.4s" }} />
+                </div>
+              </div>
+
+              {todayWords >= dailyGoal && todayQuizzes >= dailyGoal * 4 && (
+                <div style={{ marginTop: 14, fontSize: 13, color: "#2d8a4e", fontWeight: 500, textAlign: "center" }}>
+                  🎉 今日所有目标已完成！
+                </div>
+              )}
+            </div>
+
+            {/* Stats */}
             <div className="sec-title">学习概览</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
               {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连击记录", streak]].map(([label, val]) => (
@@ -365,6 +488,7 @@ export default function VocabApp() {
                 </div>
               ))}
             </div>
+
             <div className="sec-title">掌握情况</div>
             {words.length === 0 ? <div style={{ color: "#888", fontSize: 14 }}>还没有单词</div> : words.map(w => (
               <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
@@ -432,6 +556,47 @@ export default function VocabApp() {
           </div>
         )}
       </div>
+
+      {/* Session Summary Modal */}
+      {showSummary && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 380 }}>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: "#111", marginBottom: 4 }}>
+              {sessionStats.correct >= 8 ? "太棒了！🎉" : sessionStats.correct >= 6 ? "不错！继续加油" : "再练练这些词 💪"}
+            </div>
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>第 {Math.floor(sessionStats.total / 10)} 轮 · {sessionStats.total} 题小结</div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
+              {[
+                ["答对", sessionStats.correct],
+                ["答错", sessionStats.total - sessionStats.correct],
+                ["正确率", Math.round(sessionStats.correct / sessionStats.total * 100) + "%"]
+              ].map(([label, val]) => (
+                <div key={label} style={{ textAlign: "center", border: "1px solid #ebebeb", borderRadius: 10, padding: "12px 8px" }}>
+                  <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: "#111" }}>{val}</div>
+                  <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {sessionStats.wrongWords.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>需要加强</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {sessionStats.wrongWords.map(w => (
+                    <span key={w} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 20, background: "#fff5f5", color: "#e53e3e", border: "1px solid #fecaca", fontFamily: "'DM Serif Display', serif" }}>{w}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-dark" style={{ flex: 1 }} onClick={resetSession}>继续答题</button>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setShowSummary(false); setTab(3); }}>查看进度</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Nav */}
       <nav className="bottom-nav">
