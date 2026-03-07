@@ -45,7 +45,8 @@ export default function VocabApp() {
   const [newExample, setNewExample] = useState("");
   const [newTags, setNewTags] = useState([]);
   const [customTag, setCustomTag] = useState("");
-  const [userTags, setUserTags] = useState(() => { try { const s = localStorage.getItem("wv_user_tags"); return s ? JSON.parse(s) : []; } catch { return []; } });
+  const [editingTag, setEditingTag] = useState(null); // { old, new }
+  const [userTags, setUserTags] = useState(() => { try { const s = localStorage.getItem("wv_user_tags"); return s ? JSON.parse(s) : [...DEFAULT_TAGS]; } catch { return [...DEFAULT_TAGS]; } });
   const [msg, setMsg] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [quizState, setQuizState] = useState(null);
@@ -130,12 +131,21 @@ export default function VocabApp() {
     const tag = customTag.trim();
     if (!tag) return;
     if (!newTags.includes(tag)) setNewTags(ts => [...ts, tag]);
-    if (![...DEFAULT_TAGS, ...userTags].includes(tag)) setUserTags(ts => [...ts, tag]);
+    if (!userTags.includes(tag)) setUserTags(ts => [...ts, tag]);
     setCustomTag("");
   }
   function deleteUserTag(tag) {
     setUserTags(ts => ts.filter(t => t !== tag));
     setNewTags(ts => ts.filter(t => t !== tag));
+  }
+  function renameTag(oldTag, newTag) {
+    const t = newTag.trim();
+    if (!t || t === oldTag || userTags.includes(t)) { setEditingTag(null); return; }
+    setUserTags(ts => ts.map(x => x === oldTag ? t : x));
+    setNewTags(ts => ts.map(x => x === oldTag ? t : x));
+    setWords(ws => ws.map(w => ({ ...w, tags: (w.tags||[]).map(x => x === oldTag ? t : x) })));
+    setEditingTag(null);
+    showMsg("标签已更新");
   }
 
   function handleMCQ(option) {
@@ -380,15 +390,24 @@ export default function VocabApp() {
               <div>
                 <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>标签</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                  {DEFAULT_TAGS.map(tag => (
-                    <span key={tag} className={`tag-pill ${newTags.includes(tag) ? "active" : ""}`} onClick={() => toggleNewTag(tag)}>{tag}</span>
-                  ))}
                   {userTags.map(tag => (
                     <span key={tag} style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 4 }} className={`tag-pill ${newTags.includes(tag) ? "active" : ""}`}>
-                      <span onClick={() => toggleNewTag(tag)}>{tag}</span>
+                      {editingTag?.old === tag ? (
+                        <input
+                          autoFocus
+                          defaultValue={tag}
+                          onBlur={e => renameTag(tag, e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") renameTag(tag, e.target.value); if (e.key === "Escape") setEditingTag(null); }}
+                          onClick={e => e.stopPropagation()}
+                          style={{ width: Math.max(40, tag.length * 14) + "px", padding: "0 4px", fontSize: 12, border: "none", borderBottom: "1px solid #111", background: "transparent", outline: "none", fontFamily: "inherit" }}
+                        />
+                      ) : (
+                        <span onClick={() => toggleNewTag(tag)} onDoubleClick={e => { e.stopPropagation(); setEditingTag({ old: tag }); }}>{tag}</span>
+                      )}
                       <span onClick={e => { e.stopPropagation(); deleteUserTag(tag); }} style={{ fontSize: 13, lineHeight: 1, opacity: 0.6, cursor: "pointer" }}>×</span>
                     </span>
                   ))}
+                  <div style={{ fontSize: 11, color: "#aaa", width: "100%", marginTop: 4 }}>双击标签可修改名称</div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input value={customTag} onChange={e => setCustomTag(e.target.value)} placeholder="自定义标签" onKeyDown={e => e.key === "Enter" && addCustomTag()} />
