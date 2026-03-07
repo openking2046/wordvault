@@ -1,5 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect, useCallback } from “react”;
+/* eslint-disable no-unused-vars */
+/* eslint-disable jsx-a11y/anchor-is-valid */
+import { useState, useEffect, useCallback, useRef } from “react”;
 
 const SAMPLE_WORDS = [
 { id: 1, word: “Serendipity”, meaning: “意外发现美好事物的运气”, example: “Finding that book was pure serendipity.”, mastery: 0, tags: [“生活”] },
@@ -63,7 +65,7 @@ const [editingGoal, setEditingGoal] = useState(false);
 const [tempGoal, setTempGoal] = useState(5);
 const [expandedWord, setExpandedWord] = useState(null);
 const [swipedWord, setSwipedWord] = useState(null);
-const touchStartX = { current: 0 };
+const touchStartX = useRef(0);
 
 useEffect(() => { try { localStorage.setItem(“wv_words”, JSON.stringify(words)); } catch {} }, [words]);
 useEffect(() => { try { localStorage.setItem(“wv_score”, JSON.stringify(score)); } catch {} }, [score]);
