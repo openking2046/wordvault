@@ -69,7 +69,8 @@ export default function VocabApp() {
   useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
 
   const allTags = ["全部", ...Array.from(new Set(words.flatMap(w => w.tags || [])))];
-  const filteredWords = words
+  const filteredWords = [...words]
+    .reverse()
     .filter(w => filterTag === "全部" || (w.tags || []).includes(filterTag))
     .filter(w => !searchQuery.trim() || w.word.toLowerCase().includes(searchQuery.toLowerCase()) || w.meaning.includes(searchQuery));
 
@@ -301,7 +302,7 @@ export default function VocabApp() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: "#111" }}>{w.word}</span>
-                        <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#888", padding: 0 }}>♪</button>
+                        <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "3px 8px", fontWeight: 500, letterSpacing: "0.3px", lineHeight: 1.4 }}>▶ 发音</button>
                       </div>
                       {expandedWord === w.id ? (
                         <div style={{ marginTop: 8 }}>
@@ -390,7 +391,7 @@ export default function VocabApp() {
                   <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
-                    <button onClick={() => speak(quizState.question)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#888", padding: 0 }}>♪</button>
+                    <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500, letterSpacing: "0.3px" }}>▶ 发音</button>
                   </div>
                   {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
                 </div>
