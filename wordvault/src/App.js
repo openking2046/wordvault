@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/exhaustive-deps */ // v3.7-clean
 /* eslint-disable no-unused-vars */
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import { useState, useEffect, useCallback, useRef } from “react”;
@@ -231,9 +231,9 @@ return (
   <div style={{ padding: "54px 20px 14px", borderBottom: "1px solid #f2f2f2", background: "#fff", position: "sticky", top: 0, zIndex: 50 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
       <div>
-        <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
+        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
         <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>
-          {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""}{streak > 1 ? ` · 🔥${streak}` : ""}
+          {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""}{streak > 1 ? ` · ${streak}` : ""}
         </div>
       </div>
       <div style={{ textAlign: "right" }}>
@@ -292,7 +292,7 @@ return (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: "#111" }}>{w.word}</span>
+                    <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 17, color: "#111" }}>{w.word}</span>
                     <button onClick={e => { e.stopPropagation(); speak(w.word); }} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "3px 8px", fontWeight: 500, letterSpacing: "0.3px", lineHeight: 1.4 }}>▶</button>
                   </div>
                   {expandedWord === w.id ? (
@@ -385,7 +385,7 @@ return (
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
                 <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500, letterSpacing: "0.3px" }}>▶</button>
               </div>
               {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
@@ -423,7 +423,7 @@ return (
         <div style={{ border: "1px solid #ebebeb", borderRadius: 12, padding: 20, marginBottom: 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
-              <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: "#111" }}>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111" }}>
                 {todayWords >= dailyGoal ? "目标完成 ✓" : `今天还差 ${Math.max(0, dailyGoal - todayWords)} 个单词`}
               </div>
               <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>已添加 {todayWords} / 目标 {dailyGoal} 个新单词</div>
@@ -469,7 +469,7 @@ return (
 
           {todayWords >= dailyGoal && todayQuizzes >= dailyGoal * 4 && (
             <div style={{ marginTop: 14, fontSize: 13, color: "#2d8a4e", fontWeight: 500, textAlign: "center" }}>
-              🎉 今日所有目标已完成！
+               今日所有目标已完成！
             </div>
           )}
         </div>
@@ -479,7 +479,7 @@ return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
           {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连击记录", streak]].map(([label, val]) => (
             <div key={label} style={{ border: "1px solid #ebebeb", borderRadius: 10, padding: 16 }}>
-              <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 30, color: "#111" }}>{val}</div>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111" }}>{val}</div>
               <div style={{ fontSize: 11, color: "#666", marginTop: 4, fontWeight: 500, letterSpacing: "0.3px" }}>{label}</div>
             </div>
           ))}
@@ -488,7 +488,7 @@ return (
         <div className="sec-title">掌握情况</div>
         {words.length === 0 ? <div style={{ color: "#888", fontSize: 14 }}>还没有单词</div> : words.map(w => (
           <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            <div style={{ width: 120, fontSize: 13, fontFamily: "'DM Serif Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#111", flexShrink: 0 }}>{w.word}</div>
+            <div style={{ width: 120, fontSize: 13, fontFamily: "DM Serif Display, serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#111", flexShrink: 0 }}>{w.word}</div>
             <div style={{ flex: 1 }}>
               <div className="mastery-bar" style={{ height: 4 }}>
                 <div style={{ height: "100%", width: `${w.mastery/5*100}%`, background: "#111", transition: "width 0.3s" }} />
@@ -557,8 +557,8 @@ return (
   {showSummary && (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 380 }}>
-        <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: "#111", marginBottom: 4 }}>
-          {sessionStats.correct >= 8 ? "太棒了！🎉" : sessionStats.correct >= 6 ? "不错！继续加油" : "再练练这些词 💪"}
+        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", marginBottom: 4 }}>
+          {sessionStats.correct >= 8 ? "太棒了！" : sessionStats.correct >= 6 ? "不错！继续加油" : "再练练这些词 "}
         </div>
         <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>第 {Math.floor(sessionStats.total / 10)} 轮 · {sessionStats.total} 题小结</div>
 
@@ -569,7 +569,7 @@ return (
             ["正确率", Math.round(sessionStats.correct / sessionStats.total * 100) + "%"]
           ].map(([label, val]) => (
             <div key={label} style={{ textAlign: "center", border: "1px solid #ebebeb", borderRadius: 10, padding: "12px 8px" }}>
-              <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: "#111" }}>{val}</div>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111" }}>{val}</div>
               <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{label}</div>
             </div>
           ))}
@@ -580,7 +580,7 @@ return (
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>需要加强</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {sessionStats.wrongWords.map(w => (
-                <span key={w} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 20, background: "#fff5f5", color: "#e53e3e", border: "1px solid #fecaca", fontFamily: "'DM Serif Display', serif" }}>{w}</span>
+                <span key={w} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 20, background: "#fff5f5", color: "#e53e3e", border: "1px solid #fecaca", fontFamily: "DM Serif Display, serif" }}>{w}</span>
               ))}
             </div>
           </div>
