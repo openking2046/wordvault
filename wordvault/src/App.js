@@ -49,6 +49,25 @@ function speak(word) {
   window.speechSynthesis.speak(u);
 }
 
+// Weighted pick: new words & wrong words get higher probability
+function weightedPick(pool, wrongBankIds) {
+  const weights = pool.map(w => {
+    let weight = 1;
+    if (!w.nextReview) weight += 4;          // never quizzed → very high priority
+    else if (w.mastery <= 1) weight += 3;    // low mastery
+    else if (w.mastery === 2) weight += 1;   // medium mastery
+    if (wrongBankIds.includes(w.id)) weight += 5; // in wrong bank → highest priority
+    return weight;
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+}
+
 function generateMCQ(words, target) {
   const distractors = shuffle(words.filter(w => w.id !== target.id)).slice(0, 3);
   const options = shuffle([target, ...distractors]);
@@ -224,15 +243,15 @@ export default function VocabApp() {
     if (m === "review") {
       const due = getDueWords(words);
       if (due.length === 0 || words.length < 4) return;
-      pool = words; target = shuffle(due)[0];
+      pool = words; target = weightedPick(due, wrongBank);
     } else if (m === "wrong") {
       const wrongWords = words.filter(w => wrongBank.includes(w.id));
       if (wrongWords.length === 0 || words.length < 4) return;
-      pool = words; target = shuffle(wrongWords)[0];
+      pool = words; target = weightedPick(wrongWords, wrongBank);
     } else {
       pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
       if (pool.length < 4) return;
-      target = shuffle(pool)[0];
+      target = weightedPick(pool, wrongBank);
     }
     setQuizState(generateMCQ(pool, target));
     setQuizResult(null);
