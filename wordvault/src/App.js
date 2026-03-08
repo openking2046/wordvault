@@ -74,11 +74,11 @@ function generateMCQ(words, target) {
   return { question: target.word, correct: target.meaning, options: options.map(o => o.meaning), example: target.example, correctWord: target.word, isListen: false };
 }
 
-// Listen mode: play audio, pick the correct word spelling from options
+// Listen mode: play audio, pick the correct Chinese meaning from options
 function generateListenMCQ(words, target) {
   const distractors = shuffle(words.filter(w => w.id !== target.id)).slice(0, 3);
   const options = shuffle([target, ...distractors]);
-  return { question: target.word, correct: target.word, options: options.map(o => o.word), meaning: target.meaning, example: target.example, correctWord: target.word, isListen: true };
+  return { question: target.word, correct: target.meaning, options: options.map(o => o.meaning), meaning: target.meaning, example: target.example, correctWord: target.word, isListen: true };
 }
 
 // Rank system - 23 ranks, based on words + streak days
