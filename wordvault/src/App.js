@@ -801,6 +801,7 @@ export default function VocabApp() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Session Summary Modal */}
