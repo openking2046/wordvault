@@ -20,7 +20,26 @@ const NAV = [
   { icon: "⊙", label: "设置" },
 ];
 
+// Ebbinghaus forgetting curve intervals in days
+const REVIEW_INTERVALS = [1, 2, 4, 7, 15, 30, 60];
+
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function getDueWords(words) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  return words.filter(w => {
+    if (!w.nextReview) return false;
+    const due = new Date(w.nextReview); due.setHours(0,0,0,0);
+    return due <= today;
+  });
+}
+
+function scheduleReview(word, correct) {
+  const level = correct ? Math.min((word.reviewLevel || 0) + 1, REVIEW_INTERVALS.length - 1) : 0;
+  const days = REVIEW_INTERVALS[level];
+  const nextReview = Date.now() + days * 86400000;
+  return { ...word, reviewLevel: level, nextReview, lastReviewed: Date.now() };
+}
 
 function speak(word) {
   if (!window.speechSynthesis) return;
@@ -112,6 +131,10 @@ export default function VocabApp() {
     } catch { return { count: 0, lastDate: null, showBroken: false }; }
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong"
+  const [wrongBank, setWrongBank] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("wv_wrong_bank") || "[]"); } catch { return []; }
+  }); // array of word ids
   const [unlockedAchievements, setUnlockedAchievements] = useState(() => {
     try { return JSON.parse(localStorage.getItem("wv_achievements") || "[]"); } catch { return []; }
   });
@@ -134,6 +157,7 @@ export default function VocabApp() {
   const touchStartX = useRef(0);
 
   useEffect(() => { try { localStorage.setItem("wv_words", JSON.stringify(words)); } catch {} }, [words]);
+  useEffect(() => { try { localStorage.setItem("wv_wrong_bank", JSON.stringify(wrongBank)); } catch {} }, [wrongBank]);
   // Check rank up whenever relevant data changes
   useEffect(() => {
     const currentRank = getRank(words.length, streakData.count);
@@ -194,12 +218,25 @@ export default function VocabApp() {
       return b.id - a.id; // newest first (default)
     });
 
-  const startQuiz = useCallback(() => {
-    const pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
-    if (pool.length < 4) return;
-    setQuizState(generateMCQ(pool, shuffle(pool)[0]));
+  const startQuiz = useCallback((mode) => {
+    const m = mode || quizMode;
+    let pool, target;
+    if (m === "review") {
+      const due = getDueWords(words);
+      if (due.length === 0 || words.length < 4) return;
+      pool = words; target = shuffle(due)[0];
+    } else if (m === "wrong") {
+      const wrongWords = words.filter(w => wrongBank.includes(w.id));
+      if (wrongWords.length === 0 || words.length < 4) return;
+      pool = words; target = shuffle(wrongWords)[0];
+    } else {
+      pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
+      if (pool.length < 4) return;
+      target = shuffle(pool)[0];
+    }
+    setQuizState(generateMCQ(pool, target));
     setQuizResult(null);
-  }, [words, filterTag]);
+  }, [words, filterTag, quizMode, wrongBank]);
 
   useEffect(() => { if (tab === 2) startQuiz(); }, [tab, startQuiz]);
 
@@ -266,7 +303,37 @@ export default function VocabApp() {
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
 
-    if (correct) setWords(ws => ws.map(w => w.meaning === quizState.correct ? { ...w, mastery: Math.min(5, w.mastery + 1) } : w));
+    // Update mastery + schedule next review via Ebbinghaus
+    setWords(ws => ws.map(w => {
+      if (w.meaning !== quizState.correct) return w;
+      const updated = scheduleReview(w, correct);
+      return { ...updated, mastery: correct ? Math.min(5, w.mastery + 1) : Math.max(0, w.mastery - 1) };
+    }));
+
+    // Update wrong bank
+    if (!correct) {
+      const wrongWord = words.find(w => w.meaning === quizState.correct);
+      if (wrongWord) {
+        setWrongBank(prev => {
+          const next = [...new Set([...prev, wrongWord.id])];
+          localStorage.setItem("wv_wrong_bank", JSON.stringify(next));
+          return next;
+        });
+      }
+    } else {
+      // Remove from wrong bank if answered correctly in review mode
+      if (quizMode === "wrong") {
+        const correctWord = words.find(w => w.meaning === quizState.correct);
+        if (correctWord) {
+          setWrongBank(prev => {
+            const next = prev.filter(id => id !== correctWord.id);
+            localStorage.setItem("wv_wrong_bank", JSON.stringify(next));
+            return next;
+          });
+        }
+      }
+    }
+
     // Track daily quiz count
     try {
       const d = JSON.parse(localStorage.getItem("wv_daily_quiz") || "{}");
@@ -295,7 +362,7 @@ export default function VocabApp() {
   function resetSession() {
     setSessionStats({ correct: 0, total: 0, wrongWords: [] });
     setShowSummary(false);
-    startQuiz();
+    startQuiz(quizMode);
   }
 
   async function requestNotification() {
@@ -489,6 +556,22 @@ export default function VocabApp() {
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 15, pointerEvents: "none" }}>⌕</span>
               {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, lineHeight: 1 }}>×</button>}
             </div>
+            {/* Review reminder banner */}
+            {(() => {
+              const due = getDueWords(words);
+              if (due.length === 0) return null;
+              return (
+                <div onClick={() => { setQuizMode("review"); setTab(2); startQuiz("review"); }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff8f0", border: "1.5px solid #f0a500", borderRadius: 12, padding: "12px 16px", marginBottom: 14, cursor: "pointer" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#b07800" }}>{due.length} 个单词需要复习</div>
+                    <div style={{ fontSize: 11, color: "#c8900a", marginTop: 2 }}>根据艾宾浩斯记忆曲线，现在是最佳时机</div>
+                  </div>
+                  <div style={{ fontSize: 13, color: "#b07800", fontWeight: 700 }}>去复习 →</div>
+                </div>
+              );
+            })()}
+
             {/* Tag filter */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
               {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
@@ -548,6 +631,28 @@ export default function VocabApp() {
                                   <button onClick={() => setEditingWord({ id: w.id, word: w.word, meaning: w.meaning, example: w.example || "" })} style={{ background: "none", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 11, color: "#888", padding: "3px 10px", cursor: "pointer", whiteSpace: "nowrap", marginLeft: 10 }}>编辑</button>
                                 </div>
                                 {w.example && <div style={{ fontSize: 12, color: "#666", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{w.example}</div>}
+                                {/* Review schedule */}
+                                {(() => {
+                                  if (!w.nextReview) return <div style={{ fontSize: 11, color: "#bbb", marginBottom: 8 }}>尚未测验过 · 做题后开始记忆追踪</div>;
+                                  const d = new Date(w.nextReview); d.setHours(0,0,0,0);
+                                  const t = new Date(); t.setHours(0,0,0,0);
+                                  const diff = Math.round((d - t) / 86400000);
+                                  const isWrong = wrongBank.includes(w.id);
+                                  const lvl = w.reviewLevel || 0;
+                                  return (
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                                      <div style={{ display: "flex", gap: 2 }}>
+                                        {REVIEW_INTERVALS.map((_, i) => (
+                                          <div key={i} style={{ width: 14, height: 4, borderRadius: 2, background: i <= lvl ? "#111" : "#e8e8e8" }} />
+                                        ))}
+                                      </div>
+                                      <div style={{ fontSize: 11, color: diff <= 0 ? "#e53e3e" : "#888" }}>
+                                        {diff <= 0 ? "今天需要复习" : diff + "天后复习"}
+                                      </div>
+                                      {isWrong && <div style={{ fontSize: 10, background: "#fff0f0", color: "#e53e3e", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>错词库</div>}
+                                    </div>
+                                  );
+                                })()}
                                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
                                   {(w.tags||[]).map(t => (
                                     <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f0f0f0", color: "#555", display: "inline-flex", alignItems: "center", gap: 3 }}>
@@ -666,16 +771,71 @@ export default function VocabApp() {
         {/* Tab 2 */}
         {tab === 2 && (
           <div style={{ maxWidth: 480 }}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
-              {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
-            </div>
-            {(filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 ? (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#777" }}>
-                <div style={{ fontSize: 14, marginBottom: 16 }}>至少需要 4 个单词才能测验</div>
-                <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
+            {/* Mode switcher */}
+            {(() => {
+              const dueCount = getDueWords(words).length;
+              const wrongCount = wrongBank.length;
+              return (
+                <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+                  {[
+                    { id: "normal", label: "普通模式" },
+                    { id: "review", label: `遗忘复习${dueCount > 0 ? " · " + dueCount + "词" : ""}`, alert: dueCount > 0 },
+                    { id: "wrong",  label: `错词库${wrongCount > 0 ? " · " + wrongCount + "词" : ""}`, alert: wrongCount > 0 },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => { setQuizMode(m.id); setQuizResult(null); startQuiz(m.id); }}
+                      style={{ flex: 1, padding: "9px 6px", borderRadius: 10, border: "1.5px solid " + (quizMode === m.id ? "#111" : (m.alert ? "#e53e3e" : "#e0e0e0")), background: quizMode === m.id ? "#111" : "#fff", color: quizMode === m.id ? "#fff" : (m.alert ? "#e53e3e" : "#777"), fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Review mode info */}
+            {quizMode === "review" && getDueWords(words).length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#777" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>今日复习完成</div>
+                <div style={{ fontSize: 13, color: "#888" }}>所有单词都在记忆中，明天再来巩固</div>
               </div>
-            ) : quizState && (
+            )}
+
+            {/* Wrong bank empty */}
+            {quizMode === "wrong" && wrongBank.length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#777" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>错词库是空的</div>
+                <div style={{ fontSize: 13, color: "#888" }}>做题时答错的词会自动加入这里</div>
+              </div>
+            )}
+
+            {/* Normal mode tag filter */}
+            {quizMode === "normal" && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
+              </div>
+            )}
+
+            {/* Quiz card */}
+            {quizState && ((quizMode === "normal" && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length >= 4) || (quizMode === "review" && getDueWords(words).length > 0) || (quizMode === "wrong" && wrongBank.length > 0)) && (
               <div>
+                {/* Review level indicator */}
+                {quizMode === "review" && (() => {
+                  const w = words.find(x => x.word === quizState.question);
+                  const level = w?.reviewLevel || 0;
+                  const nextDays = REVIEW_INTERVALS[Math.min(level + 1, REVIEW_INTERVALS.length - 1)];
+                  return (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, color: "#888" }}>复习间隔</div>
+                      <div style={{ display: "flex", gap: 3 }}>
+                        {REVIEW_INTERVALS.map((_, i) => (
+                          <div key={i} style={{ width: 20, height: 4, borderRadius: 2, background: i <= level ? "#111" : "#e8e8e8" }} />
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#888" }}>答对后 {nextDays} 天后复习</div>
+                    </div>
+                  );
+                })()}
                 <div style={{ marginBottom: 28 }}>
                   <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -700,9 +860,17 @@ export default function VocabApp() {
                     <div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>
                       {quizResult === "correct" ? "正确 ✓" : `答案是：${quizState.correct}`}
                     </div>
-                    <button className="btn btn-dark" onClick={startQuiz}>下一题</button>
+                    <button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Not enough words */}
+            {quizMode === "normal" && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 && (
+              <div style={{ textAlign: "center", padding: "60px 0", color: "#777" }}>
+                <div style={{ fontSize: 14, marginBottom: 16 }}>至少需要 4 个单词才能测验</div>
+                <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
               </div>
             )}
           </div>
@@ -781,6 +949,36 @@ export default function VocabApp() {
             </div>
 
             {/* Stats */}
+            {/* Review Stats */}
+            {(() => {
+              const due = getDueWords(words);
+              const wrongCount = wrongBank.length;
+              if (due.length === 0 && wrongCount === 0) return null;
+              return (
+                <div style={{ marginBottom: 28 }}>
+                  <div className="sec-title">今日待办</div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    {due.length > 0 && (
+                      <div onClick={() => { setQuizMode("review"); setTab(2); startQuiz("review"); }}
+                        style={{ flex: 1, border: "1.5px solid #c8900a", borderRadius: 12, padding: 14, background: "#fffbec", cursor: "pointer" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#c8900a" }}>{due.length}</div>
+                        <div style={{ fontSize: 11, color: "#b07800", fontWeight: 600 }}>词待复习</div>
+                        <div style={{ fontSize: 10, color: "#c8900a", marginTop: 4 }}>点击开始</div>
+                      </div>
+                    )}
+                    {wrongCount > 0 && (
+                      <div onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
+                        style={{ flex: 1, border: "1.5px solid #e53e3e", borderRadius: 12, padding: 14, background: "#fff5f5", cursor: "pointer" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#e53e3e" }}>{wrongCount}</div>
+                        <div style={{ fontSize: 11, color: "#c53030", fontWeight: 600 }}>词在错词库</div>
+                        <div style={{ fontSize: 10, color: "#e53e3e", marginTop: 4 }}>点击开始</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="sec-title">学习概览</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
               {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连续天数", streakData.count + "天"]].map(([label, val]) => (
@@ -909,6 +1107,32 @@ export default function VocabApp() {
                 );
               })()}
             </div>
+            {/* Wrong Bank */}
+            <div>
+              <div className="sec-title">错词库</div>
+              {wrongBank.length === 0 ? (
+                <div style={{ fontSize: 13, color: "#aaa", padding: "20px 0", textAlign: "center" }}>答错的词会自动收录在这里</div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 12, color: "#777", marginBottom: 12 }}>共 {wrongBank.length} 个错词 · 答对后自动移出</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                    {words.filter(w => wrongBank.includes(w.id)).map(w => (
+                      <div key={w.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", background: "#fff5f5" }}>
+                        <div>
+                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</div>
+                          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{w.meaning}</div>
+                        </div>
+                        <button onClick={() => setWrongBank(prev => { const n = prev.filter(id => id !== w.id); localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; })}
+                          style={{ fontSize: 11, color: "#e53e3e", background: "none", border: "1px solid #fecaca", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>移出</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
+                    className="btn btn-dark btn-sm" style={{ width: "100%" }}>开始错词复习</button>
+                </div>
+              )}
+            </div>
+
             <div>
               <div className="sec-title">每日提醒</div>
               {notifStatus === "denied" && <div style={{ fontSize: 13, color: "#e53e3e" }}>通知已被拒绝，请在系统设置中手动开启</div>}
