@@ -198,7 +198,7 @@ export default function VocabApp() {
     const correct = option === quizState.correct;
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
-    setStreak(s => correct ? s + 1 : 0);
+
     if (correct) setWords(ws => ws.map(w => w.meaning === quizState.correct ? { ...w, mastery: Math.min(5, w.mastery + 1) } : w));
     // Track daily quiz count
     try {
@@ -791,7 +791,7 @@ export default function VocabApp() {
             </div>
             <div>
               <div className="sec-title">数据管理</div>
-              <button className="btn btn-outline btn-sm" onClick={() => { if (window.confirm("重置所有答题记录和掌握度？")) { setScore({ correct: 0, total: 0 }); setStreak(0); setWords(ws => ws.map(w => ({ ...w, mastery: 0 }))); showMsg("已重置"); } }}>
+              <button className="btn btn-outline btn-sm" onClick={() => { if (window.confirm("重置所有答题记录和掌握度？")) { setScore({ correct: 0, total: 0 }); setWords(ws => ws.map(w => ({ ...w, mastery: 0 }))); showMsg("已重置"); } }}>
                 重置学习进度
               </button>
             </div>
