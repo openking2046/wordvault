@@ -36,6 +36,56 @@ function generateMCQ(words, target) {
   return { question: target.word, correct: target.meaning, options: options.map(o => o.meaning), example: target.example };
 }
 
+// Rank system - 23 ranks, based on words + streak days
+const RANKS = [
+  // 倔强青铜 (3)  0~100词, 0~60天
+  { id:"b3", tier:"倔强青铜", name:"青铜 Ⅲ", color:"#a0522d", bg:"#fdf3ec", words:0,     days:0   },
+  { id:"b2", tier:"倔强青铜", name:"青铜 Ⅱ", color:"#a0522d", bg:"#fdf3ec", words:34,    days:20  },
+  { id:"b1", tier:"倔强青铜", name:"青铜 Ⅰ", color:"#a0522d", bg:"#fdf3ec", words:67,    days:40  },
+  // 秩序白银 (3)  100~500词, 60~120天
+  { id:"s3", tier:"秩序白银", name:"白银 Ⅲ", color:"#7a8fa6", bg:"#f0f4f8", words:100,   days:60  },
+  { id:"s2", tier:"秩序白银", name:"白银 Ⅱ", color:"#7a8fa6", bg:"#f0f4f8", words:234,   days:80  },
+  { id:"s1", tier:"秩序白银", name:"白银 Ⅰ", color:"#7a8fa6", bg:"#f0f4f8", words:367,   days:100 },
+  // 荣耀黄金 (3)  500~1000词, 120~180天
+  { id:"g3", tier:"荣耀黄金", name:"黄金 Ⅲ", color:"#c8900a", bg:"#fffbec", words:500,   days:120 },
+  { id:"g2", tier:"荣耀黄金", name:"黄金 Ⅱ", color:"#c8900a", bg:"#fffbec", words:667,   days:150 },
+  { id:"g1", tier:"荣耀黄金", name:"黄金 Ⅰ", color:"#c8900a", bg:"#fffbec", words:834,   days:165 },
+  // 尊贵铂金 (3)  1000~5000词, 180~240天
+  { id:"p3", tier:"尊贵铂金", name:"铂金 Ⅲ", color:"#2a9d8f", bg:"#edfaf8", words:1000,  days:180 },
+  { id:"p2", tier:"尊贵铂金", name:"铂金 Ⅱ", color:"#2a9d8f", bg:"#edfaf8", words:2334,  days:200 },
+  { id:"p1", tier:"尊贵铂金", name:"铂金 Ⅰ", color:"#2a9d8f", bg:"#edfaf8", words:3667,  days:220 },
+  // 永恒钻石 (5)  5000~10000词, 240~300天
+  { id:"d5", tier:"永恒钻石", name:"钻石 Ⅴ", color:"#1565c0", bg:"#e8f0fe", words:5000,  days:240 },
+  { id:"d4", tier:"永恒钻石", name:"钻石 Ⅳ", color:"#1565c0", bg:"#e8f0fe", words:6200,  days:252 },
+  { id:"d3", tier:"永恒钻石", name:"钻石 Ⅲ", color:"#1565c0", bg:"#e8f0fe", words:7400,  days:264 },
+  { id:"d2", tier:"永恒钻石", name:"钻石 Ⅱ", color:"#1565c0", bg:"#e8f0fe", words:8600,  days:276 },
+  { id:"d1", tier:"永恒钻石", name:"钻石 Ⅰ", color:"#1565c0", bg:"#e8f0fe", words:9800,  days:288 },
+  // 至尊星耀 (5)  10000~20000词, 300~330天
+  { id:"m5", tier:"至尊星耀", name:"星耀 Ⅴ", color:"#6a1b9a", bg:"#f5eeff", words:10000, days:300 },
+  { id:"m4", tier:"至尊星耀", name:"星耀 Ⅳ", color:"#6a1b9a", bg:"#f5eeff", words:12000, days:306 },
+  { id:"m3", tier:"至尊星耀", name:"星耀 Ⅲ", color:"#6a1b9a", bg:"#f5eeff", words:14000, days:312 },
+  { id:"m2", tier:"至尊星耀", name:"星耀 Ⅱ", color:"#6a1b9a", bg:"#f5eeff", words:16000, days:318 },
+  { id:"m1", tier:"至尊星耀", name:"星耀 Ⅰ", color:"#6a1b9a", bg:"#f5eeff", words:18000, days:324 },
+  // 最强王者 (1)
+  { id:"king", tier:"最强王者", name:"最强王者", color:"#b8860b", bg:"#fffde7", words:20000, days:365 },
+];
+
+function getRank(wordCount, days) {
+  let rank = RANKS[0];
+  for (const r of RANKS) {
+    if (wordCount >= r.words && days >= r.days) rank = r;
+    else break;
+  }
+  return rank;
+}
+
+function getNextRank(wordCount, days) {
+  for (let i = 0; i < RANKS.length; i++) {
+    if (wordCount < RANKS[i].words || days < RANKS[i].days) return RANKS[i];
+  }
+  return null;
+}
+
 export default function VocabApp() {
   const [tab, setTab] = useState(0);
   const [words, setWords] = useState(() => { try { const s = localStorage.getItem("wv_words"); return s ? JSON.parse(s) : SAMPLE_WORDS; } catch { return SAMPLE_WORDS; } });
@@ -62,6 +112,10 @@ export default function VocabApp() {
     } catch { return { count: 0, lastDate: null, showBroken: false }; }
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("wv_achievements") || "[]"); } catch { return []; }
+  });
+  const [newAchievement, setNewAchievement] = useState(null); // shows popup
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0, wrongWords: [] });
   const [showSummary, setShowSummary] = useState(false);
   const [filterTag, setFilterTag] = useState("全部");
@@ -80,6 +134,19 @@ export default function VocabApp() {
   const touchStartX = useRef(0);
 
   useEffect(() => { try { localStorage.setItem("wv_words", JSON.stringify(words)); } catch {} }, [words]);
+  // Check rank up whenever relevant data changes
+  useEffect(() => {
+    const currentRank = getRank(words.length, streakData.count);
+    const savedRankId = localStorage.getItem("wv_rank_id") || "b3";
+    if (currentRank.id !== savedRankId) {
+      const savedIdx = RANKS.findIndex(r => r.id === savedRankId);
+      const newIdx = RANKS.findIndex(r => r.id === currentRank.id);
+      if (newIdx > savedIdx) {
+        setNewAchievement(currentRank);
+        localStorage.setItem("wv_rank_id", currentRank.id);
+      }
+    }
+  }, [words.length, streakData.count]);
   useEffect(() => { try { localStorage.setItem("wv_score", JSON.stringify(score)); } catch {} }, [score]);
   useEffect(() => { try { localStorage.setItem("wv_ntime", notifTime); } catch {} }, [notifTime]);
   useEffect(() => { try { localStorage.setItem("wv_user_tags", JSON.stringify(userTags)); } catch {} }, [userTags]);
@@ -322,6 +389,29 @@ export default function VocabApp() {
 
       {msg && <div className="toast">{msg}</div>}
 
+      {/* Rank Up Popup */}
+      {newAchievement && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: newAchievement.bg, border: "2px solid " + newAchievement.color, borderRadius: 24, padding: 40, width: "100%", maxWidth: 320, textAlign: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", color: newAchievement.color, marginBottom: 12 }}>段位晋升</div>
+            <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 13, color: "#888", marginBottom: 4 }}>{newAchievement.tier}</div>
+            <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: newAchievement.color, fontWeight: 700, marginBottom: 16, letterSpacing: "-0.5px" }}>{newAchievement.name}</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 28 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>{words.length}</div>
+                <div style={{ fontSize: 11, color: "#888" }}>单词数</div>
+              </div>
+              <div style={{ width: 1, background: "#e0e0e0" }} />
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>{streakData.count}</div>
+                <div style={{ fontSize: 11, color: "#888" }}>连续天数</div>
+              </div>
+            </div>
+            <button style={{ width: "100%", background: newAchievement.color, color: "#fff", border: "none", borderRadius: 10, padding: "12px 0", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }} onClick={() => setNewAchievement(null)}>继续冲段</button>
+          </div>
+        </div>
+      )}
+
       {/* Streak Modal */}
       {showStreakModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -372,12 +462,15 @@ export default function VocabApp() {
           <div style={{ fontSize: 12, color: "#777", marginTop: 3 }}>
             {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""} · 已掌握 {words.filter(w => w.mastery >= 4).length}/{words.length}
           </div>
-          {streakData.count > 0 && (
-            <div onClick={() => setShowStreakModal(true)} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-              <div style={{ fontSize: 22, lineHeight: 1 }}>{ streakData.count >= 7 ? "★" : streakData.count >= 3 ? "◆" : "◇" }</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#111" }}>{streakData.count}天</div>
-            </div>
-          )}
+          {(() => {
+            const r = getRank(words.length, streakData.count);
+            return (
+              <div onClick={() => setTab(4)} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.5px", color: r.color, background: r.bg, border: "1px solid " + r.color, borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap" }}>{r.name}</div>
+                {streakData.count > 1 && <div style={{ fontSize: 10, color: "#888" }}>{streakData.count}天连续</div>}
+              </div>
+            );
+          })()}
         </div>
         </div>
       </div>
@@ -753,6 +846,69 @@ export default function VocabApp() {
         {/* Tab 4 */}
         {tab === 4 && (
           <div style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 28 }}>
+            {/* Rank Section */}
+            <div>
+              <div className="sec-title">段位系统</div>
+              {(() => {
+                const curRank = getRank(words.length, streakData.count);
+                const nextRank = getNextRank(words.length, streakData.count);
+                const curIdx = RANKS.findIndex(r => r.id === curRank.id);
+                return (
+                  <div>
+                    <div style={{ border: "2px solid " + curRank.color, borderRadius: 16, padding: 20, background: curRank.bg, marginBottom: 16, textAlign: "center" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "2px", color: curRank.color, marginBottom: 4 }}>当前段位</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 13, color: "#888" }}>{curRank.tier}</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: curRank.color, fontWeight: 700, marginBottom: nextRank ? 14 : 8 }}>{curRank.name}</div>
+                      {nextRank ? (
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 5 }}>
+                            <span>距离 {nextRank.name}</span>
+                            <span>还需 {Math.max(0, nextRank.words - words.length)} 词 · {Math.max(0, nextRank.days - streakData.count)} 天连续</span>
+                          </div>
+                          <div style={{ background: "#e8e8e8", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                            <div style={{ height: "100%", borderRadius: 4, background: curRank.color, transition: "width 0.5s", width: Math.min(100, Math.round(Math.max(words.length - curRank.words, 0) / Math.max(nextRank.words - curRank.words, 1) * 100)) + "%" }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 13, color: curRank.color, fontWeight: 700 }}>已达到最高段位！</div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10 }}>段位进度 {curIdx + 1} / {RANKS.length}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {["倔强青铜","秩序白银","荣耀黄金","尊贵铂金","永恒钻石","至尊星耀","最强王者"].map(tierName => {
+                        const tierRanks = RANKS.filter(r => r.tier === tierName);
+                        const tierColor = tierRanks[0].color;
+                        const tierBg = tierRanks[0].bg;
+                        const unlockedCount = tierRanks.filter(r => RANKS.indexOf(r) <= curIdx).length;
+                        const anyUnlocked = unlockedCount > 0;
+                        return (
+                          <div key={tierName} style={{ border: "1px solid " + (anyUnlocked ? tierColor : "#ebebeb"), borderRadius: 12, padding: "12px 14px", background: anyUnlocked ? tierBg : "#fafafa", opacity: anyUnlocked ? 1 : 0.4, transition: "all 0.2s" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: anyUnlocked ? 10 : 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: anyUnlocked ? tierColor : "#bbb" }}>{tierName}</span>
+                              <span style={{ fontSize: 11, color: anyUnlocked ? tierColor : "#ccc" }}>{unlockedCount}/{tierRanks.length}</span>
+                            </div>
+                            {anyUnlocked && (
+                              <div style={{ display: "flex", gap: 6 }}>
+                                {tierRanks.map(r => {
+                                  const unlocked = RANKS.indexOf(r) <= curIdx;
+                                  const isCurrent = r.id === curRank.id;
+                                  return (
+                                    <div key={r.id} style={{ flex: 1, textAlign: "center", padding: "7px 4px", borderRadius: 8, background: isCurrent ? tierColor : unlocked ? "rgba(0,0,0,0.07)" : "transparent", border: isCurrent ? "none" : "1px solid " + (unlocked ? tierColor : "#e0e0e0"), opacity: unlocked ? 1 : 0.3 }}>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: isCurrent ? "#fff" : tierColor }}>{r.name.split(" ")[1] || "王者"}</div>
+                                      {isCurrent && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.85)" }}>当前</div>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
             <div>
               <div className="sec-title">每日提醒</div>
               {notifStatus === "denied" && <div style={{ fontSize: 13, color: "#e53e3e" }}>通知已被拒绝，请在系统设置中手动开启</div>}
