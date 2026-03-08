@@ -55,7 +55,13 @@ export default function VocabApp() {
   const [aiLoading, setAiLoading] = useState(false);
   const [quizState, setQuizState] = useState(null);
   const [quizResult, setQuizResult] = useState(null);
-  const [streak, setStreak] = useState(0);
+  const [streakData, setStreakData] = useState(() => {
+    try {
+      const s = localStorage.getItem("wv_streak");
+      return s ? JSON.parse(s) : { count: 0, lastDate: null, showBroken: false };
+    } catch { return { count: 0, lastDate: null, showBroken: false }; }
+  });
+  const [showStreakModal, setShowStreakModal] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0, wrongWords: [] });
   const [showSummary, setShowSummary] = useState(false);
   const [filterTag, setFilterTag] = useState("全部");
@@ -78,6 +84,38 @@ export default function VocabApp() {
   useEffect(() => { try { localStorage.setItem("wv_ntime", notifTime); } catch {} }, [notifTime]);
   useEffect(() => { try { localStorage.setItem("wv_user_tags", JSON.stringify(userTags)); } catch {} }, [userTags]);
   useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
+
+  // Streak logic - runs on mount
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    setStreakData(prev => {
+      let next;
+      if (prev.lastDate === today) {
+        // Already visited today, no change
+        next = prev;
+      } else if (prev.lastDate === yesterday) {
+        // Consecutive day - increment
+        next = { count: prev.count + 1, lastDate: today, showBroken: false };
+        localStorage.setItem("wv_streak", JSON.stringify(next));
+        setShowStreakModal(true);
+        return next;
+      } else if (!prev.lastDate) {
+        // First time ever
+        next = { count: 1, lastDate: today, showBroken: false };
+        localStorage.setItem("wv_streak", JSON.stringify(next));
+        setShowStreakModal(true);
+        return next;
+      } else {
+        // Streak broken
+        next = { count: 1, lastDate: today, showBroken: prev.count > 1 };
+        localStorage.setItem("wv_streak", JSON.stringify(next));
+        if (prev.count > 1) setShowStreakModal(true);
+        return next;
+      }
+      return next;
+    });
+  }, []);
 
   const allTags = ["全部", ...Array.from(new Set(words.flatMap(w => w.tags || [])))];
   const filteredWords = [...words]
@@ -283,13 +321,61 @@ export default function VocabApp() {
 
       {msg && <div className="toast">{msg}</div>}
 
+      {/* Streak Modal */}
+      {showStreakModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 36, width: "100%", maxWidth: 320, textAlign: "center" }}>
+            {streakData.showBroken ? (
+              <>
+                <div style={{ fontSize: 56, marginBottom: 12 }}>◇</div>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", marginBottom: 8 }}>连续记录中断了</div>
+                <div style={{ fontSize: 14, color: "#777", marginBottom: 6 }}>没关系，今天重新开始</div>
+                <div style={{ fontSize: 13, color: "#aaa", marginBottom: 28 }}>当前连续：第 1 天</div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 56, marginBottom: 12, lineHeight: 1 }}>
+                  {streakData.count >= 30 ? "★" : streakData.count >= 14 ? "★" : streakData.count >= 7 ? "★" : streakData.count >= 3 ? "◆" : "◇"}
+                </div>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", marginBottom: 8 }}>
+                  {streakData.count === 1 ? "学习开始了！" : `连续 ${streakData.count} 天`}
+                </div>
+                <div style={{ fontSize: 14, color: "#777", marginBottom: 6 }}>
+                  {streakData.count === 1 && "每天坚持，词汇量会飞速增长"}
+                  {streakData.count === 3 && "3天连续，好习惯正在养成"}
+                  {streakData.count === 7 && "整整一周！你真的很拼"}
+                  {streakData.count === 14 && "两周连续，令人钦佩！"}
+                  {streakData.count === 30 && "一个月！你是真正的学霸"}
+                  {![1,3,7,14,30].includes(streakData.count) && "继续保持，别断掉！"}
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 28, flexWrap: "wrap" }}>
+                  {Array.from({ length: Math.min(streakData.count, 14) }).map((_, i) => (
+                    <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: i < streakData.count ? "#111" : "#eee" }} />
+                  ))}
+                  {streakData.count > 14 && <div style={{ fontSize: 11, color: "#aaa", alignSelf: "center" }}>+{streakData.count - 14}</div>}
+                </div>
+              </>
+            )}
+            <button className="btn btn-dark" onClick={() => setShowStreakModal(false)} style={{ width: "100%" }}>
+              {streakData.count === 1 ? "开始学习" : "继续"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ padding: "54px 20px 14px", borderBottom: "1px solid #f2f2f2", background: "#fff", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", position: "relative" }}>
           <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
           <div style={{ fontSize: 12, color: "#777", marginTop: 3 }}>
             {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""} · 已掌握 {words.filter(w => w.mastery >= 4).length}/{words.length}
           </div>
+          {streakData.count > 0 && (
+            <div onClick={() => setShowStreakModal(true)} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+              <div style={{ fontSize: 22, lineHeight: 1 }}>{ streakData.count >= 7 ? "★" : streakData.count >= 3 ? "◆" : "◇" }</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#111" }}>{streakData.count}天</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -600,7 +686,7 @@ export default function VocabApp() {
             {/* Stats */}
             <div className="sec-title">学习概览</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
-              {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连击记录", streak]].map(([label, val]) => (
+              {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连续天数", streakData.count + "天"]].map(([label, val]) => (
                 <div key={label} style={{ border: "1px solid #ebebeb", borderRadius: 10, padding: 16 }}>
                   <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111" }}>{val}</div>
                   <div style={{ fontSize: 11, color: "#666", marginTop: 4, fontWeight: 500, letterSpacing: "0.3px" }}>{label}</div>
