@@ -304,7 +304,8 @@ export default function VocabApp() {
         .opt-btn:hover:not(:disabled) { border-color: #111; background: #fff; }
         .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; }
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
+        .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
         .nav-icon { font-size: 17px; line-height: 1; color: #888; font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
@@ -365,6 +366,7 @@ export default function VocabApp() {
 
       {/* Header */}
       <div style={{ padding: "54px 20px 14px", borderBottom: "1px solid #f2f2f2", background: "#fff", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
         <div style={{ textAlign: "center", position: "relative" }}>
           <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
           <div style={{ fontSize: 12, color: "#777", marginTop: 3 }}>
@@ -377,10 +379,12 @@ export default function VocabApp() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 90px" }}>
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
 
         {/* Tab 0 */}
         {tab === 0 && (
@@ -842,12 +846,14 @@ export default function VocabApp() {
 
       {/* Bottom Nav */}
       <nav className="bottom-nav">
+        <div className="bottom-nav-inner">
         {NAV.map((item, i) => (
           <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => setTab(i)}>
             <em className="nav-icon">{item.icon}</em>
             <span className="nav-label">{item.label}</span>
           </button>
         ))}
+        </div>
       </nav>
     </div>
   );
