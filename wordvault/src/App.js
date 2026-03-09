@@ -834,6 +834,19 @@ export default function VocabApp() {
         .swipe-delete { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #e53e3e; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 0 0 0 0; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
 
+        /* Press feedback */
+        button, .tag-pill, .word-row, .opt-btn, .nav-item, [role="button"] {
+          -webkit-tap-highlight-color: transparent;
+        }
+        button:active, .tag-pill:active, .opt-btn:active, .nav-item:active {
+          transform: scale(0.94);
+          transition: transform 0.08s ease;
+        }
+        button:not(:active), .tag-pill:not(:active), .opt-btn:not(:active), .nav-item:not(:active) {
+          transform: scale(1);
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
         /* Splash */
         @keyframes splashLogoIn {
           from { opacity: 0; transform: translateY(18px) scale(0.94); }
