@@ -50,13 +50,13 @@ function speak(word) {
 }
 
 // Weighted pick: new words & wrong words get higher probability
-function weightedPick(pool, wrongBankIds) {
+function weightedPick(pool, wrongBankWords) {
   const weights = pool.map(w => {
     let weight = 1;
-    if (!w.nextReview) weight += 4;          // never quizzed → very high priority
-    else if (w.mastery <= 1) weight += 3;    // low mastery
-    else if (w.mastery === 2) weight += 1;   // medium mastery
-    if (wrongBankIds.includes(w.id)) weight += 5; // in wrong bank → highest priority
+    if (!w.nextReview) weight += 4;
+    else if (w.mastery <= 1) weight += 3;
+    else if (w.mastery === 2) weight += 1;
+    if (wrongBankWords.includes(w.word)) weight += 5;
     return weight;
   });
   const total = weights.reduce((a, b) => a + b, 0);
@@ -136,6 +136,8 @@ function getNextRank(wordCount, days) {
   return null;
 }
 
+const FREE_LIMIT = 36;
+
 export default function VocabApp() {
   const [tab, setTab] = useState(0);
   const [words, setWords] = useState(() => { try { const s = localStorage.getItem("wv_words"); return s ? JSON.parse(s) : SAMPLE_WORDS; } catch { return SAMPLE_WORDS; } });
@@ -163,11 +165,13 @@ export default function VocabApp() {
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong" | "listen" | "spell"
+  const [isPro, setIsPro] = useState(() => localStorage.getItem("wv_pro") === "1");
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [spellingInput, setSpellingInput] = useState("");
   const [hintRevealed, setHintRevealed] = useState(0); // number of letters revealed
   const [wrongBank, setWrongBank] = useState(() => {
     try { return JSON.parse(localStorage.getItem("wv_wrong_bank") || "[]"); } catch { return []; }
-  }); // array of word ids
+  }); // array of word strings (English words)
   const [unlockedAchievements, setUnlockedAchievements] = useState(() => {
     try { return JSON.parse(localStorage.getItem("wv_achievements") || "[]"); } catch { return []; }
   });
@@ -259,7 +263,7 @@ export default function VocabApp() {
       if (due.length === 0 || words.length < 4) return;
       pool = words; target = weightedPick(due, wrongBank);
     } else if (m === "wrong") {
-      const wrongWords = words.filter(w => wrongBank.includes(w.id));
+      const wrongWords = words.filter(w => wrongBank.includes(w.word));
       if (wrongWords.length === 0 || words.length < 4) return;
       pool = words; target = weightedPick(wrongWords, wrongBank);
     } else if (m === "listen") {
@@ -315,6 +319,7 @@ export default function VocabApp() {
   function handleAddWord() {
     if (!newWord.trim() || !newMeaning.trim()) { showMsg("请填写单词和释义"); return; }
     if (words.find(w => w.word.toLowerCase() === newWord.trim().toLowerCase())) { showMsg("单词已存在"); return; }
+    if (!isPro && words.length >= FREE_LIMIT) { setShowUpgrade(true); return; }
     setWords(ws => [...ws, { id: Date.now(), word: newWord.trim(), meaning: newMeaning.trim(), example: newExample.trim() || `${newWord.trim()} is a useful word.`, mastery: 0, tags: newTags }]);
     setNewWord(""); setNewMeaning(""); setNewExample(""); setNewTags([]);
     showMsg("添加成功");
@@ -357,27 +362,23 @@ export default function VocabApp() {
       return { ...updated, mastery: correct ? Math.min(5, w.mastery + 1) : Math.max(0, w.mastery - 1) };
     }));
 
-    // Update wrong bank
+    // Update wrong bank (store word string for reliability)
     if (!correct) {
-      const wrongWord = words.find(w => w.word === quizState.correctWord);
-      if (wrongWord) {
+      const wStr = quizState.correctWord;
+      setWrongBank(prev => {
+        const next = [...new Set([...prev, wStr])];
+        localStorage.setItem("wv_wrong_bank", JSON.stringify(next));
+        return next;
+      });
+    } else {
+      // Remove from wrong bank only in wrong/review mode
+      if (quizMode === "wrong" || quizMode === "listen" || quizMode === "review") {
+        const wStr = quizState.correctWord;
         setWrongBank(prev => {
-          const next = [...new Set([...prev, wrongWord.id])];
+          const next = prev.filter(w => w !== wStr);
           localStorage.setItem("wv_wrong_bank", JSON.stringify(next));
           return next;
         });
-      }
-    } else {
-      // Remove from wrong bank if answered correctly in review/wrong mode
-      if (quizMode === "wrong" || quizMode === "listen" || quizMode === "review") {
-        const correctWord = words.find(w => w.word === quizState.correctWord);
-        if (correctWord) {
-          setWrongBank(prev => {
-            const next = prev.filter(id => id !== correctWord.id);
-            localStorage.setItem("wv_wrong_bank", JSON.stringify(next));
-            return next;
-          });
-        }
       }
     }
 
@@ -409,8 +410,11 @@ export default function VocabApp() {
       return { ...updated, mastery: correct ? Math.min(5, w.mastery + 1) : Math.max(0, w.mastery - 1) };
     }));
     if (!correct) {
-      const wrongWord = words.find(w => w.word === quizState.correctWord);
-      if (wrongWord) setWrongBank(prev => { const n = [...new Set([...prev, wrongWord.id])]; localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; });
+      const wStr = quizState.correctWord;
+      setWrongBank(prev => { const n = [...new Set([...prev, wStr])]; localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; });
+    } else if (quizMode === "spell") {
+      const wStr = quizState.correctWord;
+      setWrongBank(prev => { const n = prev.filter(w => w !== wStr); localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; });
     }
     try {
       const d = JSON.parse(localStorage.getItem("wv_daily_quiz") || "{}");
@@ -441,11 +445,57 @@ export default function VocabApp() {
   }
 
   async function requestNotification() {
-    if (!("Notification" in window)) { showMsg("浏览器不支持通知"); return; }
+    if (!("Notification" in window)) { showMsg("此浏览器不支持通知"); return; }
     const perm = await Notification.requestPermission();
     setNotifStatus(perm);
-    if (perm === "granted") new Notification("WordVault", { body: "通知已开启 ✓" });
+    if (perm === "granted") {
+      // Register service worker
+      if ("serviceWorker" in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.register("/sw.js");
+          await navigator.serviceWorker.ready;
+          const sw = reg.active || reg.installing || reg.waiting;
+          if (sw) {
+            sw.postMessage({ type: "SET_NOTIF_TIME", time: notifTime });
+            sw.postMessage({ type: "TEST_NOTIF" });
+          }
+          showMsg("通知已开启，测试通知已发送");
+        } catch { showMsg("已开启通知（Service Worker 注册失败，仅应用内提醒）"); }
+      }
+    }
   }
+
+  // Save notif time + ping SW
+  async function saveNotifTime() {
+    localStorage.setItem("wv_ntime", notifTime);
+    if ("serviceWorker" in navigator && Notification.permission === "granted") {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg.active) reg.active.postMessage({ type: "SET_NOTIF_TIME", time: notifTime });
+      } catch {}
+    }
+    showMsg("已保存");
+  }
+
+  // Heartbeat: ping SW every 60s to trigger time check
+  useEffect(() => {
+    if (Notification.permission !== "granted") return;
+    if (!("serviceWorker" in navigator)) return;
+    const ping = async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg.active) reg.active.postMessage({ type: "HEARTBEAT" });
+      } catch {}
+    };
+    // Register SW and set time on load
+    navigator.serviceWorker.register("/sw.js").then(async () => {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg.active) reg.active.postMessage({ type: "SET_NOTIF_TIME", time: notifTime });
+    }).catch(() => {});
+    ping();
+    const interval = setInterval(ping, 60000);
+    return () => clearInterval(interval);
+  }, [notifTime]);
 
   function exportJSON() {
     const blob = new Blob([JSON.stringify(words, null, 2)], { type: "application/json" });
@@ -474,6 +524,13 @@ export default function VocabApp() {
         const existing = words.map(w => w.word.toLowerCase());
         const newW = imported.filter(w => w.word && !existing.includes(w.word.toLowerCase())).map(w => ({ ...w, id: Date.now()+Math.random() }));
         if (!newW.length) { setImportMsg("所有单词已存在"); return; }
+        if (!isPro && words.length + newW.length > FREE_LIMIT) {
+          const allowed = newW.slice(0, Math.max(0, FREE_LIMIT - words.length));
+          if (allowed.length === 0) { setShowUpgrade(true); setImportMsg(""); return; }
+          setImportSnapshot(words); setWords(ws => [...ws, ...allowed]);
+          setImportMsg(`已导入 ${allowed.length} 个（免费版上限 ${FREE_LIMIT} 词）`);
+          setShowUpgrade(true); return;
+        }
         setImportSnapshot(words); setWords(ws => [...ws, ...newW]);
         setImportMsg(`已导入 ${newW.length} 个单词`);
         setTimeout(() => setImportMsg(""), 4000);
@@ -530,6 +587,42 @@ export default function VocabApp() {
       `}</style>
 
       {msg && <div className="toast">{msg}</div>}
+
+      {/* Upgrade Modal */}
+      {showUpgrade && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#fff", borderRadius: 24, padding: 36, width: "100%", maxWidth: 340, textAlign: "center" }}>
+            <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 32, color: "#111", marginBottom: 6 }}>解锁完整版</div>
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 28, lineHeight: 1.7 }}>
+              免费版最多保存 <strong style={{ color: "#111" }}>{FREE_LIMIT} 个单词</strong><br/>
+              升级后无限添加，继续你的词汇之旅
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+              {[
+                "无限单词库",
+                "完整遗忘曲线追踪",
+                "听音辨词 · 拼写练习",
+                "数据导出 / 导入",
+                "所有段位解锁",
+              ].map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#444" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#111", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✓</div>
+                  {f}
+                </div>
+              ))}
+            </div>
+            <button
+              style={{ width: "100%", background: "#111", color: "#fff", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 16, fontWeight: 700, cursor: "pointer", marginBottom: 10, fontFamily: "inherit", letterSpacing: "0.3px" }}
+              onClick={() => { setIsPro(true); localStorage.setItem("wv_pro", "1"); setShowUpgrade(false); showMsg("已解锁完整版！"); }}
+            >
+              立即解锁
+            </button>
+            <button style={{ background: "none", border: "none", color: "#aaa", fontSize: 13, cursor: "pointer", padding: "6px 0" }} onClick={() => setShowUpgrade(false)}>
+              稍后再说
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Rank Up Popup */}
       {newAchievement && (
@@ -631,6 +724,20 @@ export default function VocabApp() {
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 15, pointerEvents: "none" }}>⌕</span>
               {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, lineHeight: 1 }}>×</button>}
             </div>
+            {/* Free limit banner */}
+            {!isPro && words.length >= FREE_LIMIT - 3 && (
+              <div onClick={() => setShowUpgrade(true)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: words.length >= FREE_LIMIT ? "#fff5f5" : "#fafafa", border: "1.5px solid " + (words.length >= FREE_LIMIT ? "#e53e3e" : "#e0e0e0"), borderRadius: 12, padding: "12px 16px", marginBottom: 14, cursor: "pointer" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#555" }}>
+                    {words.length >= FREE_LIMIT ? "已达免费上限" : `还能免费添加 ${FREE_LIMIT - words.length} 个词`}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>升级完整版，无限添加单词</div>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#888" }}>升级 →</div>
+              </div>
+            )}
+
             {/* Review reminder banner */}
             {(() => {
               const due = getDueWords(words);
@@ -712,7 +819,7 @@ export default function VocabApp() {
                                   const d = new Date(w.nextReview); d.setHours(0,0,0,0);
                                   const t = new Date(); t.setHours(0,0,0,0);
                                   const diff = Math.round((d - t) / 86400000);
-                                  const isWrong = wrongBank.includes(w.id);
+                                  const isWrong = wrongBank.includes(w.word);
                                   const lvl = w.reviewLevel || 0;
                                   return (
                                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -791,7 +898,15 @@ export default function VocabApp() {
         {/* Tab 1 */}
         {tab === 1 && (
           <div style={{ maxWidth: 480 }}>
-            <div className="sec-title">新建单词</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div className="sec-title" style={{ marginBottom: 0 }}>新建单词</div>
+              {!isPro && (
+                <div onClick={() => setShowUpgrade(true)} style={{ fontSize: 11, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#aaa", cursor: "pointer", fontWeight: 600 }}>
+                  {words.length}/{FREE_LIMIT} 词
+                  {words.length >= FREE_LIMIT && <span style={{ marginLeft: 4 }}>· 升级解锁</span>}
+                </div>
+              )}
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
                 <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>英文单词</div>
@@ -849,7 +964,7 @@ export default function VocabApp() {
             {/* Mode switcher */}
             {(() => {
               const dueCount = getDueWords(words).length;
-              const wrongCount = wrongBank.length;
+              const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
               return (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                   {[
@@ -1155,7 +1270,7 @@ export default function VocabApp() {
             {/* Review Stats */}
             {(() => {
               const due = getDueWords(words);
-              const wrongCount = wrongBank.length;
+              const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
               if (due.length === 0 && wrongCount === 0) return null;
               return (
                 <div style={{ marginBottom: 28 }}>
@@ -1313,27 +1428,53 @@ export default function VocabApp() {
             {/* Wrong Bank */}
             <div>
               <div className="sec-title">错词库</div>
-              {wrongBank.length === 0 ? (
-                <div style={{ fontSize: 13, color: "#aaa", padding: "20px 0", textAlign: "center" }}>答错的词会自动收录在这里</div>
-              ) : (
-                <div>
-                  <div style={{ fontSize: 12, color: "#777", marginBottom: 12 }}>共 {wrongBank.length} 个错词 · 答对后自动移出</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                    {words.filter(w => wrongBank.includes(w.id)).map(w => (
-                      <div key={w.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", background: "#fff5f5" }}>
-                        <div>
-                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</div>
-                          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{w.meaning}</div>
+              {(() => {
+                const wrongWords = words.filter(w => wrongBank.includes(w.word));
+                if (wrongWords.length === 0) return (
+                  <div style={{ fontSize: 13, color: "#aaa", padding: "20px 0", textAlign: "center" }}>答错的词会自动收录在这里</div>
+                );
+                // Group by tag
+                const allWrongTags = ["未分类", ...new Set(wrongWords.flatMap(w => w.tags && w.tags.length ? w.tags : ["未分类"]))].filter((t, i, a) => a.indexOf(t) === i);
+                const grouped = allWrongTags.map(tag => ({
+                  tag,
+                  words: tag === "未分类"
+                    ? wrongWords.filter(w => !w.tags || w.tags.length === 0)
+                    : wrongWords.filter(w => (w.tags || []).includes(tag))
+                })).filter(g => g.words.length > 0);
+                return (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                      <div style={{ fontSize: 12, color: "#777" }}>共 {wrongWords.length} 个错词</div>
+                      <button onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
+                        className="btn btn-dark btn-sm">开始错词复习</button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {grouped.map(({ tag, words: gw }) => (
+                        <div key={tag}>
+                          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#888", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                            <span>{tag}</span>
+                            <span style={{ background: "#f0f0f0", color: "#888", borderRadius: 10, padding: "1px 8px", fontSize: 10 }}>{gw.length}</span>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {gw.map(w => (
+                              <div key={w.word} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", background: "#fff5f5" }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</div>
+                                  <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{w.meaning}</div>
+                                </div>
+                                <button onClick={() => setWrongBank(prev => { const n = prev.filter(ww => ww !== w.word); localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; })}
+                                  style={{ fontSize: 11, color: "#e53e3e", background: "none", border: "1px solid #fecaca", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: 8 }}>移出</button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <button onClick={() => setWrongBank(prev => { const n = prev.filter(id => id !== w.id); localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; })}
-                          style={{ fontSize: 11, color: "#e53e3e", background: "none", border: "1px solid #fecaca", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>移出</button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    <button onClick={() => { setWrongBank([]); localStorage.setItem("wv_wrong_bank", "[]"); showMsg("错词库已清空"); }}
+                      className="btn btn-outline btn-sm" style={{ width: "100%", marginTop: 16, color: "#e53e3e", borderColor: "#fecaca" }}>清空错词库</button>
                   </div>
-                  <button onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
-                    className="btn btn-dark btn-sm" style={{ width: "100%" }}>开始错词复习</button>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <div>
@@ -1344,10 +1485,16 @@ export default function VocabApp() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   <div style={{ fontSize: 13, color: "#2d8a4e" }}>通知已开启 ✓</div>
                   <div>
-                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>提醒时间</div>
+                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>每天提醒时间</div>
                     <input type="time" value={notifTime} onChange={e => setNotifTime(e.target.value)} style={{ width: "auto" }} />
                   </div>
-                  <button className="btn btn-dark btn-sm" onClick={() => { localStorage.setItem("wv_ntime", notifTime); showMsg("已保存"); }}>保存</button>
+                  <button className="btn btn-dark btn-sm" onClick={saveNotifTime}>保存时间</button>
+                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#888", lineHeight: 1.7 }}>
+                    <div style={{ fontWeight: 600, color: "#555", marginBottom: 4 }}>如何让提醒正常工作？</div>
+                    <div>iOS：Safari 打开网址 → 底部「分享」→「添加到主屏幕」→ 从主屏幕打开 App</div>
+                    <div style={{ marginTop: 4 }}>Android：Chrome 菜单 → 「添加到主屏幕」</div>
+                    <div style={{ marginTop: 4, color: "#aaa" }}>添加到主屏幕后通知更稳定</div>
+                  </div>
                 </div>
               )}
             </div>
