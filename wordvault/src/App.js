@@ -149,6 +149,8 @@ export default function VocabApp() {
   const [customTag, setCustomTag] = useState("");
   const [editingTag, setEditingTag] = useState(null);
   const [editingWordTags, setEditingWordTags] = useState(null);
+  const [confirmDeleteTag, setConfirmDeleteTag] = useState(null); // tag name pending global delete
+  const [confirmDeleteWordTag, setConfirmDeleteWordTag] = useState(null); // { wordId, tag } pending word-level delete
   const [expandedMasteryGroup, setExpandedMasteryGroup] = useState(null);
   const [groupByTag, setGroupByTag] = useState(false);
   const [expandedTagGroup, setExpandedTagGroup] = useState({});
@@ -877,7 +879,16 @@ export default function VocabApp() {
                                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
                                   {(w.tags||[]).map(t => (
                                     <span key={t} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#f0f0f0", color: "#555", display: "inline-flex", alignItems: "center", gap: 3 }}>
-                                      {t}<span onClick={e => { e.stopPropagation(); setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: x.tags.filter(tg => tg !== t) } : x)); }} style={{ cursor: "pointer", fontSize: 12, opacity: 0.5, lineHeight: 1 }}>×</span>
+                                      {t}
+                                      {confirmDeleteWordTag?.wordId === w.id && confirmDeleteWordTag?.tag === t ? (
+                                        <>
+                                          <span style={{ fontSize: 10, color: "#e53e3e", whiteSpace: "nowrap" }}>删除?</span>
+                                          <span onClick={e => { e.stopPropagation(); setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: x.tags.filter(tg => tg !== t) } : x)); setConfirmDeleteWordTag(null); }} style={{ fontSize: 11, color: "#e53e3e", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>✓</span>
+                                          <span onClick={e => { e.stopPropagation(); setConfirmDeleteWordTag(null); }} style={{ fontSize: 11, color: "#888", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>✗</span>
+                                        </>
+                                      ) : (
+                                        <span onClick={e => { e.stopPropagation(); setConfirmDeleteWordTag({ wordId: w.id, tag: t }); }} style={{ cursor: "pointer", fontSize: 12, opacity: 0.5, lineHeight: 1 }}>×</span>
+                                      )}
                                     </span>
                                   ))}
                                   {editingWordTags === w.id ? (
@@ -981,7 +992,15 @@ export default function VocabApp() {
                       ) : (
                         <span onClick={() => toggleNewTag(tag)} onDoubleClick={e => { e.stopPropagation(); setEditingTag({ old: tag }); }}>{tag}</span>
                       )}
-                      <span onClick={e => { e.stopPropagation(); deleteUserTag(tag); }} style={{ fontSize: 13, lineHeight: 1, opacity: 0.6, cursor: "pointer" }}>×</span>
+                      {confirmDeleteTag === tag ? (
+                        <>
+                          <span style={{ fontSize: 11, color: "#e53e3e", whiteSpace: "nowrap" }}>删除?</span>
+                          <span onClick={e => { e.stopPropagation(); deleteUserTag(tag); setConfirmDeleteTag(null); }} style={{ fontSize: 12, color: "#e53e3e", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>✓</span>
+                          <span onClick={e => { e.stopPropagation(); setConfirmDeleteTag(null); }} style={{ fontSize: 12, color: "#888", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>✗</span>
+                        </>
+                      ) : (
+                        <span onClick={e => { e.stopPropagation(); setConfirmDeleteTag(tag); }} style={{ fontSize: 13, lineHeight: 1, opacity: 0.6, cursor: "pointer" }}>×</span>
+                      )}
                     </span>
                   ))}
                   <div style={{ fontSize: 11, color: "#aaa", width: "100%", marginTop: 4 }}>双击标签可修改名称</div>
