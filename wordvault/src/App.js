@@ -74,6 +74,11 @@ function generateMCQ(words, target) {
   return { question: target.word, correct: target.meaning, options: options.map(o => o.meaning), example: target.example, correctWord: target.word, isListen: false };
 }
 
+// Spell mode: show meaning, user types the word
+function generateSpellQ(words, target) {
+  return { question: target.meaning, correct: target.word, example: target.example, correctWord: target.word, isSpell: true, isListen: false };
+}
+
 // Listen mode: play audio, pick the correct Chinese meaning from options
 function generateListenMCQ(words, target) {
   const distractors = shuffle(words.filter(w => w.id !== target.id)).slice(0, 3);
@@ -157,7 +162,9 @@ export default function VocabApp() {
     } catch { return { count: 0, lastDate: null, showBroken: false }; }
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
-  const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong" | "listen"
+  const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong" | "listen" | "spell"
+  const [spellingInput, setSpellingInput] = useState("");
+  const [hintRevealed, setHintRevealed] = useState(0); // number of letters revealed
   const [wrongBank, setWrongBank] = useState(() => {
     try { return JSON.parse(localStorage.getItem("wv_wrong_bank") || "[]"); } catch { return []; }
   }); // array of word ids
@@ -259,15 +266,22 @@ export default function VocabApp() {
       pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
       if (pool.length < 4) return;
       target = weightedPick(pool, wrongBank);
+    } else if (m === "spell") {
+      pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
+      if (pool.length < 1) return;
+      target = weightedPick(pool, wrongBank);
     } else {
       pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
       if (pool.length < 4) return;
       target = weightedPick(pool, wrongBank);
     }
-    const state = (m === "listen") ? generateListenMCQ(pool, target) : generateMCQ(pool, target);
+    const state = m === "listen" ? generateListenMCQ(pool, target)
+      : m === "spell" ? generateSpellQ(pool, target)
+      : generateMCQ(pool, target);
     setQuizState(state);
     setQuizResult(null);
-    // Auto-play in listen mode
+    setSpellingInput("");
+    setHintRevealed(0);
     if (m === "listen") setTimeout(() => speak(target.word), 200);
   }, [words, filterTag, quizMode, wrongBank]);
 
@@ -380,6 +394,34 @@ export default function VocabApp() {
       if (newTotal % 10 === 0) {
         setTimeout(() => setShowSummary(true), 600);
       }
+      return { correct: newCorrect, total: newTotal, wrongWords: newWrong };
+    });
+  }
+
+  function handleSpell(input) {
+    const answer = input.trim();
+    const correct = answer.toLowerCase() === quizState.correct.toLowerCase();
+    setQuizResult(correct ? "correct" : "wrong");
+    setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+    setWords(ws => ws.map(w => {
+      if (w.word !== quizState.correctWord) return w;
+      const updated = scheduleReview(w, correct);
+      return { ...updated, mastery: correct ? Math.min(5, w.mastery + 1) : Math.max(0, w.mastery - 1) };
+    }));
+    if (!correct) {
+      const wrongWord = words.find(w => w.word === quizState.correctWord);
+      if (wrongWord) setWrongBank(prev => { const n = [...new Set([...prev, wrongWord.id])]; localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; });
+    }
+    try {
+      const d = JSON.parse(localStorage.getItem("wv_daily_quiz") || "{}");
+      d[todayKey] = (d[todayKey] || 0) + 1;
+      localStorage.setItem("wv_daily_quiz", JSON.stringify(d));
+    } catch {}
+    setSessionStats(s => {
+      const newTotal = s.total + 1;
+      const newCorrect = s.correct + (correct ? 1 : 0);
+      const newWrong = correct ? s.wrongWords : [...new Set([...s.wrongWords, quizState.correct])];
+      if (newTotal % 10 === 0) setTimeout(() => setShowSummary(true), 600);
       return { correct: newCorrect, total: newTotal, wrongWords: newWrong };
     });
   }
@@ -811,12 +853,13 @@ export default function VocabApp() {
               return (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                   {[
-                    { id: "normal", label: "释义选词" },
-                    { id: "listen", label: "听音辨词" },
-                    { id: "review", label: `遗忘复习${dueCount > 0 ? " · " + dueCount : ""}`, alert: dueCount > 0 },
-                    { id: "wrong",  label: `错词库${wrongCount > 0 ? " · " + wrongCount : ""}`, alert: wrongCount > 0 },
+                    { id: "normal", label: "释义选词",  span: false },
+                    { id: "listen", label: "听音辨词",  span: false },
+                    { id: "spell",  label: "拼写练习",  span: false },
+                    { id: "review", label: `遗忘复习${dueCount > 0 ? " · " + dueCount : ""}`, alert: dueCount > 0, span: false },
+                    { id: "wrong",  label: `错词库${wrongCount > 0 ? " · " + wrongCount : ""}`, alert: wrongCount > 0, span: false },
                   ].map(m => (
-                    <button key={m.id} onClick={() => { setQuizMode(m.id); setQuizResult(null); startQuiz(m.id); }}
+                    <button key={m.id} onClick={() => { setQuizMode(m.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(m.id); }}
                       style={{ flex: "1 1 calc(50% - 4px)", padding: "9px 6px", borderRadius: 10, border: "1.5px solid " + (quizMode === m.id ? "#111" : (m.alert ? "#e53e3e" : "#e0e0e0")), background: quizMode === m.id ? "#111" : "#fff", color: quizMode === m.id ? "#fff" : (m.alert ? "#e53e3e" : "#777"), fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
                       {m.label}
                     </button>
@@ -843,15 +886,15 @@ export default function VocabApp() {
               </div>
             )}
 
-            {/* Tag filter for normal + listen modes */}
-            {(quizMode === "normal" || quizMode === "listen") && (
+            {/* Tag filter for normal + listen + spell modes */}
+            {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
                 {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
               </div>
             )}
 
             {/* Quiz card */}
-            {quizState && ((( quizMode === "normal" || quizMode === "listen") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length >= 4) || (quizMode === "review" && getDueWords(words).length > 0) || (quizMode === "wrong" && wrongBank.length > 0)) && (
+            {quizState && ((( quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length >= 4) || (quizMode === "review" && getDueWords(words).length > 0) || (quizMode === "wrong" && wrongBank.length > 0)) && (
               <div>
                 {/* Review level indicator */}
                 {quizMode === "review" && (() => {
@@ -870,65 +913,162 @@ export default function VocabApp() {
                     </div>
                   );
                 })()}
-                {quizState.isListen ? (
-                  /* LISTEN MODE question area */
-                  <div style={{ marginBottom: 28, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#777", marginBottom: 20, letterSpacing: "0.5px", textTransform: "uppercase" }}>听音辨词 — 选出你听到的单词</div>
-                    <button onClick={() => speak(quizState.question)}
-                      style={{ width: 96, height: 96, borderRadius: "50%", background: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", transition: "transform 0.1s, opacity 0.1s" }}
-                      onMouseDown={e => e.currentTarget.style.transform = "scale(0.93)"}
-                      onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-                    >
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                      </svg>
-                    </button>
-                    <div style={{ fontSize: 12, color: "#aaa" }}>点击喇叭播放，可重复收听</div>
+                {quizState.isSpell ? (
+                  /* ── SPELL MODE ── */
+                  <div>
+                    <div style={{ fontSize: 11, color: "#777", marginBottom: 14, letterSpacing: "0.5px", textTransform: "uppercase" }}>看释义，打出对应的英文单词</div>
+                    {/* Chinese meaning as prompt */}
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 6, lineHeight: 1.3 }}>{quizState.question}</div>
+                    {quizState.example && !quizResult && (
+                      <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{quizState.example}</div>
+                    )}
+                    {/* Letter boxes */}
+                    {(() => {
+                      const answer = quizState.correct;
+                      const input = spellingInput;
+                      return (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, marginTop: 16 }}>
+                          {answer.split("").map((letter, i) => {
+                            const isHinted = i < hintRevealed;
+                            const typed = input[i] || "";
+                            const isDone = !!quizResult;
+                            const isCorrectLetter = typed.toLowerCase() === letter.toLowerCase();
+                            let bg = "#f5f5f5", border = "1.5px solid #e0e0e0", color = "#111";
+                            if (isHinted) { bg = "#fffbec"; border = "1.5px solid #c8900a"; color = "#c8900a"; }
+                            else if (isDone && typed) {
+                              bg = isCorrectLetter ? "#f0fff4" : "#fff5f5";
+                              border = "1.5px solid " + (isCorrectLetter ? "#2d8a4e" : "#e53e3e");
+                              color = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
+                            }
+                            return (
+                              <div key={i} style={{ width: 36, height: 44, borderRadius: 8, background: bg, border, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "DM Serif Display, serif", fontSize: 20, color, transition: "all 0.15s", position: "relative" }}>
+                                {isHinted ? letter.toUpperCase() : (typed || (isDone ? answer[i] : ""))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                    {/* Input + controls */}
+                    {!quizResult ? (
+                      <div>
+                        <input
+                          autoFocus
+                          value={spellingInput}
+                          onChange={e => setSpellingInput(e.target.value.slice(0, quizState.correct.length))}
+                          onKeyDown={e => { if (e.key === "Enter" && spellingInput.trim()) handleSpell(spellingInput); }}
+                          placeholder={"输入 " + quizState.correct.length + " 个字母…"}
+                          style={{ width: "100%", fontSize: 16, letterSpacing: "2px", marginBottom: 12, textTransform: "lowercase", fontFamily: "inherit", background: "#fafafa" }}
+                          disabled={!!quizResult}
+                        />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button className="btn btn-dark" style={{ flex: 2 }} onClick={() => spellingInput.trim() && handleSpell(spellingInput)}>确认</button>
+                          {hintRevealed < quizState.correct.length && (
+                            <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setHintRevealed(h => h + 1)}>提示 ({quizState.correct.length - hintRevealed})</button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        {/* Result */}
+                        <div style={{ background: quizResult === "correct" ? "#f0fff4" : "#fff5f5", border: "1.5px solid " + (quizResult === "correct" ? "#2d8a4e" : "#e53e3e"), borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: quizResult === "wrong" ? 8 : 0 }}>
+                            {quizResult === "correct" ? "拼写正确 ✓" : "拼写有误"}
+                          </div>
+                          {quizResult === "wrong" && (
+                            <div>
+                              <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>正确拼写：</div>
+                              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", letterSpacing: "1px" }}>{quizState.correct}</div>
+                            </div>
+                          )}
+                        </div>
+                        {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", marginBottom: 16, lineHeight: 1.5 }}>{quizState.example}</div>}
+                        <button className="btn btn-dark" style={{ width: "100%" }} onClick={() => startQuiz()}>下一题</button>
+                      </div>
+                    )}
+                  </div>
+                ) : quizState.isListen ? (
+                  /* ── LISTEN MODE ── */
+                  <div>
+                    <div style={{ marginBottom: 28, textAlign: "center" }}>
+                      <div style={{ fontSize: 11, color: "#777", marginBottom: 20, letterSpacing: "0.5px", textTransform: "uppercase" }}>听音辨词 — 选出你听到的单词</div>
+                      <button onClick={() => speak(quizState.question)}
+                        style={{ width: 96, height: 96, borderRadius: "50%", background: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", transition: "transform 0.1s" }}
+                        onMouseDown={e => e.currentTarget.style.transform = "scale(0.93)"}
+                        onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
+                      >
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                        </svg>
+                      </button>
+                      <div style={{ fontSize: 12, color: "#aaa" }}>点击喇叭播放，可重复收听</div>
+                      {quizResult && (
+                        <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "inline-block" }}>
+                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div>
+                          <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>
+                          {quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      {quizState.options.map((opt, i) => {
+                        let cls = "opt-btn";
+                        if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
+                        return (
+                          <button key={i} className={cls} disabled={!!quizResult} onClick={() => handleMCQ(opt)}>
+                            <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
+                          </button>
+                        );
+                      })}
+                    </div>
                     {quizResult && (
-                      <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "inline-block" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div>
-                        <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>
-                        {quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}
+                      <div style={{ marginTop: 20, textAlign: "center" }}>
+                        <div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>
+                          {quizResult === "correct" ? "正确 ✓" : `正确答案：${quizState.correct}`}
+                        </div>
+                        <button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  /* NORMAL MODE question area */
-                  <div style={{ marginBottom: 28 }}>
-                    <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
-                      <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500, letterSpacing: "0.3px" }}>▶</button>
+                  /* ── NORMAL / REVIEW / WRONG MODE ── */
+                  <div>
+                    <div style={{ marginBottom: 28 }}>
+                      <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
+                        <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500, letterSpacing: "0.3px" }}>▶</button>
+                      </div>
+                      {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
                     </div>
-                    {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
-                  </div>
-                )}
-                <div>
-                  {quizState.options.map((opt, i) => {
-                    let cls = "opt-btn";
-                    if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
-                    return (
-                      <button key={i} className={cls} disabled={!!quizResult} onClick={() => handleMCQ(opt)}>
-                        <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
-                      </button>
-                    );
-                  })}
-                </div>
-                {quizResult && (
-                  <div style={{ marginTop: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>
-                      {quizResult === "correct" ? "正确 ✓" : (quizState.isListen ? `正确答案：${quizState.correct}` : `答案是：${quizState.correct}`)}
+                    <div>
+                      {quizState.options.map((opt, i) => {
+                        let cls = "opt-btn";
+                        if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
+                        return (
+                          <button key={i} className={cls} disabled={!!quizResult} onClick={() => handleMCQ(opt)}>
+                            <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button>
+                    {quizResult && (
+                      <div style={{ marginTop: 20, textAlign: "center" }}>
+                        <div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>
+                          {quizResult === "correct" ? "正确 ✓" : `答案是：${quizState.correct}`}
+                        </div>
+                        <button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
             {/* Not enough words */}
-            {(quizMode === "normal" || quizMode === "listen") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 && (
+            {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 && (
               <div style={{ textAlign: "center", padding: "60px 0", color: "#777" }}>
                 <div style={{ fontSize: 14, marginBottom: 16 }}>至少需要 4 个单词才能测验</div>
                 <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
