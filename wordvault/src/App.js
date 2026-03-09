@@ -183,6 +183,15 @@ export default function VocabApp() {
   const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | alpha
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
+  const [serverNotifyTime, setServerNotifyTime] = useState("22:00");
+
+  // Fetch notify time from server config
+  useEffect(() => {
+    fetch("/api/config")
+      .then(r => r.json())
+      .then(d => { if (d.notifyTime) setServerNotifyTime(d.notifyTime); })
+      .catch(() => {});
+  }, []);
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
   const [dailyGoal, setDailyGoal] = useState(() => parseInt(localStorage.getItem("wv_daily_goal") || "5"));
@@ -1520,7 +1529,7 @@ export default function VocabApp() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#111" }}>每天提醒我练习</div>
-                  <div style={{ fontSize: 12, color: "#999", marginTop: 3 }}>每晚 22:00 推送提醒</div>
+                  <div style={{ fontSize: 12, color: "#999", marginTop: 3 }}>每晚 {serverNotifyTime} 推送提醒</div>
                 </div>
                 <div onClick={notifStatus === "granted"
                     ? () => { setNotifStatus("off"); localStorage.setItem("wv_notif_off","1"); }
@@ -1531,7 +1540,7 @@ export default function VocabApp() {
               </div>
               {notifStatus === "granted" && (
                 <div style={{ background: "#f0fff4", border: "1px solid #c6f6d5", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#276749" }}>
-                  已开启 · 每晚 22:00 提醒你练习单词，锁屏也能收到 🔔
+                  已开启 · 每晚 {serverNotifyTime} 提醒你练习单词，锁屏也能收到 🔔
                 </div>
               )}
               {notifStatus === "off" && (
