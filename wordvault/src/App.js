@@ -444,58 +444,96 @@ export default function VocabApp() {
     startQuiz(quizMode);
   }
 
-  async function requestNotification() {
-    if (!("Notification" in window)) { showMsg("此浏览器不支持通知"); return; }
-    const perm = await Notification.requestPermission();
-    setNotifStatus(perm);
-    if (perm === "granted") {
-      // Register service worker
-      if ("serviceWorker" in navigator) {
-        try {
-          const reg = await navigator.serviceWorker.register("/sw.js");
-          await navigator.serviceWorker.ready;
-          const sw = reg.active || reg.installing || reg.waiting;
-          if (sw) {
-            sw.postMessage({ type: "SET_NOTIF_TIME", time: notifTime });
-            sw.postMessage({ type: "TEST_NOTIF" });
-          }
-          showMsg("通知已开启，测试通知已发送");
-        } catch { showMsg("已开启通知（Service Worker 注册失败，仅应用内提醒）"); }
-      }
-    }
-  }
-
-  // Save notif time + ping SW
-  async function saveNotifTime() {
-    localStorage.setItem("wv_ntime", notifTime);
-    if ("serviceWorker" in navigator && Notification.permission === "granted") {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        if (reg.active) reg.active.postMessage({ type: "SET_NOTIF_TIME", time: notifTime });
-      } catch {}
-    }
-    showMsg("已保存");
-  }
-
-  // Heartbeat: ping SW every 60s to trigger time check
+  // OneSignal: request permission + subscribe
+  // Check OneSignal permission status on load
   useEffect(() => {
-    if (Notification.permission !== "granted") return;
-    if (!("serviceWorker" in navigator)) return;
-    const ping = async () => {
+    const checkStatus = async () => {
       try {
-        const reg = await navigator.serviceWorker.ready;
-        if (reg.active) reg.active.postMessage({ type: "HEARTBEAT" });
+        const OS = window.OneSignal;
+        if (OS) {
+          // Wait for OneSignal to be ready
+          await new Promise(r => setTimeout(r, 1500));
+          const perm = Notification.permission;
+          setNotifStatus(perm);
+        } else if ("Notification" in window) {
+          setNotifStatus(Notification.permission);
+        }
       } catch {}
     };
-    // Register SW and set time on load
-    navigator.serviceWorker.register("/sw.js").then(async () => {
-      const reg = await navigator.serviceWorker.ready;
-      if (reg.active) reg.active.postMessage({ type: "SET_NOTIF_TIME", time: notifTime });
-    }).catch(() => {});
-    ping();
-    const interval = setInterval(ping, 60000);
+    checkStatus();
+  }, []);
+
+  async function requestNotification() {
+    try {
+      // Must be added to home screen on iOS first
+      const OS = window.OneSignal;
+      if (!OS) {
+        showMsg("通知服务还在加载，请稍后重试");
+        return;
+      }
+      // Request permission via OneSignal (handles SW registration automatically)
+      await OS.Notifications.requestPermission();
+      await new Promise(r => setTimeout(r, 800));
+      const perm = Notification.permission;
+      setNotifStatus(perm);
+      if (perm === "granted") {
+        // Tag user with their preferred hour so OneSignal can target them
+        const [h] = notifTime.split(":").map(Number);
+        try {
+          await OS.User.addTags({
+            wv_remind_hour: String(h),
+            wv_remind_time: notifTime,
+          });
+        } catch {}
+        showMsg("通知已开启！");
+      } else {
+        showMsg("请在系统设置中允许通知权限");
+      }
+    } catch(e) {
+      showMsg("开启失败，请检查系统通知权限");
+    }
+  }
+
+  async function saveNotifTime() {
+    localStorage.setItem("wv_ntime", notifTime);
+    // Update OneSignal user tag so server knows the right send time
+    try {
+      const OS = window.OneSignal;
+      if (OS && Notification.permission === "granted") {
+        const [h] = notifTime.split(":").map(Number);
+        await OS.User.addTags({
+          wv_remind_hour: String(h),
+          wv_remind_time: notifTime,
+        });
+      }
+    } catch {}
+    showMsg("提醒时间已保存：" + notifTime);
+  }
+
+  // Service Worker heartbeat — fires local notification at exact saved time
+  // (fallback for when app is open in foreground)
+  useEffect(() => {
+    const check = () => {
+      if (Notification.permission !== "granted") return;
+      const saved = localStorage.getItem("wv_ntime");
+      if (!saved) return;
+      const now = new Date();
+      const [h, m] = saved.split(":").map(Number);
+      if (now.getHours() !== h || now.getMinutes() !== m) return;
+      const todayKey = now.toISOString().slice(0, 10);
+      const last = localStorage.getItem("wv_last_notif");
+      if (last === todayKey) return;
+      localStorage.setItem("wv_last_notif", todayKey);
+      new Notification("WordVault · 该学单词了", {
+        body: "每天坚持，词汇量会飞速增长 ✓",
+        icon: "/logo192.png",
+        tag: "wv-daily",
+        requireInteraction: true,
+      });
+    };
+    const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
-  }, [notifTime]);
+  }, []);
 
   function exportJSON() {
     const blob = new Blob([JSON.stringify(words, null, 2)], { type: "application/json" });
@@ -1479,21 +1517,51 @@ export default function VocabApp() {
 
             <div>
               <div className="sec-title">每日提醒</div>
-              {notifStatus === "denied" && <div style={{ fontSize: 13, color: "#e53e3e" }}>通知已被拒绝，请在系统设置中手动开启</div>}
-              {notifStatus !== "granted" && notifStatus !== "denied" && <button className="btn btn-dark btn-sm" onClick={requestNotification}>开启通知权限</button>}
+              {notifStatus === "denied" && (
+                <div style={{ background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#e53e3e" }}>
+                  通知已被拒绝，请到手机「设置 → 通知 → Safari/Chrome」手动开启
+                </div>
+              )}
+              {notifStatus !== "granted" && notifStatus !== "denied" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ fontSize: 13, color: "#666", lineHeight: 1.6 }}>
+                    开启后每天到时间会弹出通知，即使 App 不在前台
+                  </div>
+                  <button className="btn btn-dark btn-sm" onClick={requestNotification}>开启通知权限</button>
+                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#888", lineHeight: 1.7 }}>
+                    <div style={{ fontWeight: 600, color: "#555", marginBottom: 4 }}>使用前先添加到主屏幕</div>
+                    <div>📱 iOS：Safari → 底部「分享」→「添加到主屏幕」</div>
+                    <div style={{ marginTop: 2 }}>🤖 Android：Chrome 菜单 → 「添加到主屏幕」</div>
+                    <div style={{ marginTop: 4, color: "#bbb" }}>添加后从主屏幕图标打开，再来开启通知</div>
+                  </div>
+                </div>
+              )}
               {notifStatus === "granted" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ fontSize: 13, color: "#2d8a4e" }}>通知已开启 ✓</div>
-                  <div>
-                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>每天提醒时间</div>
-                    <input type="time" value={notifTime} onChange={e => setNotifTime(e.target.value)} style={{ width: "auto" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2d8a4e" }} />
+                    <div style={{ fontSize: 13, color: "#2d8a4e", fontWeight: 600 }}>通知已开启</div>
                   </div>
-                  <button className="btn btn-dark btn-sm" onClick={saveNotifTime}>保存时间</button>
-                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#888", lineHeight: 1.7 }}>
-                    <div style={{ fontWeight: 600, color: "#555", marginBottom: 4 }}>如何让提醒正常工作？</div>
-                    <div>iOS：Safari 打开网址 → 底部「分享」→「添加到主屏幕」→ 从主屏幕打开 App</div>
-                    <div style={{ marginTop: 4 }}>Android：Chrome 菜单 → 「添加到主屏幕」</div>
-                    <div style={{ marginTop: 4, color: "#aaa" }}>添加到主屏幕后通知更稳定</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>每天提醒时间</div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input type="time" value={notifTime} onChange={e => setNotifTime(e.target.value)} style={{ width: "auto", fontSize: 20, fontWeight: 600, border: "1.5px solid #e0e0e0", borderRadius: 8, padding: "6px 12px" }} />
+                      <button className="btn btn-dark btn-sm" onClick={saveNotifTime}>保存</button>
+                    </div>
+                  </div>
+                  <div style={{ background: "#f0fff4", border: "1px solid #c6f6d5", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#276749", lineHeight: 1.8 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>每天 {notifTime} 推送提醒 ✓</div>
+                    <div style={{ color: "#888" }}>锁屏推送需在 OneSignal 后台设置每日定时，下方有教程</div>
+                  </div>
+                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "14px", fontSize: 12, color: "#555", lineHeight: 1.9 }}>
+                    <div style={{ fontWeight: 700, color: "#111", marginBottom: 6 }}>设置锁屏推送（一次性操作）</div>
+                    <div>① 打开 <span style={{ fontWeight: 600 }}>onesignal.com</span> → 登录</div>
+                    <div>② 点 <span style={{ fontWeight: 600 }}>Messages → New Push</span></div>
+                    <div>③ Title 填 <span style={{ fontWeight: 600 }}>WordVault · 该学单词了</span></div>
+                    <div>④ Message 填 <span style={{ fontWeight: 600 }}>每天坚持，词汇量飞速增长</span></div>
+                    <div>⑤ Delivery → <span style={{ fontWeight: 600 }}>Recurring</span> → 选 Daily</div>
+                    <div>⑥ 时间设置为 <span style={{ fontWeight: 600, color: "#111" }}>{notifTime}</span> → Send</div>
+                    <div style={{ marginTop: 6, color: "#aaa" }}>设置后每天这个时间，手机锁屏也会收到推送</div>
                   </div>
                 </div>
               )}
