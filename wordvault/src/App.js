@@ -207,6 +207,19 @@ export default function VocabApp() {
   const battleTimerRef = useRef(null);
   const battleCanvasRef = useRef(null);
 
+  // Challenge Link Mode
+  const [challengeMode, setChallengeMode] = useState(false); // receiving a challenge
+  const [challengeWords, setChallengeWords] = useState([]); // words in the challenge
+  const [challengeFrom, setChallengeFrom] = useState(""); // sender name
+  const [challengeIdx, setChallengeIdx] = useState(0);
+  const [challengeAnswers, setChallengeAnswers] = useState([]); // {word, correct, chosen}
+  const [challengeAnswered, setChallengeAnswered] = useState(null);
+  const [challengeDone, setChallengeDone] = useState(false);
+  const [showCreateChallenge, setShowCreateChallenge] = useState(false);
+  const [challengeSelectedWords, setChallengeSelectedWords] = useState([]);
+  const [challengeSenderName, setChallengeSenderName] = useState("");
+  const [generatedLink, setGeneratedLink] = useState("");
+
   useEffect(() => { try { localStorage.setItem("wv_words", JSON.stringify(words)); } catch {} }, [words]);
   useEffect(() => { try { localStorage.setItem("wv_wrong_bank", JSON.stringify(wrongBank)); } catch {} }, [wrongBank]);
   // Check rank up whenever relevant data changes
@@ -307,6 +320,15 @@ export default function VocabApp() {
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(""), 2500); };
 
+  // Haptic feedback helper
+  const haptic = (type = "light") => {
+    if (!navigator.vibrate) return;
+    if (type === "light") navigator.vibrate(8);
+    else if (type === "medium") navigator.vibrate(15);
+    else if (type === "success") navigator.vibrate([8, 40, 8]);
+    else if (type === "error") navigator.vibrate([12, 30, 12, 30, 12]);
+  };
+
   async function handleAIGenerate() {
     if (!newWord.trim()) { showMsg("请先填写单词"); return; }
     setAiLoading(true);
@@ -366,6 +388,7 @@ export default function VocabApp() {
 
   function handleMCQ(option) {
     const correct = option === quizState.correct;
+    haptic(correct ? "success" : "error");
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
 
@@ -416,6 +439,7 @@ export default function VocabApp() {
   function handleSpell(input) {
     const answer = input.trim();
     const correct = answer.toLowerCase() === quizState.correct.toLowerCase();
+    haptic(correct ? "success" : "error");
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
     setWords(ws => ws.map(w => {
@@ -489,6 +513,7 @@ export default function VocabApp() {
   function handleBattleMCQ(opt) {
     if (battleAnswered) return;
     const correct = opt === battleQuestion.correct;
+    haptic(correct ? "success" : "error");
     setBattleAnswered(correct ? "correct" : "wrong");
     setBattleStats(s => ({
       correct: s.correct + (correct ? 1 : 0),
@@ -547,7 +572,77 @@ export default function VocabApp() {
     ctx.fillText("wordvault-woad.vercel.app", W - 36, H - 24);
   }
 
-  // OneSignal: request permission + subscribe
+  // ── Challenge Link functions ──
+  function generateChallengeLink() {
+    if (challengeSelectedWords.length === 0) { showMsg("请至少选择 1 个单词"); return; }
+    if (!challengeSenderName.trim()) { showMsg("请填写你的名字"); return; }
+    const payload = {
+      from: challengeSenderName.trim(),
+      words: challengeSelectedWords.map(w => ({ word: w.word, meaning: w.meaning, example: w.example || "" }))
+    };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const link = window.location.origin + window.location.pathname + "?c=" + encoded;
+    setGeneratedLink(link);
+  }
+
+  function copyLink() {
+    if (!generatedLink) return;
+    navigator.clipboard.writeText(generatedLink).then(() => showMsg("链接已复制！")).catch(() => {
+      const el = document.createElement("textarea");
+      el.value = generatedLink; document.body.appendChild(el); el.select();
+      document.execCommand("copy"); document.body.removeChild(el);
+      showMsg("链接已复制！");
+    });
+  }
+
+  function toggleChallengeWord(w) {
+    setChallengeSelectedWords(prev =>
+      prev.find(x => x.id === w.id) ? prev.filter(x => x.id !== w.id) : [...prev, w]
+    );
+  }
+
+  function getChallengeQuestion(idx, cWords) {
+    const target = cWords[idx];
+    // Build distractors from all app words + challenge words
+    const allPool = [...words, ...cWords.filter(cw => !words.find(w => w.word === cw.word))];
+    const distractors = shuffle(allPool.filter(w => w.word !== target.word)).slice(0, 3);
+    const options = shuffle([target, ...distractors]);
+    return { question: target.word, correct: target.meaning, options: options.map(o => o.meaning), example: target.example };
+  }
+
+  function handleChallengeAnswer(opt) {
+    if (challengeAnswered) return;
+    const q = getChallengeQuestion(challengeIdx, challengeWords);
+    const correct = opt === q.correct;
+    haptic(correct ? "success" : "error");
+    setChallengeAnswered(correct ? "correct" : "wrong");
+    setChallengeAnswers(prev => [...prev, { word: q.question, correct, chosen: opt, rightAnswer: q.correct }]);
+    setTimeout(() => {
+      const nextIdx = challengeIdx + 1;
+      if (nextIdx >= challengeWords.length) {
+        setChallengeDone(true);
+      } else {
+        setChallengeIdx(nextIdx);
+        setChallengeAnswered(null);
+      }
+    }, 500);
+  }
+
+  // Detect challenge link on mount
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const c = params.get("c");
+      if (c) {
+        const payload = JSON.parse(decodeURIComponent(escape(atob(c))));
+        if (payload.words && payload.words.length > 0) {
+          setChallengeWords(payload.words);
+          setChallengeFrom(payload.from || "朋友");
+          setChallengeMode(true);
+        }
+      }
+    } catch {}
+  }, []);
   // Check OneSignal permission status on load
   useEffect(() => {
     const checkStatus = async () => {
@@ -1119,6 +1214,15 @@ export default function VocabApp() {
         {/* Tab 2 */}
         {tab === 2 && (
           <div style={{ maxWidth: 480 }}>
+            {/* Challenge entry button */}
+            <div onClick={() => { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: "1.5px dashed #e0e0e0", borderRadius: 12, padding: "12px 16px", marginBottom: 18, cursor: "pointer", background: "#fafafa" }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>🔗 发起好友挑战</div>
+                <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>从词库选词，生成链接发给朋友</div>
+              </div>
+              <span style={{ fontSize: 18, color: "#ccc" }}>›</span>
+            </div>
             {/* Mode switcher */}
             {(() => {
               const dueCount = getDueWords(words).length;
@@ -1818,6 +1922,148 @@ export default function VocabApp() {
         </div>
       </div>
 
+      {/* Create Challenge Modal */}
+      {showCreateChallenge && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, maxHeight: "85vh", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "20px 20px 0", flexShrink: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#111" }}>发起好友挑战</div>
+                <button onClick={() => { setShowCreateChallenge(false); setGeneratedLink(""); }} style={{ background: "none", border: "none", fontSize: 22, color: "#aaa", cursor: "pointer", lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>选好词 → 生成链接 → 发给朋友，看他能答对几题</div>
+              <input value={challengeSenderName} onChange={e => setChallengeSenderName(e.target.value)}
+                placeholder="你的名字（朋友会看到）" style={{ marginBottom: 14 }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#444" }}>选择单词 <span style={{ color: "#aaa", fontWeight: 400 }}>（已选 {challengeSelectedWords.length} 个）</span></div>
+                <button onClick={() => setChallengeSelectedWords(challengeSelectedWords.length === words.length ? [] : shuffle(words).slice(0, Math.min(10, words.length)))}
+                  style={{ fontSize: 11, color: "#888", background: "none", border: "1px solid #e0e0e0", borderRadius: 6, padding: "3px 10px", cursor: "pointer", fontFamily: "inherit" }}>
+                  随机选10个
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 20px" }}>
+              {words.map(w => {
+                const selected = !!challengeSelectedWords.find(x => x.id === w.id);
+                return (
+                  <div key={w.id} onClick={() => toggleChallengeWord(w)}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f5f5f5", cursor: "pointer" }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, border: "1.5px solid " + (selected ? "#111" : "#ddd"), background: selected ? "#111" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                      {selected && <span style={{ color: "#fff", fontSize: 12, lineHeight: 1 }}>✓</span>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</div>
+                      <div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{w.meaning}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding: 20, flexShrink: 0, borderTop: "1px solid #f0f0f0" }}>
+              {!generatedLink ? (
+                <button className="btn btn-dark" style={{ width: "100%" }} onClick={generateChallengeLink}>
+                  生成挑战链接
+                </button>
+              ) : (
+                <div>
+                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#555", wordBreak: "break-all", marginBottom: 10, lineHeight: 1.6 }}>{generatedLink}</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="btn btn-dark" style={{ flex: 1 }} onClick={copyLink}>复制链接</button>
+                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { if (navigator.share) navigator.share({ title: `${challengeSenderName} 向你发起了 WordVault 挑战！`, url: generatedLink }); else copyLink(); }}>分享</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Incoming Challenge Modal */}
+      {challengeMode && (
+        <div style={{ position: "fixed", inset: 0, background: "#fff", zIndex: 600, display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "20px 20px 0", flexShrink: 0 }}>
+            {!challengeDone ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, color: "#888" }}>🔗 <strong style={{ color: "#111" }}>{challengeFrom}</strong> 向你发起挑战</div>
+                  <div style={{ fontSize: 12, color: "#aaa" }}>{challengeIdx + 1} / {challengeWords.length}</div>
+                </div>
+                {/* Progress bar */}
+                <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, marginBottom: 24, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: ((challengeIdx + (challengeAnswered ? 1 : 0)) / challengeWords.length * 100) + "%", background: "#111", transition: "width 0.3s" }} />
+                </div>
+                {(() => {
+                  const q = getChallengeQuestion(challengeIdx, challengeWords);
+                  return (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>选择正确的中文释义</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 38, color: "#111", marginBottom: 8, lineHeight: 1.1 }}>{q.question}</div>
+                      {q.example && <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 24, lineHeight: 1.5 }}>{q.example}</div>}
+                      <div key={q.question + q.options.join()}>
+                        {q.options.map((opt, i) => {
+                          let bg = "#fafafa", border = "#ebebeb", color = "#111";
+                          if (challengeAnswered) {
+                            if (opt === q.correct) { bg = "#f0faf4"; border = "#2d8a4e"; color = "#2d8a4e"; }
+                            else if (challengeAnswered === "wrong" && opt !== q.correct) { bg = "#fff5f5"; border = "#fecaca"; color = "#e53e3e"; }
+                          }
+                          return (
+                            <button key={i} disabled={!!challengeAnswered}
+                              onClick={e => { e.currentTarget.blur(); handleChallengeAnswer(opt); }}
+                              style={{ width: "100%", background: bg, border: "1.5px solid " + border, borderRadius: 10, padding: "14px 16px", textAlign: "left", fontFamily: "inherit", fontSize: 14, color, cursor: challengeAnswered ? "default" : "pointer", marginBottom: 8, transition: "all 0.15s" }}>
+                              <span style={{ marginRight: 10, fontSize: 12, opacity: 0.5 }}>{String.fromCharCode(65+i)}</span>{opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
+              /* Challenge Result */
+              <div style={{ paddingTop: 20 }}>
+                <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>🔗 <strong style={{ color: "#111" }}>{challengeFrom}</strong> 的挑战结果</div>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#111", marginBottom: 24 }}>
+                  {challengeAnswers.filter(a => a.correct).length >= challengeWords.length * 0.8 ? "太厉害了！" : challengeAnswers.filter(a => a.correct).length >= challengeWords.length * 0.6 ? "不错，继续加油！" : "加油，下次更好！"}
+                </div>
+                {/* Big score */}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 24 }}>
+                  <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 64, color: "#111", lineHeight: 1 }}>{challengeAnswers.filter(a => a.correct).length}</span>
+                  <span style={{ fontSize: 20, color: "#aaa" }}>/ {challengeWords.length} 题</span>
+                </div>
+                {/* Word by word breakdown */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28, maxHeight: "40vh", overflowY: "auto" }}>
+                  {challengeAnswers.map((a, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: a.correct ? "#f0faf4" : "#fff5f5", border: "1px solid " + (a.correct ? "#c6f6d5" : "#fecaca") }}>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{a.correct ? "✓" : "✗"}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{a.word}</div>
+                        {!a.correct && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 2 }}>正确：{a.rightAnswer}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button className="btn btn-dark" style={{ flex: 1 }}
+                    onClick={() => {
+                      const correct = challengeAnswers.filter(a => a.correct).length;
+                      const total = challengeWords.length;
+                      const acc = Math.round(correct / total * 100);
+                      const text = `我挑战了 ${challengeFrom} 的 WordVault 词单！\n答对 ${correct}/${total} 题，正确率 ${acc}%\n快来挑战：${window.location.href}`;
+                      if (navigator.share) navigator.share({ text }); else { navigator.clipboard.writeText(text).then(() => showMsg("结果已复制！")); }
+                    }}>
+                    分享结果
+                  </button>
+                  <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setChallengeMode(false); window.history.replaceState({}, "", window.location.pathname); }}>
+                    进入词库
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Session Summary Modal */}
       {showSummary && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -1863,7 +2109,7 @@ export default function VocabApp() {
       <nav className="bottom-nav">
         <div className="bottom-nav-inner">
         {NAV.map((item, i) => (
-          <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => setTab(i)}>
+          <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => { haptic("light"); setTab(i); }}>
             <em className="nav-icon">{item.icon}</em>
             <span className="nav-label">{item.label}</span>
           </button>
