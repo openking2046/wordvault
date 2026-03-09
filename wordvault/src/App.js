@@ -784,6 +784,14 @@ export default function VocabApp() {
   const masteryLabel = (m) => ["未学","初识","认识","熟悉","掌握","精通"][m];
   const correctRate = score.total ? Math.round(score.correct / score.total * 100) : 0;
 
+  // Splash screen state: "in" | "out" | "done"
+  const [splash, setSplash] = useState("in");
+  useEffect(() => {
+    const t1 = setTimeout(() => setSplash("out"), 1800);
+    const t2 = setTimeout(() => setSplash("done"), 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
   return (
     <div style={{ fontFamily: "Inter, -apple-system, sans-serif", minHeight: "100vh", background: "#fff", color: "#111", display: "flex", flexDirection: "column" }}>
       <style>{`
@@ -820,7 +828,45 @@ export default function VocabApp() {
         .swipe-content.swiped { transform: translateX(-72px); }
         .swipe-delete { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #e53e3e; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 0 0 0 0; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
+
+        /* Splash */
+        @keyframes splashLogoIn {
+          from { opacity: 0; transform: translateY(18px) scale(0.94); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes splashSubIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes splashDotPulse {
+          0%, 100% { transform: scaleX(1); opacity: 1; }
+          50% { transform: scaleX(1.6); opacity: 0.5; }
+        }
+        @keyframes splashExit {
+          from { opacity: 1; transform: translateY(0); }
+          to   { opacity: 0; transform: translateY(-32px); }
+        }
+        .splash-logo  { animation: splashLogoIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both; }
+        .splash-sub   { animation: splashSubIn  0.6s cubic-bezier(0.22,1,0.36,1) 0.7s both; }
+        .splash-dot   { display: inline-block; width: 28px; height: 3px; border-radius: 2px; background: #fff; animation: splashDotPulse 1.1s ease-in-out 1s infinite; }
+        .splash-exit  { animation: splashExit 0.55s cubic-bezier(0.4,0,1,1) forwards; }
       `}</style>
+
+      {/* Splash Screen */}
+      {splash !== "done" && (
+        <div className={splash === "out" ? "splash-exit" : ""}
+          style={{ position: "fixed", inset: 0, background: "#111", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0 }}>
+          <div className="splash-logo" style={{ fontFamily: "DM Serif Display, serif", fontSize: 42, color: "#fff", letterSpacing: "-0.5px", marginBottom: 10 }}>
+            WordVault
+          </div>
+          <div className="splash-sub" style={{ fontSize: 13, color: "#666", letterSpacing: "3px", textTransform: "uppercase", marginBottom: 40 }}>
+            记住每一个单词
+          </div>
+          <div className="splash-sub" style={{ animationDelay: "1s" }}>
+            <span className="splash-dot" />
+          </div>
+        </div>
+      )}
 
       {msg && <div className="toast">{msg}</div>}
 
