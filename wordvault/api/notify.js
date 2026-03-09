@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Only allow GET (from Vercel Cron) or POST
   if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -21,9 +20,12 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         app_id: appId,
         included_segments: ["All"],
-        headings: { en: "WordVault · 该学单词了" },
-        contents: { en: "每天坚持，词汇量会飞速增长 ✓" },
-        url: "https://wordvault-woad.vercel.app"
+        headings: { en: "WordVault · 今天还没练习单词哦" },
+        contents: { en: "每天坚持 10 分钟，词汇量飞速增长！点击开始今天的练习 💪" },
+        url: "https://wordvault-woad.vercel.app",
+        ios_sound: "default",
+        android_sound: "default",
+        priority: 10
       })
     });
 
