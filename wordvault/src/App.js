@@ -196,6 +196,17 @@ export default function VocabApp() {
   const [swipedWord, setSwipedWord] = useState(null);
   const touchStartX = useRef(0);
 
+  // Battle Mode
+  const [battleActive, setBattleActive] = useState(false);
+  const [battleTimeLeft, setBattleTimeLeft] = useState(60);
+  const [battleStats, setBattleStats] = useState({ correct: 0, total: 0, words: [] });
+  const [battleQuestion, setBattleQuestion] = useState(null);
+  const [battleAnswered, setBattleAnswered] = useState(null);
+  const [showBattleResult, setShowBattleResult] = useState(false);
+  const [battleFinalStats, setBattleFinalStats] = useState(null);
+  const battleTimerRef = useRef(null);
+  const battleCanvasRef = useRef(null);
+
   useEffect(() => { try { localStorage.setItem("wv_words", JSON.stringify(words)); } catch {} }, [words]);
   useEffect(() => { try { localStorage.setItem("wv_wrong_bank", JSON.stringify(wrongBank)); } catch {} }, [wrongBank]);
   // Check rank up whenever relevant data changes
@@ -445,6 +456,95 @@ export default function VocabApp() {
     setSessionStats({ correct: 0, total: 0, wrongWords: [] });
     setShowSummary(false);
     startQuiz(quizMode);
+  }
+
+  function pickBattleQuestion() {
+    if (words.length < 4) return null;
+    const target = weightedPick(words, wrongBank);
+    return generateMCQ(words, target);
+  }
+
+  function startBattle() {
+    if (words.length < 4) { showMsg("至少需要 4 个单词才能对战"); return; }
+    clearInterval(battleTimerRef.current);
+    setBattleQuestion(pickBattleQuestion());
+    setBattleAnswered(null);
+    setBattleStats({ correct: 0, total: 0, words: [] });
+    setBattleTimeLeft(60);
+    setBattleActive(true);
+    setShowBattleResult(false);
+    battleTimerRef.current = setInterval(() => {
+      setBattleTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(battleTimerRef.current);
+          setBattleActive(false);
+          setBattleStats(s => { setBattleFinalStats(s); setShowBattleResult(true); return s; });
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  }
+
+  function handleBattleMCQ(opt) {
+    if (battleAnswered) return;
+    const correct = opt === battleQuestion.correct;
+    setBattleAnswered(correct ? "correct" : "wrong");
+    setBattleStats(s => ({
+      correct: s.correct + (correct ? 1 : 0),
+      total: s.total + 1,
+      words: [...s.words, { word: battleQuestion.question, correct }]
+    }));
+    setTimeout(() => {
+      setBattleQuestion(pickBattleQuestion());
+      setBattleAnswered(null);
+    }, 400);
+  }
+
+  function endBattle() {
+    clearInterval(battleTimerRef.current);
+    setBattleActive(false);
+    setBattleStats(s => { setBattleFinalStats(s); setShowBattleResult(true); return s; });
+    setBattleTimeLeft(0);
+  }
+
+  function drawBattleCard() {
+    const canvas = battleCanvasRef.current;
+    if (!canvas || !battleFinalStats) return;
+    const ctx = canvas.getContext("2d");
+    const W = 600, H = 360;
+    canvas.width = W; canvas.height = H;
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, "#0f0f0f");
+    grad.addColorStop(1, "#16213e");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(40, 40, 4, H - 80);
+    ctx.fillStyle = "#888";
+    ctx.font = "bold 12px sans-serif";
+    ctx.fillText("WORDVAULT  ·  限时对战", 60, 68);
+    const acc = battleFinalStats.total > 0 ? Math.round(battleFinalStats.correct / battleFinalStats.total * 100) : 0;
+    ctx.font = "bold 90px serif";
+    ctx.fillStyle = acc >= 80 ? "#4ade80" : acc >= 60 ? "#facc15" : "#f87171";
+    ctx.fillText(String(battleFinalStats.correct), 60, 200);
+    const scoreW = ctx.measureText(String(battleFinalStats.correct)).width;
+    ctx.font = "bold 26px serif";
+    ctx.fillStyle = "#888";
+    ctx.fillText("/ " + battleFinalStats.total + " 题", 60 + scoreW + 10, 190);
+    const stats2 = [["正确率", acc + "%"], ["用时", "60 秒"], ["词库", words.length + " 词"]];
+    stats2.forEach(([label, val], i) => {
+      const x = 60 + i * 150;
+      ctx.font = "12px sans-serif"; ctx.fillStyle = "#666"; ctx.fillText(label, x, 248);
+      ctx.font = "bold 20px sans-serif"; ctx.fillStyle = "#fff"; ctx.fillText(val, x, 272);
+    });
+    const wrongWords = battleFinalStats.words.filter(w => !w.correct).slice(0, 5).map(w => w.word);
+    if (wrongWords.length > 0) {
+      ctx.font = "12px sans-serif"; ctx.fillStyle = "#555";
+      ctx.fillText("需加强：" + wrongWords.join("  ·  "), 60, 315);
+    }
+    ctx.textAlign = "right"; ctx.fillStyle = "#333"; ctx.font = "11px sans-serif";
+    ctx.fillText("wordvault-woad.vercel.app", W - 36, H - 24);
   }
 
   // OneSignal: request permission + subscribe
@@ -1037,6 +1137,10 @@ export default function VocabApp() {
                       {m.label}
                     </button>
                   ))}
+                  <button onClick={() => { setQuizMode("battle"); if (!battleActive && !showBattleResult) startBattle(); }}
+                    style={{ flex: "1 1 100%", padding: "11px 6px", borderRadius: 10, border: "1.5px solid " + (quizMode === "battle" ? "#111" : "#e0e0e0"), background: quizMode === "battle" ? "#111" : "linear-gradient(135deg,#fff 0%,#fafafa 100%)", color: quizMode === "battle" ? "#fff" : "#111", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px" }}>
+                    ⚡ 限时对战 · 60秒挑战
+                  </button>
                 </div>
               );
             })()}
@@ -1247,6 +1351,113 @@ export default function VocabApp() {
               <div style={{ textAlign: "center", padding: "60px 0", color: "#777" }}>
                 <div style={{ fontSize: 14, marginBottom: 16 }}>至少需要 4 个单词才能测验</div>
                 <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
+              </div>
+            )}
+
+            {/* Battle Mode UI */}
+            {quizMode === "battle" && !showBattleResult && (
+              <div>
+                {!battleActive && !battleQuestion ? (
+                  <div style={{ textAlign: "center", padding: "40px 0" }}>
+                    <div style={{ fontSize: 52, marginBottom: 12 }}>⚡</div>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", marginBottom: 8 }}>限时对战</div>
+                    <div style={{ fontSize: 14, color: "#888", marginBottom: 32, lineHeight: 1.7 }}>
+                      60 秒内答对尽可能多的题<br/>结束后生成战绩图分享给朋友
+                    </div>
+                    <button className="btn btn-dark" style={{ padding: "14px 40px", fontSize: 16, borderRadius: 12 }} onClick={startBattle}>开始挑战</button>
+                  </div>
+                ) : battleActive && battleQuestion ? (
+                  <div>
+                    {/* Timer bar */}
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                          <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 42, color: battleTimeLeft <= 10 ? "#e53e3e" : "#111", lineHeight: 1, transition: "color 0.3s" }}>{battleTimeLeft}</span>
+                          <span style={{ fontSize: 13, color: "#aaa" }}>秒</span>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{battleStats.correct}</div>
+                          <div style={{ fontSize: 11, color: "#aaa" }}>答对 / {battleStats.total} 题</div>
+                        </div>
+                      </div>
+                      <div style={{ height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: (battleTimeLeft / 60 * 100) + "%", background: battleTimeLeft <= 10 ? "#e53e3e" : "#111", transition: "width 1s linear, background 0.3s" }} />
+                      </div>
+                    </div>
+
+                    {/* Question */}
+                    <div style={{ marginBottom: 24 }}>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", marginBottom: 6, lineHeight: 1.1 }}>{battleQuestion.question}</div>
+                      {battleQuestion.example && <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic" }}>{battleQuestion.example}</div>}
+                    </div>
+
+                    {/* Options */}
+                    <div key={battleQuestion.question + battleQuestion.options.join()}>
+                      {battleQuestion.options.map((opt, i) => {
+                        let bg = "#fafafa", border = "#ebebeb", color = "#111";
+                        if (battleAnswered) {
+                          if (opt === battleQuestion.correct) { bg = "#f0faf4"; border = "#2d8a4e"; color = "#2d8a4e"; }
+                          else if (battleAnswered === "wrong") { bg = "#fff5f5"; border = "#e53e3e"; color = "#e53e3e"; }
+                        }
+                        return (
+                          <button key={i} disabled={!!battleAnswered}
+                            onClick={e => { e.currentTarget.blur(); handleBattleMCQ(opt); }}
+                            style={{ width: "100%", background: bg, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", textAlign: "left", fontFamily: "inherit", fontSize: 14, color, cursor: battleAnswered ? "default" : "pointer", marginBottom: 8, transition: "all 0.15s" }}>
+                            <span style={{ color: battleAnswered ? "inherit" : "#aaa", marginRight: 10, fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{String.fromCharCode(65+i)}</span>{opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ marginTop: 16, textAlign: "center" }}>
+                      <button onClick={endBattle} style={{ background: "none", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>结束挑战</button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {/* Battle Result */}
+            {quizMode === "battle" && showBattleResult && battleFinalStats && (
+              <div>
+                <div style={{ background: "#0f0f0f", borderRadius: 16, padding: "28px 24px", marginBottom: 16, color: "#fff" }}>
+                  <div style={{ fontSize: 11, letterSpacing: "2px", color: "#666", marginBottom: 16, fontWeight: 600 }}>WORDVAULT · 限时对战</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 20 }}>
+                    <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 72, lineHeight: 1, color: battleFinalStats.total > 0 && Math.round(battleFinalStats.correct / battleFinalStats.total * 100) >= 80 ? "#4ade80" : battleFinalStats.total > 0 && Math.round(battleFinalStats.correct / battleFinalStats.total * 100) >= 60 ? "#facc15" : "#f87171" }}>{battleFinalStats.correct}</span>
+                    <span style={{ fontSize: 20, color: "#555" }}>/ {battleFinalStats.total} 题</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 0 }}>
+                    {[
+                      ["正确率", battleFinalStats.total > 0 ? Math.round(battleFinalStats.correct / battleFinalStats.total * 100) + "%" : "0%"],
+                      ["用时", "60 秒"],
+                      ["词库", words.length + " 词"],
+                    ].map(([label, val]) => (
+                      <div key={label} style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: "#555", marginBottom: 4 }}>{label}</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {battleFinalStats.words.filter(w => !w.correct).length > 0 && (
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #222" }}>
+                      <div style={{ fontSize: 11, color: "#444", marginBottom: 8 }}>需加强</div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {battleFinalStats.words.filter(w => !w.correct).slice(0, 6).map((w, i) => (
+                          <span key={i} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 20, background: "#1a1a1a", color: "#f87171", border: "1px solid #2a2a2a", fontFamily: "DM Serif Display, serif" }}>{w.word}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Canvas for share image */}
+                <canvas ref={battleCanvasRef} style={{ display: "none" }} />
+
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => { drawBattleCard(); setTimeout(() => { const canvas = battleCanvasRef.current; if (!canvas) return; const link = document.createElement("a"); link.download = "wordvault-battle.png"; link.href = canvas.toDataURL("image/png"); link.click(); }, 100); }}>
+                    保存战绩图
+                  </button>
+                  <button className="btn btn-outline" style={{ flex: 1 }} onClick={startBattle}>再战一局</button>
+                </div>
               </div>
             )}
           </div>
