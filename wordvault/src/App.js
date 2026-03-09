@@ -185,6 +185,7 @@ export default function VocabApp() {
   const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | alpha
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem("wv_sound") !== "0");
   
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
@@ -629,9 +630,13 @@ export default function VocabApp() {
   }
 
   // Global click sound + haptic on every interactive element
+  const soundEnabledRef = useRef(soundEnabled);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
   useEffect(() => {
     let ctx = null;
     const playClick = () => {
+      if (!soundEnabledRef.current) return;
       try {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
         if (ctx.state === "suspended") ctx.resume();
@@ -650,7 +655,10 @@ export default function VocabApp() {
     };
     const handler = (e) => {
       const el = e.target.closest("button, .tag-pill, .opt-btn, .nav-item, [role='button']");
-      if (el) { playClick(); navigator.vibrate && navigator.vibrate(6); }
+      if (el) {
+        navigator.vibrate && navigator.vibrate(6);
+        playClick();
+      }
     };
     document.addEventListener("pointerdown", handler);
     return () => document.removeEventListener("pointerdown", handler);
@@ -1936,6 +1944,20 @@ export default function VocabApp() {
             </div>
 
             <div>
+            <div>
+              <div className="sec-title">点击音效</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#111" }}>按键音效</div>
+                  <div style={{ fontSize: 12, color: "#999", marginTop: 3 }}>每次点击播放轻微音效</div>
+                </div>
+                <div onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("wv_sound", next ? "1" : "0"); }}
+                  style={{ width: 50, height: 28, borderRadius: 14, background: soundEnabled ? "#111" : "#ddd", cursor: "pointer", position: "relative", transition: "background 0.25s", flexShrink: 0 }}>
+                  <div style={{ position: "absolute", top: 3, left: soundEnabled ? 25 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", transition: "left 0.25s" }} />
+                </div>
+              </div>
+            </div>
+
               <div className="sec-title">每日提醒</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div>
