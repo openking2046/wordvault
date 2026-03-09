@@ -920,7 +920,9 @@ export default function VocabApp() {
                     {/* Chinese meaning as prompt */}
                     <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 6, lineHeight: 1.3 }}>{quizState.question}</div>
                     {quizState.example && !quizResult && (
-                      <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{quizState.example}</div>
+                      <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>
+                        {quizState.example.replace(new RegExp(quizState.correct, "gi"), "＿".repeat(quizState.correct.length))}
+                      </div>
                     )}
                     {/* Letter boxes */}
                     {(() => {
