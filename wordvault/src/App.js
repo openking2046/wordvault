@@ -205,6 +205,8 @@ export default function VocabApp() {
   const [battleAnswered, setBattleAnswered] = useState(null);
   const [showBattleResult, setShowBattleResult] = useState(false);
   const [battleFinalStats, setBattleFinalStats] = useState(null);
+  const [showUnlock, setShowUnlock] = useState(false);
+  const [unlockWord, setUnlockWord] = useState("");
   const battleTimerRef = useRef(null);
   const battleCanvasRef = useRef(null);
 
@@ -357,10 +359,12 @@ export default function VocabApp() {
     if (!newWord.trim() || !newMeaning.trim()) { showMsg("请填写单词和释义"); return; }
     if (words.find(w => w.word.toLowerCase() === newWord.trim().toLowerCase())) { showMsg("单词已存在"); return; }
     if (!isPro && words.length >= FREE_LIMIT) { setShowUpgrade(true); return; }
-    setWords(ws => [...ws, { id: Date.now(), word: newWord.trim(), meaning: newMeaning.trim(), example: newExample.trim() || `${newWord.trim()} is a useful word.`, mastery: 0, tags: newTags }]);
+    const word = newWord.trim();
+    setWords(ws => [...ws, { id: Date.now(), word, meaning: newMeaning.trim(), example: newExample.trim() || `${word} is a useful word.`, mastery: 0, tags: newTags }]);
     setNewWord(""); setNewMeaning(""); setNewExample(""); setNewTags([]);
-    showMsg("添加成功");
-    setTimeout(() => setTab(0), 800);
+    setUnlockWord(word);
+    setShowUnlock(true);
+    setTimeout(() => { setShowUnlock(false); setTab(0); }, 2200);
   }
 
   function toggleNewTag(tag) { setNewTags(ts => ts.includes(tag) ? ts.filter(t => t !== tag) : [...ts, tag]); }
@@ -874,6 +878,17 @@ export default function VocabApp() {
         button:not(:active), .tag-pill:not(:active), .opt-btn:not(:active), .nav-item:not(:active) {
           transform: scale(1);
           transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Word Unlock */
+        @keyframes unlockBgIn    { from { opacity:0 } to { opacity:1 } }
+        @keyframes unlockBgOut   { from { opacity:1 } to { opacity:0 } }
+        @keyframes unlockWordIn  { 0%{opacity:0;transform:scale(0.4) translateY(20px)} 60%{transform:scale(1.08) translateY(-4px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes unlockBadge   { 0%{opacity:0;transform:scale(0) rotate(-15deg)} 60%{transform:scale(1.15) rotate(4deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+        @keyframes unlockSub     { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+        @keyframes particleFly {
+          0%   { transform: translate(0,0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
         }
 
         /* Splash */
@@ -2170,6 +2185,71 @@ export default function VocabApp() {
           </div>
         </div>
       )}
+
+      {/* Word Unlock Animation */}
+      {showUnlock && (() => {
+        const COLORS = ["#FFD700","#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#BB8FCE","#85C1E9","#82E0AA"];
+        const particles = Array.from({ length: 28 }, (_, i) => {
+          const angle = (i / 28) * 360 + Math.random() * 13;
+          const dist = 80 + Math.random() * 120;
+          const rad = angle * Math.PI / 180;
+          return {
+            dx: Math.cos(rad) * dist,
+            dy: Math.sin(rad) * dist,
+            color: COLORS[i % COLORS.length],
+            size: 6 + Math.random() * 8,
+            delay: Math.random() * 0.15,
+            shape: i % 3 === 0 ? "star" : i % 3 === 1 ? "circle" : "rect",
+          };
+        });
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.75)", animation: "unlockBgIn 0.25s ease forwards" }}>
+            {/* Particles */}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {particles.map((p, i) => (
+                <div key={i} style={{
+                  position: "absolute",
+                  width: p.size, height: p.size,
+                  background: p.color,
+                  borderRadius: p.shape === "circle" ? "50%" : p.shape === "star" ? "2px" : "2px",
+                  transform: p.shape === "star" ? "rotate(45deg)" : "none",
+                  boxShadow: `0 0 6px ${p.color}`,
+                  "--dx": p.dx + "px",
+                  "--dy": p.dy + "px",
+                  animation: `particleFly 0.9s cubic-bezier(0.2,0.8,0.4,1) ${p.delay}s both`,
+                }} />
+              ))}
+            </div>
+
+            {/* Card */}
+            <div style={{ background: "#fff", borderRadius: 28, padding: "40px 36px", textAlign: "center", maxWidth: 300, width: "90%", position: "relative" }}>
+              {/* Badge */}
+              <div style={{ animation: "unlockBadge 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",
+                width: 72, height: 72, borderRadius: "50%", background: "#111", margin: "0 auto 20px",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>
+                🔓
+              </div>
+
+              {/* Word */}
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 32, color: "#111", lineHeight: 1.1, marginBottom: 10,
+                animation: "unlockWordIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both" }}>
+                {unlockWord}
+              </div>
+
+              {/* Sub */}
+              <div style={{ fontSize: 13, color: "#888", animation: "unlockSub 0.4s ease 0.5s both" }}>
+                已解锁 · 加入词库 🎉
+              </div>
+
+              {/* Word count */}
+              <div style={{ marginTop: 16, fontSize: 12, color: "#bbb", animation: "unlockSub 0.4s ease 0.65s both" }}>
+                词库共 {words.length} 个单词
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Session Summary Modal */}
       {showSummary && (
