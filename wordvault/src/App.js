@@ -1517,52 +1517,37 @@ export default function VocabApp() {
 
             <div>
               <div className="sec-title">每日提醒</div>
-              {notifStatus === "denied" && (
-                <div style={{ background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#e53e3e" }}>
-                  通知已被拒绝，请到手机「设置 → 通知 → Safari/Chrome」手动开启
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#111" }}>每天提醒我练习</div>
+                  <div style={{ fontSize: 12, color: "#999", marginTop: 3 }}>每晚 22:00 推送提醒</div>
                 </div>
-              )}
-              {notifStatus !== "granted" && notifStatus !== "denied" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ fontSize: 13, color: "#666", lineHeight: 1.6 }}>
-                    开启后每天到时间会弹出通知，即使 App 不在前台
-                  </div>
-                  <button className="btn btn-dark btn-sm" onClick={requestNotification}>开启通知权限</button>
-                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#888", lineHeight: 1.7 }}>
-                    <div style={{ fontWeight: 600, color: "#555", marginBottom: 4 }}>使用前先添加到主屏幕</div>
-                    <div>📱 iOS：Safari → 底部「分享」→「添加到主屏幕」</div>
-                    <div style={{ marginTop: 2 }}>🤖 Android：Chrome 菜单 → 「添加到主屏幕」</div>
-                    <div style={{ marginTop: 4, color: "#bbb" }}>添加后从主屏幕图标打开，再来开启通知</div>
-                  </div>
+                <div onClick={notifStatus === "granted"
+                    ? () => { setNotifStatus("off"); localStorage.setItem("wv_notif_off","1"); }
+                    : requestNotification}
+                  style={{ width: 50, height: 28, borderRadius: 14, background: notifStatus === "granted" ? "#111" : "#ddd", cursor: "pointer", position: "relative", transition: "background 0.25s", flexShrink: 0 }}>
+                  <div style={{ position: "absolute", top: 3, left: notifStatus === "granted" ? 25 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", transition: "left 0.25s" }} />
                 </div>
-              )}
+              </div>
               {notifStatus === "granted" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2d8a4e" }} />
-                    <div style={{ fontSize: 13, color: "#2d8a4e", fontWeight: 600 }}>通知已开启</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>每天提醒时间</div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input type="time" value={notifTime} onChange={e => setNotifTime(e.target.value)} style={{ width: "auto", fontSize: 20, fontWeight: 600, border: "1.5px solid #e0e0e0", borderRadius: 8, padding: "6px 12px" }} />
-                      <button className="btn btn-dark btn-sm" onClick={saveNotifTime}>保存</button>
-                    </div>
-                  </div>
-                  <div style={{ background: "#f0fff4", border: "1px solid #c6f6d5", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#276749", lineHeight: 1.8 }}>
-                    <div style={{ fontWeight: 600, marginBottom: 4 }}>每天 {notifTime} 推送提醒 ✓</div>
-                    <div style={{ color: "#888" }}>锁屏推送需在 OneSignal 后台设置每日定时，下方有教程</div>
-                  </div>
-                  <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "14px", fontSize: 12, color: "#555", lineHeight: 1.9 }}>
-                    <div style={{ fontWeight: 700, color: "#111", marginBottom: 6 }}>设置锁屏推送（一次性操作）</div>
-                    <div>① 打开 <span style={{ fontWeight: 600 }}>onesignal.com</span> → 登录</div>
-                    <div>② 点 <span style={{ fontWeight: 600 }}>Messages → New Push</span></div>
-                    <div>③ Title 填 <span style={{ fontWeight: 600 }}>WordVault · 该学单词了</span></div>
-                    <div>④ Message 填 <span style={{ fontWeight: 600 }}>每天坚持，词汇量飞速增长</span></div>
-                    <div>⑤ Delivery → <span style={{ fontWeight: 600 }}>Recurring</span> → 选 Daily</div>
-                    <div>⑥ 时间设置为 <span style={{ fontWeight: 600, color: "#111" }}>{notifTime}</span> → Send</div>
-                    <div style={{ marginTop: 6, color: "#aaa" }}>设置后每天这个时间，手机锁屏也会收到推送</div>
-                  </div>
+                <div style={{ background: "#f0fff4", border: "1px solid #c6f6d5", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#276749" }}>
+                  已开启 · 每晚 22:00 提醒你练习单词，锁屏也能收到 🔔
+                </div>
+              )}
+              {notifStatus === "off" && (
+                <div style={{ fontSize: 13, color: "#aaa" }}>提醒已关闭，点上方开关重新开启</div>
+              )}
+              {notifStatus === "denied" && (
+                <div style={{ background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#e53e3e", lineHeight: 1.7 }}>
+                  通知权限被拒绝，请手动开启：<br/>
+                  手机「设置」→「通知」→ 找到 WordVault → 打开通知
+                </div>
+              )}
+              {notifStatus !== "granted" && notifStatus !== "denied" && notifStatus !== "off" && (
+                <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#888", lineHeight: 1.8 }}>
+                  <div style={{ fontWeight: 600, color: "#555", marginBottom: 4 }}>iOS 用户需先添加到主屏幕</div>
+                  <div>Safari → 底部「分享」→「添加到主屏幕」</div>
+                  <div>从主屏幕图标打开 → 再点上方开关开启</div>
                 </div>
               )}
             </div>
