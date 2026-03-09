@@ -628,9 +628,30 @@ export default function VocabApp() {
     }, 500);
   }
 
-  // Global light haptic on every tap
+  // Global click sound + haptic on every interactive element
   useEffect(() => {
-    const handler = () => navigator.vibrate && navigator.vibrate(6);
+    let ctx = null;
+    const playClick = () => {
+      try {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === "suspended") ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.06);
+      } catch {}
+    };
+    const handler = (e) => {
+      const el = e.target.closest("button, .tag-pill, .opt-btn, .nav-item, [role='button']");
+      if (el) { playClick(); navigator.vibrate && navigator.vibrate(6); }
+    };
     document.addEventListener("pointerdown", handler);
     return () => document.removeEventListener("pointerdown", handler);
   }, []);
