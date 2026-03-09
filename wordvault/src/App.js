@@ -787,8 +787,8 @@ export default function VocabApp() {
   // Splash screen state: "in" | "out" | "done"
   const [splash, setSplash] = useState("in");
   useEffect(() => {
-    const t1 = setTimeout(() => setSplash("out"), 1800);
-    const t2 = setTimeout(() => setSplash("done"), 2500);
+    const t1 = setTimeout(() => setSplash("out"), 2400);
+    const t2 = setTimeout(() => setSplash("done"), 3100);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
@@ -848,7 +848,7 @@ export default function VocabApp() {
         }
         .splash-logo  { animation: splashLogoIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both; }
         .splash-sub   { animation: splashSubIn  0.6s cubic-bezier(0.22,1,0.36,1) 0.7s both; }
-        .splash-dot   { display: inline-block; width: 28px; height: 3px; border-radius: 2px; background: #fff; animation: splashDotPulse 1.1s ease-in-out 1s infinite; }
+        .splash-dot   { display: inline-block; width: 28px; height: 3px; border-radius: 2px; background: #fff; animation: splashDotPulse 1.4s ease-in-out 1s infinite; }
         .splash-exit  { animation: splashExit 0.55s cubic-bezier(0.4,0,1,1) forwards; }
       `}</style>
 
@@ -860,7 +860,7 @@ export default function VocabApp() {
             WordVault
           </div>
           <div className="splash-sub" style={{ fontSize: 13, color: "#666", letterSpacing: "3px", textTransform: "uppercase", marginBottom: 40 }}>
-            记住每一个单词
+            You can change the world !
           </div>
           <div className="splash-sub" style={{ animationDelay: "1s" }}>
             <span className="splash-dot" />
