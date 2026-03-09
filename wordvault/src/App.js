@@ -1187,12 +1187,12 @@ export default function VocabApp() {
                         </div>
                       )}
                     </div>
-                    <div>
+                    <div key={quizState.question + quizState.options.join()}>
                       {quizState.options.map((opt, i) => {
                         let cls = "opt-btn";
                         if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
                         return (
-                          <button key={i} className={cls} disabled={!!quizResult} onClick={() => handleMCQ(opt)}>
+                          <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}>
                             <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
                           </button>
                         );
@@ -1218,12 +1218,12 @@ export default function VocabApp() {
                       </div>
                       {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
                     </div>
-                    <div>
+                    <div key={quizState.question + quizState.options.join()}>
                       {quizState.options.map((opt, i) => {
                         let cls = "opt-btn";
                         if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
                         return (
-                          <button key={i} className={cls} disabled={!!quizResult} onClick={() => handleMCQ(opt)}>
+                          <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}>
                             <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
                           </button>
                         );
