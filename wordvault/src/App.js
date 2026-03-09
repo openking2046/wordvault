@@ -628,7 +628,12 @@ export default function VocabApp() {
     }, 500);
   }
 
-  // Detect challenge link on mount
+  // Global light haptic on every tap
+  useEffect(() => {
+    const handler = () => navigator.vibrate && navigator.vibrate(6);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
+  }, []);
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
