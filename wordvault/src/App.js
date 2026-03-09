@@ -183,15 +183,7 @@ export default function VocabApp() {
   const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | alpha
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
-  const [serverNotifyTime, setServerNotifyTime] = useState("22:00");
-
-  // Fetch notify time from server config
-  useEffect(() => {
-    fetch("/api/config")
-      .then(r => r.json())
-      .then(d => { if (d.notifyTime) setServerNotifyTime(d.notifyTime); })
-      .catch(() => {});
-  }, []);
+  const serverNotifyTime = process.env.REACT_APP_NOTIFY_TIME || "22:00";
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
   const [dailyGoal, setDailyGoal] = useState(() => parseInt(localStorage.getItem("wv_daily_goal") || "5"));
