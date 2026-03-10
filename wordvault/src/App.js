@@ -1764,70 +1764,151 @@ export default function VocabApp() {
         {/* Tab 1 */}
         {tab === 1 && (
           <div style={{ maxWidth: 480 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div className="sec-title" style={{ marginBottom: 0 }}>新建单词</div>
-              {!isPro && (
-                <div onClick={() => setShowUpgrade(true)} style={{ fontSize: 11, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#aaa", cursor: "pointer", fontWeight: 600 }}>
-                  {words.length}/{FREE_LIMIT} 词
-                  {words.length >= FREE_LIMIT && <span style={{ marginLeft: 4 }}>· 升级解锁</span>}
-                </div>
-              )}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Combo header bar */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <div>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>英文单词</div>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", letterSpacing: "-0.5px" }}>收录新词</div>
+                <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>今日已收录 <span style={{ color: "#111", fontWeight: 700 }}>{todayWords}</span> 个词</div>
+              </div>
+              {/* Combo badge */}
+              <div style={{ textAlign: "center", background: todayWords >= 3 ? "#111" : "#f5f5f5", borderRadius: 14, padding: "8px 14px", transition: "background 0.3s" }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: todayWords >= 3 ? "#fff" : "#111", lineHeight: 1 }}>
+                  {todayWords >= 10 ? "🔥" : todayWords >= 5 ? "⚡" : todayWords >= 3 ? "✦" : "＋"}
+                  {todayWords}
+                </div>
+                <div style={{ fontSize: 9, color: todayWords >= 3 ? "#888" : "#bbb", letterSpacing: "1.5px", marginTop: 2 }}>
+                  {todayWords >= 10 ? "ON FIRE" : todayWords >= 5 ? "COMBO" : todayWords >= 3 ? "STREAK" : "TODAY"}
+                </div>
+              </div>
+            </div>
+
+            {/* Live word card preview */}
+            {(newWord || newMeaning) && (
+              <div style={{ background: "#111", borderRadius: 18, padding: "18px 20px", marginBottom: 20, animation: "unlockSub 0.3s ease both" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: newWord ? "#fff" : "#333", letterSpacing: "-0.3px" }}>
+                    {newWord || "单词"}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#333", letterSpacing: "2px", background: "#1a1a1a", borderRadius: 6, padding: "3px 8px" }}>PREVIEW</div>
+                </div>
+                {newMeaning ? (
+                  <div style={{ fontSize: 14, color: "#aaa", marginBottom: newExample ? 10 : 0 }}>{newMeaning}</div>
+                ) : (
+                  <div style={{ fontSize: 13, color: "#2a2a2a", fontStyle: "italic" }}>释义将出现在这里…</div>
+                )}
+                {newExample && (
+                  <div style={{ fontSize: 12, color: "#555", fontStyle: "italic", borderLeft: "2px solid #2a2a2a", paddingLeft: 10, marginTop: 8, lineHeight: 1.5 }}>
+                    {newExample}
+                  </div>
+                )}
+                {newTags.length > 0 && (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
+                    {newTags.map(t => <span key={t} style={{ fontSize: 10, color: "#555", background: "#1a1a1a", borderRadius: 6, padding: "3px 8px", border: "1px solid #2a2a2a" }}>{t}</span>)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Word input + AI */}
+              <div>
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>英文单词</div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <input value={newWord} onChange={e => setNewWord(e.target.value)} placeholder="e.g. Tenacious" />
-                  <button className="btn btn-dark btn-sm" onClick={handleAIGenerate} disabled={aiLoading || !newWord.trim()} style={{ whiteSpace: "nowrap" }}>
-                    {aiLoading ? "…" : "AI 填写"}
+                  <input value={newWord} onChange={e => setNewWord(e.target.value)}
+                    placeholder="e.g. Tenacious"
+                    style={{ flex: 1, fontSize: 17, fontWeight: 500, background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 12 }}
+                    onKeyDown={e => e.key === "Enter" && !aiLoading && newWord.trim() && handleAIGenerate()} />
+                  <button onClick={handleAIGenerate} disabled={aiLoading || !newWord.trim()}
+                    style={{ whiteSpace: "nowrap", background: (!aiLoading && newWord.trim()) ? "#111" : "#f0f0f0",
+                      color: (!aiLoading && newWord.trim()) ? "#fff" : "#ccc",
+                      border: "none", borderRadius: 12, padding: "0 16px", fontSize: 13, fontWeight: 700,
+                      cursor: (!aiLoading && newWord.trim()) ? "pointer" : "not-allowed", fontFamily: "inherit",
+                      transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
+                    {aiLoading ? (
+                      <span style={{ display: "inline-block", animation: "cursorBlink 0.6s ease infinite" }}>✦</span>
+                    ) : "✦ AI"}
                   </button>
                 </div>
+                {!newWord && <div style={{ fontSize: 11, color: "#ccc", marginTop: 5 }}>输入后按 Enter 让 AI 自动填写</div>}
               </div>
+
+              {/* Meaning */}
               <div>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>中文释义</div>
-                <input value={newMeaning} onChange={e => setNewMeaning(e.target.value)} placeholder="e.g. 坚韧的，顽强的" />
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>中文释义</div>
+                <input value={newMeaning} onChange={e => setNewMeaning(e.target.value)}
+                  placeholder="e.g. 坚韧的，顽强的"
+                  style={{ background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 12 }} />
               </div>
+
+              {/* Example — collapsible hint */}
               <div>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>例句（可选）</div>
-                <textarea value={newExample} onChange={e => setNewExample(e.target.value)} placeholder="e.g. She was tenacious in pursuing her goals." rows={3} style={{ resize: "none" }} />
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>
+                  例句 <span style={{ color: "#ccc", fontWeight: 400, textTransform: "none" }}>（可选）</span>
+                </div>
+                <textarea value={newExample} onChange={e => setNewExample(e.target.value)}
+                  placeholder="e.g. She was tenacious in pursuing her goals." rows={2}
+                  style={{ resize: "none", background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 12, lineHeight: 1.5 }} />
               </div>
+
+              {/* Tags — compact */}
               <div>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>标签</div>
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 8, textTransform: "uppercase" }}>标签</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                   {userTags.map(tag => (
                     <span key={tag} style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 4 }} className={`tag-pill ${newTags.includes(tag) ? "active" : ""}`}>
                       {editingTag?.old === tag ? (
-                        <input
-                          autoFocus
-                          defaultValue={tag}
+                        <input autoFocus defaultValue={tag}
                           onBlur={e => renameTag(tag, e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter") renameTag(tag, e.target.value); if (e.key === "Escape") setEditingTag(null); }}
                           onClick={e => e.stopPropagation()}
-                          style={{ width: Math.max(40, tag.length * 14) + "px", padding: "0 4px", fontSize: 12, border: "none", borderBottom: "1px solid #111", background: "transparent", outline: "none", fontFamily: "inherit" }}
-                        />
+                          style={{ width: Math.max(40, tag.length * 14) + "px", padding: "0 4px", fontSize: 12, border: "none", borderBottom: "1px solid #111", background: "transparent", outline: "none", fontFamily: "inherit" }} />
                       ) : (
                         <span onClick={() => toggleNewTag(tag)} onDoubleClick={e => { e.stopPropagation(); setEditingTag({ old: tag }); }}>{tag}</span>
                       )}
                       {confirmDeleteTag === tag ? (
                         <>
                           <span style={{ fontSize: 11, color: "#e53e3e", whiteSpace: "nowrap" }}>删除?</span>
-                          <span onClick={e => { e.stopPropagation(); deleteUserTag(tag); setConfirmDeleteTag(null); }} style={{ fontSize: 12, color: "#e53e3e", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>✓</span>
-                          <span onClick={e => { e.stopPropagation(); setConfirmDeleteTag(null); }} style={{ fontSize: 12, color: "#888", cursor: "pointer", fontWeight: 700, lineHeight: 1 }}>✗</span>
+                          <span onClick={e => { e.stopPropagation(); deleteUserTag(tag); setConfirmDeleteTag(null); }} style={{ fontSize: 12, color: "#e53e3e", cursor: "pointer", fontWeight: 700 }}>✓</span>
+                          <span onClick={e => { e.stopPropagation(); setConfirmDeleteTag(null); }} style={{ fontSize: 12, color: "#888", cursor: "pointer", fontWeight: 700 }}>✗</span>
                         </>
                       ) : (
-                        <span onClick={e => { e.stopPropagation(); setConfirmDeleteTag(tag); }} style={{ fontSize: 13, lineHeight: 1, opacity: 0.6, cursor: "pointer" }}>×</span>
+                        <span onClick={e => { e.stopPropagation(); setConfirmDeleteTag(tag); }} style={{ fontSize: 13, opacity: 0.5, cursor: "pointer" }}>×</span>
                       )}
                     </span>
                   ))}
-                  <div style={{ fontSize: 11, color: "#aaa", width: "100%", marginTop: 4 }}>双击标签可修改名称</div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <input value={customTag} onChange={e => setCustomTag(e.target.value)} placeholder="自定义标签" onKeyDown={e => e.key === "Enter" && addCustomTag()} />
-                  <button className="btn btn-outline btn-sm" onClick={addCustomTag}>添加</button>
+                  <input value={customTag} onChange={e => setCustomTag(e.target.value)}
+                    placeholder="新标签…" style={{ background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 10 }}
+                    onKeyDown={e => e.key === "Enter" && addCustomTag()} />
+                  <button className="btn btn-outline btn-sm" onClick={addCustomTag} style={{ borderRadius: 10 }}>添加</button>
                 </div>
-
+                <div style={{ fontSize: 10, color: "#ccc", marginTop: 6 }}>双击标签可修改名称</div>
               </div>
-              <button className="btn btn-dark" onClick={handleAddWord} style={{ width: "100%", marginTop: 4 }}>添加单词</button>
+
+              {/* Unlock button */}
+              <button onClick={handleAddWord}
+                disabled={!newWord.trim() || !newMeaning.trim()}
+                style={{ width: "100%", marginTop: 4, padding: "17px 0", borderRadius: 16, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16, cursor: (!newWord.trim() || !newMeaning.trim()) ? "not-allowed" : "pointer",
+                  background: (!newWord.trim() || !newMeaning.trim()) ? "#f0f0f0" : "#111",
+                  color: (!newWord.trim() || !newMeaning.trim()) ? "#ccc" : "#fff",
+                  transition: "all 0.2s", letterSpacing: "0.3px" }}>
+                {(!newWord.trim() || !newMeaning.trim()) ? "填写单词和释义后解锁" : `🔓 收录「${newWord.trim()}」`}
+              </button>
+
+              {/* Word count bar */}
+              {!isPro && (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ height: 3, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
+                    <div style={{ height: "100%", background: words.length >= FREE_LIMIT ? "#e53e3e" : "#111", borderRadius: 2, width: Math.min(100, words.length / FREE_LIMIT * 100) + "%", transition: "width 0.4s" }} />
+                  </div>
+                  <div onClick={() => words.length >= FREE_LIMIT && setShowUpgrade(true)}
+                    style={{ fontSize: 11, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#bbb", cursor: words.length >= FREE_LIMIT ? "pointer" : "default" }}>
+                    词库 {words.length}/{FREE_LIMIT} 词{words.length >= FREE_LIMIT ? " · 升级 Pro 解锁无限" : ""}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
