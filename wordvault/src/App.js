@@ -1397,13 +1397,14 @@ export default function VocabApp() {
         .game-card-btn {
           -webkit-tap-highlight-color: transparent;
           touch-action: manipulation;
-          transition: border-color 0.1s ease, box-shadow 0.1s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+          user-select: none;
+          -webkit-user-select: none;
+          transition: border-color 0.08s ease, transform 0.08s ease;
         }
         .game-card-btn:active {
           border-color: #111 !important;
           box-shadow: 0 0 0 2px #111 !important;
-          transform: scale(0.96);
-          transition: border-color 0.05s ease, box-shadow 0.05s ease, transform 0.08s ease;
+          transform: scale(0.95);
         }
 
         /* Nav center button bounce */
@@ -2224,7 +2225,9 @@ export default function VocabApp() {
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
                 const renderCard = (g) => {
-                  function go() {
+                  function go(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     haptic("medium");
                     if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
                     else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
@@ -2232,29 +2235,33 @@ export default function VocabApp() {
                     else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
                   }
                   return (
-                    <button key={g.id} onClick={go} className="game-card-btn"
+                    <div key={g.id}
+                      onTouchEnd={go}
+                      onClick={go}
+                      role="button"
+                      className="game-card-btn"
                       style={{ display: "flex", flexDirection: "column", justifyContent: "space-between",
                         width: "100%", textAlign: "left", fontFamily: "inherit",
                         background: "#fff", borderRadius: 18, padding: "18px 16px", marginBottom: 10,
                         boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                         border: g.alert ? "2.5px solid " + g.color + "44" : "2.5px solid transparent",
                         minHeight: 150, cursor: "pointer",
-                        position: "relative", overflow: "hidden" }}
+                        position: "relative", overflow: "hidden",
+                        userSelect: "none" }}
                     >
-                      {/* Big background number */}
                       <div style={{ position: "absolute", top: -8, right: 10,
                         fontFamily: "DM Serif Display, serif", fontSize: 88, fontWeight: 700, lineHeight: 1,
                         color: g.color, opacity: 0.07, userSelect: "none", pointerEvents: "none", letterSpacing: "-4px"
                       }}>{g.num}</div>
-                      <div style={{ position: "relative" }}>
+                      <div style={{ position: "relative", pointerEvents: "none" }}>
                         <div style={{ fontSize: 28, marginBottom: 10 }}>{g.icon}</div>
                         <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 17, color: "#111", marginBottom: 5, letterSpacing: "-0.3px" }}>{g.name}</div>
                         <div style={{ fontSize: 11, color: "#999", lineHeight: 1.5 }}>{g.desc}</div>
                       </div>
-                      <div style={{ marginTop: 14, position: "relative" }}>
+                      <div style={{ marginTop: 14, position: "relative", pointerEvents: "none" }}>
                         <span style={{ fontSize: 10, fontWeight: 700, color: g.color, background: g.color + "14", borderRadius: 6, padding: "3px 8px" }}>{g.sub}</span>
                       </div>
-                    </button>
+                    </div>
                   );
                 };
                 return (
