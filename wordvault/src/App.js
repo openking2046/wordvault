@@ -926,7 +926,7 @@ export default function VocabApp() {
       const last = localStorage.getItem("wv_last_notif");
       if (last === todayKey) return;
       localStorage.setItem("wv_last_notif", todayKey);
-      new Notification("WordVault · 该学单词了", {
+      new Notification("WordCombo · 该学单词了", {
         body: "每天坚持，词汇量会飞速增长 ✓",
         icon: "/logo192.png",
         tag: "wv-daily",
@@ -990,10 +990,68 @@ export default function VocabApp() {
 
   // Splash screen state: "in" | "out" | "done"
   const [splash, setSplash] = useState("in");
+  const [typedText, setTypedText] = useState("");
+  const [typedLine2, setTypedLine2] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  const [splashPhase, setSplashPhase] = useState(0); // 0=logo, 1=typing line1, 2=typing line2, 3=done typing
+
+  const LINE1 = "The more you hit, the less you forget.";
+  const LINE2 = "Welcome to WordCombo";
+
   useEffect(() => {
-    const t1 = setTimeout(() => setSplash("out"), 2400);
-    const t2 = setTimeout(() => setSplash("done"), 3100);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // Typewriter audio
+    let audioCtx = null;
+    const playKey = () => {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.04, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.012));
+        const src = audioCtx.createBufferSource();
+        const gain = audioCtx.createGain();
+        src.buffer = buf; src.connect(gain); gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+        src.start();
+      } catch {}
+    };
+
+    // Phase 0: logo appears (0.6s)
+    const t0 = setTimeout(() => setSplashPhase(1), 700);
+
+    // Phase 1: type line 1
+    let idx1 = 0;
+    const t1 = setTimeout(() => {
+      const iv = setInterval(() => {
+        idx1++;
+        setTypedText(LINE1.slice(0, idx1));
+        playKey();
+        if (idx1 >= LINE1.length) {
+          clearInterval(iv);
+          setSplashPhase(2);
+          // Phase 2: type line 2 after pause
+          let idx2 = 0;
+          setTimeout(() => {
+            const iv2 = setInterval(() => {
+              idx2++;
+              setTypedLine2(LINE2.slice(0, idx2));
+              playKey();
+              if (idx2 >= LINE2.length) {
+                clearInterval(iv2);
+                setSplashPhase(3);
+              }
+            }, 55);
+          }, 400);
+        }
+      }, 42);
+    }, 700);
+
+    // Exit
+    const totalTypingMs = 700 + LINE1.length * 42 + 400 + LINE2.length * 55 + 600;
+    const tOut = setTimeout(() => setSplash("out"), totalTypingMs);
+    const tDone = setTimeout(() => setSplash("done"), totalTypingMs + 700);
+
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(tOut); clearTimeout(tDone); };
   }, []);
 
   return (
@@ -1060,25 +1118,34 @@ export default function VocabApp() {
 
         /* Splash */
         @keyframes splashLogoIn {
-          from { opacity: 0; transform: translateY(18px) scale(0.94); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
+          0%   { opacity: 0; transform: scale(0.6) translateY(10px); filter: blur(8px); }
+          60%  { opacity: 1; transform: scale(1.06) translateY(-2px); filter: blur(0); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
         }
-        @keyframes splashSubIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes splashScanline {
+          0%   { transform: translateY(-100%); opacity: 0.06; }
+          100% { transform: translateY(100vh); opacity: 0.06; }
         }
-        @keyframes splashDotPulse {
-          0%, 100% { transform: scaleX(1); opacity: 1; }
-          50% { transform: scaleX(1.6); opacity: 0.5; }
+        @keyframes splashGlow {
+          0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+          50%       { text-shadow: 0 0 40px rgba(255,255,255,0.5), 0 0 80px rgba(255,255,255,0.2); }
         }
         @keyframes splashExit {
-          from { opacity: 1; transform: translateY(0); }
-          to   { opacity: 0; transform: translateY(-32px); }
+          0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+          40%  { opacity: 1; transform: scale(1.04); filter: blur(0); }
+          100% { opacity: 0; transform: scale(1.12); filter: blur(12px); }
         }
-        .splash-logo  { animation: splashLogoIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both; }
-        .splash-sub   { animation: splashSubIn  0.6s cubic-bezier(0.22,1,0.36,1) 0.7s both; }
-        .splash-dot   { display: inline-block; width: 28px; height: 3px; border-radius: 2px; background: #fff; animation: splashDotPulse 1.4s ease-in-out 1s infinite; }
-        .splash-exit  { animation: splashExit 0.55s cubic-bezier(0.4,0,1,1) forwards; }
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; } 50% { opacity: 0; }
+        }
+        @keyframes splashBadgeIn {
+          0%   { opacity: 0; transform: translateY(16px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .splash-logo-anim { animation: splashLogoIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s both, splashGlow 2.5s ease-in-out 1s infinite; }
+        .splash-exit      { animation: splashExit 0.6s cubic-bezier(0.4,0,0.6,1) forwards; }
+        .splash-cursor    { display: inline-block; width: 2px; height: 1em; background: #fff; margin-left: 2px; vertical-align: text-bottom; animation: cursorBlink 0.7s step-end infinite; }
+        .splash-badge     { animation: splashBadgeIn 0.5s ease 0.3s both; }
       `}</style>
 
       {/* Profile Setup */}
@@ -1123,15 +1190,68 @@ export default function VocabApp() {
       {/* Splash Screen */}
       {splash !== "done" && (
         <div className={splash === "out" ? "splash-exit" : ""}
-          style={{ position: "fixed", inset: 0, background: "#111", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0 }}>
-          <div className="splash-logo" style={{ fontFamily: "DM Serif Display, serif", fontSize: 42, color: "#fff", letterSpacing: "-0.5px", marginBottom: 10 }}>
-            WordVault
-          </div>
-          <div className="splash-sub" style={{ fontSize: 13, color: "#666", letterSpacing: "3px", textTransform: "uppercase", marginBottom: 40 }}>
-            You can change the world !
-          </div>
-          <div className="splash-sub" style={{ animationDelay: "1s" }}>
-            <span className="splash-dot" />
+          style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden",
+            background: "linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0d0d1a 100%)" }}>
+
+          {/* Subtle grid overlay */}
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none" }} />
+
+          {/* Scanline sweep */}
+          <div style={{ position: "absolute", left: 0, right: 0, height: "30%", background: "linear-gradient(transparent, rgba(255,255,255,0.03), transparent)", animation: "splashScanline 3s linear infinite", pointerEvents: "none" }} />
+
+          {/* Corner brackets — game HUD feel */}
+          {[["0 0","border-top border-left"],["0 auto 0 0","border-top border-right"],["auto 0 0 0","border-bottom border-left"],["auto 0 0 auto","border-bottom border-right"]].map(([inset], i) => (
+            <div key={i} style={{ position: "absolute", width: 24, height: 24, border: "1.5px solid rgba(255,255,255,0.15)",
+              top: i < 2 ? 28 : "auto", bottom: i >= 2 ? 28 : "auto",
+              left: i % 2 === 0 ? 24 : "auto", right: i % 2 === 1 ? 24 : "auto",
+              borderRight: i % 2 === 0 ? "none" : undefined, borderLeft: i % 2 === 1 ? "none" : undefined,
+              borderBottom: i < 2 ? "none" : undefined, borderTop: i >= 2 ? "none" : undefined,
+            }} />
+          ))}
+
+          {/* Main content */}
+          <div style={{ textAlign: "center", padding: "0 32px", position: "relative", zIndex: 1 }}>
+
+            {/* Logo */}
+            {splashPhase >= 0 && (
+              <div className="splash-logo-anim" style={{ fontFamily: "DM Serif Display, serif", fontSize: 52, color: "#fff", letterSpacing: "-1px", lineHeight: 1, marginBottom: 8 }}>
+                WordCombo
+              </div>
+            )}
+
+            {/* Version tag */}
+            <div className="splash-badge" style={{ display: "inline-block", fontSize: 10, letterSpacing: "3px", color: "#444", textTransform: "uppercase", marginBottom: 48 }}>
+              VOCABULARY · UNLEASHED
+            </div>
+
+            {/* Typewriter line 1 */}
+            <div style={{ minHeight: 60, marginBottom: 8 }}>
+              {splashPhase >= 1 && (
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", lineHeight: 1.4, letterSpacing: "-0.3px" }}>
+                  {typedText}
+                  {splashPhase === 1 && <span className="splash-cursor" />}
+                </div>
+              )}
+            </div>
+
+            {/* Typewriter line 2 */}
+            <div style={{ minHeight: 32 }}>
+              {splashPhase >= 2 && (
+                <div style={{ fontSize: 13, color: "#555", letterSpacing: "1px" }}>
+                  {typedLine2}
+                  {splashPhase === 2 && <span className="splash-cursor" />}
+                </div>
+              )}
+            </div>
+
+            {/* Done indicator */}
+            {splashPhase === 3 && (
+              <div style={{ marginTop: 36, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, animation: "splashBadgeIn 0.4s ease both" }}>
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#333", animation: "cursorBlink 0.8s ease infinite" }} />
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#444", animation: "cursorBlink 0.8s ease 0.15s infinite" }} />
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#333", animation: "cursorBlink 0.8s ease 0.3s infinite" }} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1253,7 +1373,7 @@ export default function VocabApp() {
               </div>
             </div>
           )}
-          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
+          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.3px" }}>WordCombo</div>
           <div style={{ fontSize: 12, color: "#777", marginTop: 3 }}>
             {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""} · 已掌握 {words.filter(w => w.mastery >= 4).length}/{words.length}
           </div>
@@ -2403,7 +2523,7 @@ export default function VocabApp() {
               {notifStatus === "denied" && (
                 <div style={{ background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#e53e3e", lineHeight: 1.7 }}>
                   通知权限被拒绝，请手动开启：<br/>
-                  手机「设置」→「通知」→ 找到 WordVault → 打开通知
+                  手机「设置」→「通知」→ 找到 WordCombo → 打开通知
                 </div>
               )}
               {notifStatus !== "granted" && notifStatus !== "denied" && notifStatus !== "off" && (
@@ -2497,7 +2617,7 @@ export default function VocabApp() {
                   <div style={{ background: "#f7f7f7", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#555", wordBreak: "break-all", marginBottom: 10, lineHeight: 1.6 }}>{generatedLink}</div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className="btn btn-dark" style={{ flex: 1 }} onClick={copyLink}>复制链接</button>
-                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { if (navigator.share) navigator.share({ title: `${challengeSenderName} 向你发起了 WordVault 挑战！`, url: generatedLink }); else copyLink(); }}>分享</button>
+                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { if (navigator.share) navigator.share({ title: `${challengeSenderName} 向你发起了 WordCombo 挑战！`, url: generatedLink }); else copyLink(); }}>分享</button>
                   </div>
                 </div>
               )}
@@ -2577,7 +2697,7 @@ export default function VocabApp() {
                       const correct = challengeAnswers.filter(a => a.correct).length;
                       const total = challengeWords.length;
                       const acc = Math.round(correct / total * 100);
-                      const text = `我挑战了 ${challengeFrom} 的 WordVault 词单！\n答对 ${correct}/${total} 题，正确率 ${acc}%\n快来挑战：${window.location.href}`;
+                      const text = `我挑战了 ${challengeFrom} 的 WordCombo 词单！\n答对 ${correct}/${total} 题，正确率 ${acc}%\n快来挑战：${window.location.href}`;
                       if (navigator.share) navigator.share({ text }); else { navigator.clipboard.writeText(text).then(() => showMsg("结果已复制！")); }
                     }}>
                     分享结果
