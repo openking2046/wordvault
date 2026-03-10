@@ -311,6 +311,7 @@ export default function VocabApp() {
   const pairPoolRef = useRef([]); // shuffled word pool for continuous flow
   const pairPoolIdxRef = useRef(0);
   const pairCardCounterRef = useRef(0); // unique id counter
+  const pairSoundRef = useRef(null);
   const [isPro, setIsPro] = useState(() => localStorage.getItem("wv_pro") === "1");
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [spellingInput, setSpellingInput] = useState("");
@@ -798,7 +799,6 @@ export default function VocabApp() {
   }
 
   // ── Combo Pair Game ──
-  const pairSoundRef = useRef(null);
 
   function playPairSound(type) {
     try {
