@@ -126,7 +126,7 @@ const TASKS = [
 const NAV = [
   { icon: "☰", label: "单词库" },
   { icon: "+", label: "添加" },
-  { icon: "◎", label: "测验" },
+  { icon: "◎", label: "Combo" },
   { icon: "▦", label: "进度" },
   { icon: "⊙", label: "设置" },
 ];
@@ -461,7 +461,7 @@ export default function VocabApp() {
     setQuizResult(null);
     setSpellingInput("");
     setHintRevealed(0);
-    if (m === "listen") setTimeout(() => speak(target.word), 200);
+    // listen mode: do NOT auto-play, user taps the button
   }, [words, filterTag, quizMode, wrongBank]);
 
   useEffect(() => { if (tab === 2) { setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); startQuiz(); } }, [tab, startQuiz]);
@@ -1365,6 +1365,8 @@ export default function VocabApp() {
         button, .tag-pill, .word-row, .opt-btn, .nav-item, [role="button"] {
           -webkit-tap-highlight-color: transparent;
         }
+        .game-card { transition: transform 0.12s, box-shadow 0.12s; }
+        .game-card:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important; }
         button:active, .tag-pill:active, .opt-btn:active, .nav-item:active {
           transform: scale(0.94);
           transition: transform 0.08s ease;
@@ -2157,14 +2159,14 @@ export default function VocabApp() {
                 const dueCount = getDueWords(words).length;
                 const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
                 const games = [
-                  { id: "normal",    icon: "📖", name: "释义选词", desc: "看单词，选正确释义", sub: "经典模式", color: "#111" },
-                  { id: "listen",    icon: "🔊", name: "听音辨词", desc: "听发音，判断正确单词", sub: "耳力训练", color: "#2d6bcf" },
-                  { id: "spell",     icon: "✍️", name: "拼写练习", desc: "看释义，打出完整单词", sub: "手感养成", color: "#7c3aed" },
-                  { id: "review",    icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
-                  { id: "wrong",     icon: "🎯", name: "错词研究", desc: "专项攻克做错的单词", sub: wrongCount > 0 ? wrongCount + " 词待攻克" : "暂无错词", color: wrongCount > 0 ? "#e53e3e" : "#888", alert: wrongCount > 0 },
-                  { id: "battle",    icon: "⚡", name: "限时挑战", desc: "60秒内答对最多题，生成战绩图", sub: "高压竞速", color: "#c2410c" },
-                  { id: "pair",      icon: "🔗", name: "Combo配对", desc: "点击配对单词与释义，连击得分", sub: "连击模式", color: "#0891b2" },
-                  { id: "challenge", icon: "👥", name: "好友挑战", desc: "选词生成链接，发给朋友对战", sub: "社交对战", color: "#7c3aed" },
+                  { id: "normal",    num: 1, icon: "📖", name: "释义选词", desc: "看单词，选正确释义", sub: "经典模式", color: "#111" },
+                  { id: "listen",    num: 2, icon: "🔊", name: "听音辨词", desc: "听发音，判断正确单词", sub: "耳力训练", color: "#2d6bcf" },
+                  { id: "spell",     num: 3, icon: "✍️", name: "拼写练习", desc: "看释义，打出完整单词", sub: "手感养成", color: "#7c3aed" },
+                  { id: "review",    num: 4, icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
+                  { id: "wrong",     num: 5, icon: "🎯", name: "错词研究", desc: "专项攻克做错的单词", sub: wrongCount > 0 ? wrongCount + " 词待攻克" : "暂无错词", color: wrongCount > 0 ? "#e53e3e" : "#888", alert: wrongCount > 0 },
+                  { id: "battle",    num: 6, icon: "⚡", name: "限时挑战", desc: "60秒内答对最多题，生成战绩图", sub: "高压竞速", color: "#c2410c" },
+                  { id: "pair",      num: 7, icon: "🔗", name: "Combo配对", desc: "点击配对单词与释义，连击得分", sub: "连击模式", color: "#0891b2" },
+                  { id: "challenge", num: 8, icon: "👥", name: "好友挑战", desc: "选词生成链接，发给朋友对战", sub: "社交对战", color: "#7c3aed" },
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
@@ -2177,21 +2179,29 @@ export default function VocabApp() {
                       else if (g.id === "battle") { setQuizMode("battle"); setQuizLobby(false); if (!battleActive && !showBattleResult) startBattle(); }
                       else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
                     }}
+                    className="game-card"
                     style={{ background: "#fff", borderRadius: 18, padding: "18px 16px", marginBottom: 10, cursor: "pointer",
                       boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                       border: g.alert ? "1.5px solid " + g.color + "33" : "1.5px solid transparent",
                       minHeight: 150, display: "flex", flexDirection: "column", justifyContent: "space-between",
-                      transition: "transform 0.15s, box-shadow 0.15s" }}
-                    onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)"; }}
-                    onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)"; }}
+                      position: "relative", overflow: "hidden" }}
                   >
-                    <div>
+                    {/* Big background number */}
+                    <div style={{
+                      position: "absolute", top: -8, right: 10,
+                      fontFamily: "DM Serif Display, serif",
+                      fontSize: 88, fontWeight: 700, lineHeight: 1,
+                      color: g.color, opacity: 0.07,
+                      userSelect: "none", pointerEvents: "none",
+                      letterSpacing: "-4px"
+                    }}>{g.num}</div>
+
+                    <div style={{ position: "relative" }}>
                       <div style={{ fontSize: 28, marginBottom: 10 }}>{g.icon}</div>
                       <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 17, color: "#111", marginBottom: 5, letterSpacing: "-0.3px" }}>{g.name}</div>
                       <div style={{ fontSize: 11, color: "#999", lineHeight: 1.5 }}>{g.desc}</div>
                     </div>
-                    <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: g.color, background: g.color + "14", borderRadius: 6, padding: "3px 8px" }}>{g.sub}</span>
                       <span style={{ fontSize: 16, color: "#ccc" }}>›</span>
                     </div>
@@ -3352,7 +3362,7 @@ export default function VocabApp() {
               <div className="nav-center-btn">
                 <em className="nav-center-icon">◎</em>
               </div>
-              <span className="nav-label">测验</span>
+              <span className="nav-label">Combo</span>
             </button>
           );
           return (
