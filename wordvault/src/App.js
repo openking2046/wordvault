@@ -294,6 +294,19 @@ export default function VocabApp() {
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong" | "listen" | "spell"
+  const [quizLobby, setQuizLobby] = useState(true); // true = show game selection cards
+
+  // Combo Pair Game state
+  const [pairActive, setPairActive] = useState(false);
+  const [pairCards, setPairCards] = useState([]); // {id, text, type:'word'|'meaning', wordId, matched, selected}
+  const [pairSelected, setPairSelected] = useState(null);
+  const [pairMatched, setPairMatched] = useState([]);
+  const [pairTimer, setPairTimer] = useState(90);
+  const [pairCombo, setPairCombo] = useState(0);
+  const [pairMaxCombo, setPairMaxCombo] = useState(0);
+  const [pairDone, setPairDone] = useState(false);
+  const [pairScore, setPairScore] = useState(0);
+  const pairTimerRef = useRef(null);
   const [isPro, setIsPro] = useState(() => localStorage.getItem("wv_pro") === "1");
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [spellingInput, setSpellingInput] = useState("");
@@ -780,6 +793,77 @@ export default function VocabApp() {
     ctx.fillText("wordvault-woad.vercel.app", W - 36, H - 24);
   }
 
+  // ── Combo Pair Game ──
+  function startPairGame() {
+    const pool = words.length >= 5 ? words : null;
+    if (!pool) { showMsg("至少需要 5 个单词才能配对"); return; }
+    const selected = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+    const leftCards = selected.map((w, i) => ({ id: 'w'+i, text: w.word, type: 'word', wordId: i, matched: false, selected: false }));
+    const rightCards = [...selected].sort(() => Math.random() - 0.5).map((w, i) => {
+      const idx = selected.findIndex(s => s.id === w.id);
+      return { id: 'm'+i, text: w.meaning.split('；')[0].split(';')[0].slice(0,12), type: 'meaning', wordId: idx, matched: false, selected: false };
+    });
+    setPairCards([...leftCards, ...rightCards]);
+    setPairSelected(null);
+    setPairMatched([]);
+    setPairCombo(0);
+    setPairMaxCombo(0);
+    setPairScore(0);
+    setPairTimer(90);
+    setPairDone(false);
+    setPairActive(true);
+    clearInterval(pairTimerRef.current);
+    pairTimerRef.current = setInterval(() => {
+      setPairTimer(t => {
+        if (t <= 1) { clearInterval(pairTimerRef.current); setPairDone(true); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+  }
+
+  function handlePairTap(card) {
+    if (card.matched || pairDone) return;
+    setPairCards(cards => {
+      const updated = cards.map(c => ({ ...c, selected: c.id === card.id ? true : (c.type !== card.type ? c.selected : false) }));
+      const wordSel = updated.find(c => c.type === 'word' && c.selected);
+      const meanSel = updated.find(c => c.type === 'meaning' && c.selected);
+      if (wordSel && meanSel) {
+        if (wordSel.wordId === meanSel.wordId) {
+          // Match!
+          haptic('success');
+          const newCards = updated.map(c => c.id === wordSel.id || c.id === meanSel.id ? { ...c, matched: true, selected: false } : c);
+          setPairMatched(m => [...m, wordSel.wordId]);
+          setPairCombo(c => {
+            const nc = c + 1;
+            setPairMaxCombo(mx => Math.max(mx, nc));
+            setPairScore(s => s + 10 + nc * 5);
+            return nc;
+          });
+          if (newCards.filter(c => !c.matched).length === 0) {
+            clearInterval(pairTimerRef.current);
+            setTimeout(() => setPairDone(true), 400);
+          }
+          return newCards;
+        } else {
+          // Wrong
+          haptic('error');
+          setPairCombo(0);
+          setTimeout(() => setPairCards(cs => cs.map(c => ({ ...c, selected: false }))), 600);
+          return updated.map(c => ({ ...c, selected: c.id === wordSel.id || c.id === meanSel.id ? false : c.selected, wrong: c.id === wordSel.id || c.id === meanSel.id ? true : false }));
+        }
+      }
+      return updated;
+    });
+    setTimeout(() => setPairCards(cs => cs.map(c => ({ ...c, wrong: false }))), 500);
+  }
+
+  function endPairGame() {
+    clearInterval(pairTimerRef.current);
+    setPairActive(false);
+    setPairDone(false);
+    setQuizLobby(true);
+  }
+
   // ── Challenge Link functions ──
   function generateChallengeLink() {
     if (challengeSelectedWords.length === 0) { showMsg("请至少选择 1 个单词"); return; }
@@ -1117,11 +1201,18 @@ export default function VocabApp() {
         .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; }
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
-        .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; }
+        .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
+        .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
+        .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #111; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: transform 0.15s; }
+        .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
+        .nav-center-icon { font-size: 20px; line-height: 1; color: #fff; font-style: normal; }
         .nav-icon { font-size: 17px; line-height: 1; color: #888; font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
         .nav-item.active .nav-icon, .nav-item.active .nav-label { color: #111; font-weight: 600; }
+        .nav-item-center .nav-label { color: #888; font-size: 10px; }
+        .nav-item-center.active .nav-label { color: #111; font-weight: 600; }
+        .nav-item-center.active .nav-center-btn { background: #000; }
         .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; }
         .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
@@ -1916,358 +2007,325 @@ export default function VocabApp() {
         {/* Tab 2 */}
         {tab === 2 && (
           <div style={{ maxWidth: 480 }}>
-            {/* Challenge entry button */}
-            <div onClick={() => { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: "1.5px dashed #e0e0e0", borderRadius: 12, padding: "12px 16px", marginBottom: 18, cursor: "pointer", background: "#fafafa" }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>🔗 发起好友挑战</div>
-                <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>从词库选词，生成链接发给朋友</div>
-              </div>
-              <span style={{ fontSize: 18, color: "#ccc" }}>›</span>
-            </div>
-            {/* Mode switcher */}
-            {(() => {
-              const dueCount = getDueWords(words).length;
-              const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
-              return (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-                  {[
-                    { id: "normal", label: "释义选词",  span: false },
-                    { id: "listen", label: "听音辨词",  span: false },
-                    { id: "spell",  label: "拼写练习",  span: false },
-                    { id: "review", label: `遗忘复习${dueCount > 0 ? " · " + dueCount : ""}`, alert: dueCount > 0, span: false },
-                    { id: "wrong",  label: `错词库${wrongCount > 0 ? " · " + wrongCount : ""}`, alert: wrongCount > 0, span: false },
-                  ].map(m => (
-                    <button key={m.id} onClick={() => { setQuizMode(m.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(m.id); }}
-                      style={{ flex: "1 1 calc(50% - 4px)", padding: "9px 6px", borderRadius: 10, border: "1.5px solid " + (quizMode === m.id ? "#111" : (m.alert ? "#e53e3e" : "#e0e0e0")), background: quizMode === m.id ? "#111" : "#fff", color: quizMode === m.id ? "#fff" : (m.alert ? "#e53e3e" : "#777"), fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
-                      {m.label}
-                    </button>
-                  ))}
-                  <button onClick={() => { setQuizMode("battle"); if (!battleActive && !showBattleResult) startBattle(); }}
-                    style={{ flex: "1 1 100%", padding: "11px 6px", borderRadius: 10, border: "1.5px solid " + (quizMode === "battle" ? "#111" : "#e0e0e0"), background: quizMode === "battle" ? "#111" : "linear-gradient(135deg,#fff 0%,#fafafa 100%)", color: quizMode === "battle" ? "#fff" : "#111", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px" }}>
-                    ⚡ 限时对战 · 60秒挑战
-                  </button>
-                </div>
-              );
-            })()}
 
-            {/* Review mode info */}
-            {quizMode === "review" && getDueWords(words).length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "#777" }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-                <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>今日复习完成</div>
-                <div style={{ fontSize: 13, color: "#888" }}>所有单词都在记忆中，明天再来巩固</div>
+          {/* ── GAME LOBBY ── */}
+          {quizLobby && !pairActive && (
+            <div>
+              <div style={{ marginBottom: 22 }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", letterSpacing: "-0.5px" }}>选择游戏</div>
+                <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>练习词库 · 积累 Combo · 提升段位</div>
               </div>
-            )}
-
-            {/* Wrong bank empty */}
-            {quizMode === "wrong" && wrongBank.length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "#777" }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-                <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>错词库是空的</div>
-                <div style={{ fontSize: 13, color: "#888" }}>做题时答错的词会自动加入这里</div>
-              </div>
-            )}
-
-            {/* Tag filter for normal + listen + spell modes */}
-            {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-                {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
-              </div>
-            )}
-
-            {/* Quiz card */}
-            {quizState && ((( quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length >= 4) || (quizMode === "review" && getDueWords(words).length > 0) || (quizMode === "wrong" && wrongBank.length > 0)) && (
-              <div>
-                {/* Review level indicator */}
-                {quizMode === "review" && (() => {
-                  const w = words.find(x => x.word === quizState.question);
-                  const level = w?.reviewLevel || 0;
-                  const nextDays = REVIEW_INTERVALS[Math.min(level + 1, REVIEW_INTERVALS.length - 1)];
-                  return (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, color: "#888" }}>复习间隔</div>
-                      <div style={{ display: "flex", gap: 3 }}>
-                        {REVIEW_INTERVALS.map((_, i) => (
-                          <div key={i} style={{ width: 20, height: 4, borderRadius: 2, background: i <= level ? "#111" : "#e8e8e8" }} />
-                        ))}
-                      </div>
-                      <div style={{ fontSize: 11, color: "#888" }}>答对后 {nextDays} 天后复习</div>
+              {(() => {
+                const dueCount = getDueWords(words).length;
+                const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
+                const games = [
+                  { id: "normal",    icon: "📖", name: "释义选词", desc: "看单词，选正确释义", sub: "经典模式", color: "#111" },
+                  { id: "listen",    icon: "🔊", name: "听音辨词", desc: "听发音，判断正确单词", sub: "耳力训练", color: "#2d6bcf" },
+                  { id: "spell",     icon: "✍️", name: "拼写练习", desc: "看释义，打出完整单词", sub: "手感养成", color: "#7c3aed" },
+                  { id: "review",    icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
+                  { id: "wrong",     icon: "🎯", name: "错词研究", desc: "专项攻克做错的单词", sub: wrongCount > 0 ? wrongCount + " 词待攻克" : "暂无错词", color: wrongCount > 0 ? "#e53e3e" : "#888", alert: wrongCount > 0 },
+                  { id: "battle",    icon: "⚡", name: "限时挑战", desc: "60秒内答对最多题，生成战绩图", sub: "高压竞速", color: "#c2410c" },
+                  { id: "pair",      icon: "🔗", name: "Combo配对", desc: "点击配对单词与释义，连击得分", sub: "连击模式", color: "#0891b2" },
+                  { id: "challenge", icon: "👥", name: "好友挑战", desc: "选词生成链接，发给朋友对战", sub: "社交对战", color: "#7c3aed" },
+                ];
+                const left = games.filter((_, i) => i % 2 === 0);
+                const right = games.filter((_, i) => i % 2 === 1);
+                const renderCard = (g) => (
+                  <div key={g.id}
+                    onClick={() => {
+                      haptic("medium");
+                      if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
+                      else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
+                      else if (g.id === "battle") { setQuizMode("battle"); setQuizLobby(false); if (!battleActive && !showBattleResult) startBattle(); }
+                      else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
+                    }}
+                    style={{ background: "#fff", borderRadius: 18, padding: "18px 16px", marginBottom: 10, cursor: "pointer",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+                      border: g.alert ? "1.5px solid " + g.color + "33" : "1.5px solid transparent",
+                      minHeight: 150, display: "flex", flexDirection: "column", justifyContent: "space-between",
+                      transition: "transform 0.15s, box-shadow 0.15s" }}
+                    onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)"; }}
+                    onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)"; }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 28, marginBottom: 10 }}>{g.icon}</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 17, color: "#111", marginBottom: 5, letterSpacing: "-0.3px" }}>{g.name}</div>
+                      <div style={{ fontSize: 11, color: "#999", lineHeight: 1.5 }}>{g.desc}</div>
                     </div>
-                  );
-                })()}
-                {quizState.isSpell ? (
-                  /* ── SPELL MODE ── */
-                  <div>
-                    <div style={{ fontSize: 11, color: "#777", marginBottom: 14, letterSpacing: "0.5px", textTransform: "uppercase" }}>看释义，打出对应的英文单词</div>
-                    {/* Chinese meaning as prompt */}
-                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 6, lineHeight: 1.3 }}>{quizState.question}</div>
-                    {quizState.example && !quizResult && (
-                      <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>
-                        {quizState.example.replace(new RegExp(quizState.correct, "gi"), "＿".repeat(quizState.correct.length))}
-                      </div>
-                    )}
-                    {/* Letter boxes */}
-                    {(() => {
-                      const answer = quizState.correct;
-                      const input = spellingInput;
-                      return (
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, marginTop: 16 }}>
-                          {answer.split("").map((letter, i) => {
-                            const isHinted = i < hintRevealed;
-                            const typed = input[i] || "";
-                            const isDone = !!quizResult;
-                            const isCorrectLetter = typed.toLowerCase() === letter.toLowerCase();
-                            let bg = "#f5f5f5", border = "1.5px solid #e0e0e0", color = "#111";
-                            if (isHinted) { bg = "#fffbec"; border = "1.5px solid #c8900a"; color = "#c8900a"; }
-                            else if (isDone && typed) {
-                              bg = isCorrectLetter ? "#f0fff4" : "#fff5f5";
-                              border = "1.5px solid " + (isCorrectLetter ? "#2d8a4e" : "#e53e3e");
-                              color = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
-                            }
-                            return (
-                              <div key={i} style={{ width: 36, height: 44, borderRadius: 8, background: bg, border, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "DM Serif Display, serif", fontSize: 20, color, transition: "all 0.15s", position: "relative" }}>
-                                {isHinted ? letter.toUpperCase() : (typed || (isDone ? answer[i] : ""))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                    {/* Input + controls */}
-                    {!quizResult ? (
-                      <div>
-                        <input
-                          autoFocus
-                          value={spellingInput}
-                          onChange={e => setSpellingInput(e.target.value.slice(0, quizState.correct.length))}
-                          onKeyDown={e => { if (e.key === "Enter" && spellingInput.trim()) handleSpell(spellingInput); }}
-                          placeholder={"输入 " + quizState.correct.length + " 个字母…"}
-                          style={{ width: "100%", fontSize: 16, letterSpacing: "2px", marginBottom: 12, textTransform: "lowercase", fontFamily: "inherit", background: "#fafafa" }}
-                          disabled={!!quizResult}
-                        />
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button className="btn btn-dark" style={{ flex: 2 }} onClick={() => spellingInput.trim() && handleSpell(spellingInput)}>确认</button>
-                          {hintRevealed < quizState.correct.length && (
-                            <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setHintRevealed(h => h + 1)}>提示 ({quizState.correct.length - hintRevealed})</button>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        {/* Result */}
-                        <div style={{ background: quizResult === "correct" ? "#f0fff4" : "#fff5f5", border: "1.5px solid " + (quizResult === "correct" ? "#2d8a4e" : "#e53e3e"), borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: quizResult === "wrong" ? 8 : 0 }}>
-                            {quizResult === "correct" ? "拼写正确 ✓" : "拼写有误"}
-                          </div>
-                          {quizResult === "wrong" && (
-                            <div>
-                              <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>正确拼写：</div>
-                              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", letterSpacing: "1px" }}>{quizState.correct}</div>
-                            </div>
-                          )}
-                        </div>
-                        {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", marginBottom: 16, lineHeight: 1.5 }}>{quizState.example}</div>}
-                        <button className="btn btn-dark" style={{ width: "100%" }} onClick={() => startQuiz()}>下一题</button>
-                      </div>
-                    )}
+                    <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: g.color, background: g.color + "14", borderRadius: 6, padding: "3px 8px" }}>{g.sub}</span>
+                      <span style={{ fontSize: 16, color: "#ccc" }}>›</span>
+                    </div>
                   </div>
-                ) : quizState.isListen ? (
-                  /* ── LISTEN MODE ── */
-                  <div>
-                    <div style={{ marginBottom: 28, textAlign: "center" }}>
-                      <div style={{ fontSize: 11, color: "#777", marginBottom: 20, letterSpacing: "0.5px", textTransform: "uppercase" }}>听音辨词 — 选出你听到的单词</div>
-                      <button onClick={() => speak(quizState.question)}
-                        style={{ width: 96, height: 96, borderRadius: "50%", background: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", transition: "transform 0.1s" }}
-                        onMouseDown={e => e.currentTarget.style.transform = "scale(0.93)"}
-                        onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-                      >
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                        </svg>
-                      </button>
-                      <div style={{ fontSize: 12, color: "#aaa" }}>点击喇叭播放，可重复收听</div>
-                      {quizResult && (
-                        <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "inline-block" }}>
-                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div>
-                          <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>
-                          {quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}
+                );
+                return (
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ flex: 1 }}>{left.map(renderCard)}</div>
+                    <div style={{ flex: 1 }}>{right.map(renderCard)}</div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* ── COMBO PAIR GAME ── */}
+          {pairActive && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <button onClick={endPairGame} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#aaa", padding: "4px 8px 4px 0" }}>✕</button>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {pairCombo >= 2 && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: pairCombo >= 4 ? "#d97706" : "#0891b2", background: pairCombo >= 4 ? "#fffbeb" : "#e0f2fe", borderRadius: 8, padding: "4px 10px", animation: "unlockBadge 0.3s ease both" }}>
+                      COMBO ×{pairCombo}
+                    </div>
+                  )}
+                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111" }}>{pairScore}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, background: pairTimer <= 20 ? "#fff5f5" : "#f5f5f5", borderRadius: 10, padding: "6px 12px" }}>
+                    <span style={{ fontSize: 13 }}>⏱</span>
+                    <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: pairTimer <= 20 ? "#e53e3e" : "#111", transition: "color 0.3s" }}>{pairTimer}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ height: 3, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 22 }}>
+                <div style={{ height: "100%", background: pairTimer <= 20 ? "#e53e3e" : "#0891b2", borderRadius: 2, width: (pairTimer / 90 * 100) + "%", transition: "width 1s linear, background 0.3s" }} />
+              </div>
+              {!pairDone ? (
+                <div>
+                  <div style={{ fontSize: 11, color: "#aaa", letterSpacing: "1px", textAlign: "center", marginBottom: 16, textTransform: "uppercase" }}>点击左右配对匹配</div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                      {pairCards.filter(c => c.type === "word").map(card => (
+                        <div key={card.id} onClick={() => handlePairTap(card)}
+                          style={{ padding: "16px 12px", borderRadius: 14, textAlign: "center", cursor: card.matched ? "default" : "pointer",
+                            background: card.matched ? "#f0faf4" : card.wrong ? "#fff0f0" : card.selected ? "#111" : "#fff",
+                            border: "2px solid " + (card.matched ? "#2d8a4e" : card.wrong ? "#e53e3e" : card.selected ? "#111" : "#ebebeb"),
+                            color: card.matched ? "#2d8a4e" : card.selected ? "#fff" : "#111",
+                            fontFamily: "DM Serif Display, serif", fontSize: 15, letterSpacing: "-0.2px",
+                            opacity: card.matched ? 0.4 : 1,
+                            transition: "all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
+                            transform: card.selected ? "scale(1.04)" : "scale(1)" }}>
+                          {card.matched ? "✓" : card.text}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                      {pairCards.filter(c => c.type === "meaning").map(card => (
+                        <div key={card.id} onClick={() => handlePairTap(card)}
+                          style={{ padding: "16px 10px", borderRadius: 14, textAlign: "center", cursor: card.matched ? "default" : "pointer",
+                            background: card.matched ? "#f0faf4" : card.wrong ? "#fff0f0" : card.selected ? "#0891b2" : "#fff",
+                            border: "2px solid " + (card.matched ? "#2d8a4e" : card.wrong ? "#e53e3e" : card.selected ? "#0891b2" : "#ebebeb"),
+                            color: card.matched ? "#2d8a4e" : card.selected ? "#fff" : "#555",
+                            fontSize: 11, lineHeight: 1.4,
+                            opacity: card.matched ? 0.4 : 1,
+                            transition: "all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
+                            transform: card.selected ? "scale(1.04)" : "scale(1)" }}>
+                          {card.matched ? "✓" : card.text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ background: "#111", borderRadius: 20, padding: "28px 24px", color: "#fff", marginBottom: 20 }}>
+                    <div style={{ fontSize: 11, letterSpacing: "3px", color: "#555", marginBottom: 16 }}>COMBO PAIR · 结果</div>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 72, color: pairMatched.length === 5 ? "#4ade80" : "#facc15", lineHeight: 1 }}>{pairScore}</div>
+                    <div style={{ fontSize: 13, color: "#555", marginTop: 6, marginBottom: 20 }}>{pairMatched.length === 5 ? "全部配对成功 🎉" : "配对 " + pairMatched.length + " / 5 对"}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                      {[["得分", pairScore], ["最高连击", "×" + pairMaxCombo], ["剩余时间", pairTimer + "s"]].map(([label, val]) => (
+                        <div key={label} style={{ background: "#1a1a1a", borderRadius: 10, padding: "10px 8px" }}>
+                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#fff" }}>{val}</div>
+                          <div style={{ fontSize: 10, color: "#555", marginTop: 3 }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button style={{ flex: 1, padding: "14px 0", background: "#111", color: "#fff", border: "none", borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }} onClick={startPairGame}>再来一局</button>
+                    <button style={{ flex: 1, padding: "14px 0", background: "#f5f5f5", color: "#111", border: "none", borderRadius: 14, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }} onClick={endPairGame}>返回大厅</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── ACTIVE QUIZ ── */}
+          {!quizLobby && !pairActive && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                <button onClick={() => { setQuizLobby(true); setBattleActive(false); setShowBattleResult(false); }}
+                  style={{ background: "#f5f5f5", border: "none", borderRadius: 10, padding: "6px 14px 6px 10px", fontSize: 12, color: "#555", cursor: "pointer", fontFamily: "inherit" }}>
+                  ‹ 游戏大厅
+                </button>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 16, color: "#111" }}>
+                  {quizMode === "normal" ? "释义选词" : quizMode === "listen" ? "听音辨词" : quizMode === "spell" ? "拼写练习" : quizMode === "review" ? "遗忘复习" : quizMode === "wrong" ? "错词研究" : "限时挑战"}
+                </div>
+              </div>
+
+              {quizMode === "review" && getDueWords(words).length === 0 && (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                  <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>今日复习完成</div>
+                  <div style={{ fontSize: 13, color: "#888" }}>所有单词都在记忆中，明天再来巩固</div>
+                </div>
+              )}
+              {quizMode === "wrong" && wrongBank.length === 0 && (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                  <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>错词库是空的</div>
+                  <div style={{ fontSize: 13, color: "#888" }}>做题时答错的词会自动加入这里</div>
+                </div>
+              )}
+
+              {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                  {allTags.map(tag => <span key={tag} className={"tag-pill " + (filterTag === tag ? "active" : "")} onClick={() => setFilterTag(tag)}>{tag}</span>)}
+                </div>
+              )}
+
+              {quizState && (((quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length >= 4) || (quizMode === "review" && getDueWords(words).length > 0) || (quizMode === "wrong" && wrongBank.length > 0)) && (
+                <div>
+                  {quizMode === "review" && (() => {
+                    const w = words.find(x => x.word === quizState.question);
+                    const level = w?.reviewLevel || 0;
+                    const nextDays = REVIEW_INTERVALS[Math.min(level + 1, REVIEW_INTERVALS.length - 1)];
+                    return (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, color: "#888" }}>复习间隔</div>
+                        <div style={{ display: "flex", gap: 3 }}>{REVIEW_INTERVALS.map((_, i) => <div key={i} style={{ width: 20, height: 4, borderRadius: 2, background: i <= level ? "#111" : "#e8e8e8" }} />)}</div>
+                        <div style={{ fontSize: 11, color: "#888" }}>答对后 {nextDays} 天后复习</div>
+                      </div>
+                    );
+                  })()}
+
+                  {quizState.isSpell ? (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#777", marginBottom: 14, letterSpacing: "0.5px", textTransform: "uppercase" }}>看释义，打出对应的英文单词</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 6, lineHeight: 1.3 }}>{quizState.question}</div>
+                      {quizState.example && !quizResult && <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 20, lineHeight: 1.5 }}>{quizState.example.replace(new RegExp(quizState.correct, "gi"), "＿".repeat(quizState.correct.length))}</div>}
+                      {(() => {
+                        const answer = quizState.correct; const input = spellingInput;
+                        return (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, marginTop: 16 }}>
+                            {answer.split("").map((letter, i) => {
+                              const isHinted = i < hintRevealed; const typed = input[i] || ""; const isDone = !!quizResult; const isCorrectLetter = typed.toLowerCase() === letter.toLowerCase();
+                              let bg = "#f5f5f5", border = "1.5px solid #e0e0e0", color = "#111";
+                              if (isHinted) { bg = "#fffbec"; border = "1.5px solid #c8900a"; color = "#c8900a"; }
+                              else if (isDone && typed) { bg = isCorrectLetter ? "#f0fff4" : "#fff5f5"; border = "1.5px solid " + (isCorrectLetter ? "#2d8a4e" : "#e53e3e"); color = isCorrectLetter ? "#2d8a4e" : "#e53e3e"; }
+                              return <div key={i} style={{ width: 34, height: 40, borderRadius: 8, background: bg, border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 600, color, fontFamily: "DM Serif Display, serif", transition: "all 0.15s" }}>{isHinted ? letter : (typed || "")}</div>;
+                            })}
+                          </div>
+                        );
+                      })()}
+                      {!quizResult && (
+                        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                          <input value={spellingInput} onChange={e => setSpellingInput(e.target.value.replace(/[^a-zA-Z\-\s']/g, ""))}
+                            placeholder="在此输入拼写…" maxLength={quizState.correct.length + 5}
+                            autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                            onKeyDown={e => { if (e.key === "Enter") { const correct = spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase(); haptic(correct ? "success" : "error"); setQuizResult(correct ? "correct" : "wrong"); setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 })); if (correct) { try { const d = JSON.parse(localStorage.getItem("wv_today_correct")||"{}"); const todayKey2 = new Date().toISOString().slice(0,10); localStorage.setItem("wv_today_correct", JSON.stringify({ date: todayKey2, count: (d.date === todayKey2 ? d.count : 0) + 1 })); } catch {} } } }}
+                            style={{ flex: 1, fontSize: 16 }} />
+                          <button className="btn btn-outline btn-sm" onClick={() => setHintRevealed(h => Math.min(h + 1, quizState.correct.length))}>提示</button>
                         </div>
                       )}
+                      {quizResult && <div style={{ marginTop: 16 }}><div style={{ fontSize: 14, fontWeight: 600, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: quizResult === "wrong" ? 8 : 0 }}>{quizResult === "correct" ? "拼写正确 ✓" : "拼写有误"}</div>{quizResult === "wrong" && <div><div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>正确拼写：</div><div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", letterSpacing: "1px" }}>{quizState.correct}</div></div>}</div>}
+                      {quizState.example && quizResult && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", marginBottom: 16, lineHeight: 1.5, marginTop: 8 }}>{quizState.example}</div>}
+                      {quizResult && <button className="btn btn-dark" style={{ width: "100%" }} onClick={() => startQuiz()}>下一题</button>}
                     </div>
-                    <div key={quizState.question + quizState.options.join()}>
-                      {quizState.options.map((opt, i) => {
-                        let cls = "opt-btn";
-                        if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
-                        return (
-                          <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}>
-                            <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
-                          </button>
-                        );
-                      })}
+                  ) : quizState.isListen ? (
+                    <div>
+                      <div style={{ marginBottom: 28, textAlign: "center" }}>
+                        <div style={{ fontSize: 11, color: "#777", marginBottom: 20, letterSpacing: "0.5px", textTransform: "uppercase" }}>听音辨词 — 选出你听到的单词</div>
+                        <button onClick={() => speak(quizState.question)} style={{ width: 96, height: 96, borderRadius: "50%", background: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", transition: "transform 0.1s" }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.93)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        </button>
+                        <div style={{ fontSize: 12, color: "#aaa" }}>点击喇叭播放，可重复收听</div>
+                        {quizResult && <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "inline-block" }}><div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div><div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>{quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}</div>}
+                      </div>
+                      <div key={quizState.question + quizState.options.join()}>
+                        {quizState.options.map((opt, i) => { let cls = "opt-btn"; if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; } return <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}><span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
+                      </div>
+                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>{quizResult === "correct" ? "正确 ✓" : "正确答案：" + quizState.correct}</div><button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
                     </div>
-                    {quizResult && (
-                      <div style={{ marginTop: 20, textAlign: "center" }}>
-                        <div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>
-                          {quizResult === "correct" ? "正确 ✓" : `正确答案：${quizState.correct}`}
+                  ) : (
+                    <div>
+                      <div style={{ marginBottom: 28 }}>
+                        <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
+                          <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500 }}>▶</button>
                         </div>
-                        <button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button>
+                        {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  /* ── NORMAL / REVIEW / WRONG MODE ── */
-                  <div>
-                    <div style={{ marginBottom: 28 }}>
-                      <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
-                        <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500, letterSpacing: "0.3px" }}>▶</button>
+                      <div key={quizState.question + quizState.options.join()}>
+                        {quizState.options.map((opt, i) => { let cls = "opt-btn"; if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; } return <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}><span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
                       </div>
-                      {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
-                    </div>
-                    <div key={quizState.question + quizState.options.join()}>
-                      {quizState.options.map((opt, i) => {
-                        let cls = "opt-btn";
-                        if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; }
-                        return (
-                          <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}>
-                            <span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {quizResult && (
-                      <div style={{ marginTop: 20, textAlign: "center" }}>
-                        <div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>
-                          {quizResult === "correct" ? "正确 ✓" : `答案是：${quizState.correct}`}
-                        </div>
-                        <button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Not enough words */}
-            {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 && (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#777" }}>
-                <div style={{ fontSize: 14, marginBottom: 16 }}>至少需要 4 个单词才能测验</div>
-                <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
-              </div>
-            )}
-
-            {/* Battle Mode UI */}
-            {quizMode === "battle" && !showBattleResult && (
-              <div>
-                {!battleActive && !battleQuestion ? (
-                  <div style={{ textAlign: "center", padding: "40px 0" }}>
-                    <div style={{ fontSize: 52, marginBottom: 12 }}>⚡</div>
-                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", marginBottom: 8 }}>限时对战</div>
-                    <div style={{ fontSize: 14, color: "#888", marginBottom: 32, lineHeight: 1.7 }}>
-                      60 秒内答对尽可能多的题<br/>结束后生成战绩图分享给朋友
-                    </div>
-                    <button className="btn btn-dark" style={{ padding: "14px 40px", fontSize: 16, borderRadius: 12 }} onClick={startBattle}>开始挑战</button>
-                  </div>
-                ) : battleActive && battleQuestion ? (
-                  <div>
-                    {/* Timer bar */}
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                          <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 42, color: battleTimeLeft <= 10 ? "#e53e3e" : "#111", lineHeight: 1, transition: "color 0.3s" }}>{battleTimeLeft}</span>
-                          <span style={{ fontSize: 13, color: "#aaa" }}>秒</span>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{battleStats.correct}</div>
-                          <div style={{ fontSize: 11, color: "#aaa" }}>答对 / {battleStats.total} 题</div>
-                        </div>
-                      </div>
-                      <div style={{ height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: (battleTimeLeft / 60 * 100) + "%", background: battleTimeLeft <= 10 ? "#e53e3e" : "#111", transition: "width 1s linear, background 0.3s" }} />
-                      </div>
-                    </div>
-
-                    {/* Question */}
-                    <div style={{ marginBottom: 24 }}>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", marginBottom: 6, lineHeight: 1.1 }}>{battleQuestion.question}</div>
-                      {battleQuestion.example && <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic" }}>{battleQuestion.example}</div>}
-                    </div>
-
-                    {/* Options */}
-                    <div key={battleQuestion.question + battleQuestion.options.join()}>
-                      {battleQuestion.options.map((opt, i) => {
-                        let bg = "#fafafa", border = "#ebebeb", color = "#111";
-                        if (battleAnswered) {
-                          if (opt === battleQuestion.correct) { bg = "#f0faf4"; border = "#2d8a4e"; color = "#2d8a4e"; }
-                          else if (battleAnswered === "wrong") { bg = "#fff5f5"; border = "#e53e3e"; color = "#e53e3e"; }
-                        }
-                        return (
-                          <button key={i} disabled={!!battleAnswered}
-                            onClick={e => { e.currentTarget.blur(); handleBattleMCQ(opt); }}
-                            style={{ width: "100%", background: bg, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", textAlign: "left", fontFamily: "inherit", fontSize: 14, color, cursor: battleAnswered ? "default" : "pointer", marginBottom: 8, transition: "all 0.15s" }}>
-                            <span style={{ color: battleAnswered ? "inherit" : "#aaa", marginRight: 10, fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{String.fromCharCode(65+i)}</span>{opt}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ marginTop: 16, textAlign: "center" }}>
-                      <button onClick={endBattle} style={{ background: "none", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>结束挑战</button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {/* Battle Result */}
-            {quizMode === "battle" && showBattleResult && battleFinalStats && (
-              <div>
-                <div style={{ background: "#0f0f0f", borderRadius: 16, padding: "28px 24px", marginBottom: 16, color: "#fff" }}>
-                  <div style={{ fontSize: 11, letterSpacing: "2px", color: "#666", marginBottom: 16, fontWeight: 600 }}>WORDVAULT · 限时对战</div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 20 }}>
-                    <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 72, lineHeight: 1, color: battleFinalStats.total > 0 && Math.round(battleFinalStats.correct / battleFinalStats.total * 100) >= 80 ? "#4ade80" : battleFinalStats.total > 0 && Math.round(battleFinalStats.correct / battleFinalStats.total * 100) >= 60 ? "#facc15" : "#f87171" }}>{battleFinalStats.correct}</span>
-                    <span style={{ fontSize: 20, color: "#555" }}>/ {battleFinalStats.total} 题</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 0 }}>
-                    {[
-                      ["正确率", battleFinalStats.total > 0 ? Math.round(battleFinalStats.correct / battleFinalStats.total * 100) + "%" : "0%"],
-                      ["用时", "60 秒"],
-                      ["词库", words.length + " 词"],
-                    ].map(([label, val]) => (
-                      <div key={label} style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: "#555", marginBottom: 4 }}>{label}</div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{val}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {battleFinalStats.words.filter(w => !w.correct).length > 0 && (
-                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #222" }}>
-                      <div style={{ fontSize: 11, color: "#444", marginBottom: 8 }}>需加强</div>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {battleFinalStats.words.filter(w => !w.correct).slice(0, 6).map((w, i) => (
-                          <span key={i} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 20, background: "#1a1a1a", color: "#f87171", border: "1px solid #2a2a2a", fontFamily: "DM Serif Display, serif" }}>{w.word}</span>
-                        ))}
-                      </div>
+                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>{quizResult === "correct" ? "正确 ✓" : "答案是：" + quizState.correct}</div><button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
                     </div>
                   )}
                 </div>
+              )}
 
-                {/* Canvas for share image */}
-                <canvas ref={battleCanvasRef} style={{ display: "none" }} />
-
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => { drawBattleCard(); setTimeout(() => { const canvas = battleCanvasRef.current; if (!canvas) return; const link = document.createElement("a"); link.download = "wordvault-battle.png"; link.href = canvas.toDataURL("image/png"); link.click(); }, 100); }}>
-                    保存战绩图
-                  </button>
-                  <button className="btn btn-outline" style={{ flex: 1 }} onClick={startBattle}>再战一局</button>
+              {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (filterTag === "全部" ? words : words.filter(w => (w.tags||[]).includes(filterTag))).length < 4 && (
+                <div style={{ textAlign: "center", padding: "60px 0" }}>
+                  <div style={{ fontSize: 14, marginBottom: 16, color: "#777" }}>至少需要 4 个单词才能测验</div>
+                  <button className="btn btn-dark btn-sm" onClick={() => setTab(1)}>去添加单词</button>
                 </div>
-              </div>
-            )}
+              )}
+
+              {quizMode === "battle" && !showBattleResult && (
+                <div>
+                  {!battleActive && !battleQuestion ? (
+                    <div style={{ textAlign: "center", padding: "40px 0" }}>
+                      <div style={{ fontSize: 52, marginBottom: 12 }}>⚡</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", marginBottom: 8 }}>限时挑战</div>
+                      <div style={{ fontSize: 14, color: "#888", marginBottom: 32, lineHeight: 1.7 }}>60 秒内答对尽可能多的题<br/>结束后生成战绩图分享给朋友</div>
+                      <button className="btn btn-dark" style={{ padding: "14px 40px", fontSize: 16, borderRadius: 12 }} onClick={startBattle}>开始挑战</button>
+                    </div>
+                  ) : battleActive && battleQuestion ? (
+                    <div>
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}><span style={{ fontFamily: "DM Serif Display, serif", fontSize: 42, color: battleTimeLeft <= 10 ? "#e53e3e" : "#111", lineHeight: 1, transition: "color 0.3s" }}>{battleTimeLeft}</span><span style={{ fontSize: 13, color: "#aaa" }}>秒</span></div>
+                          <div style={{ textAlign: "right" }}><div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{battleStats.correct}</div><div style={{ fontSize: 11, color: "#aaa" }}>答对 / {battleStats.total} 题</div></div>
+                        </div>
+                        <div style={{ height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}><div style={{ height: "100%", width: (battleTimeLeft / 60 * 100) + "%", background: battleTimeLeft <= 10 ? "#e53e3e" : "#111", transition: "width 1s linear, background 0.3s" }} /></div>
+                      </div>
+                      <div style={{ marginBottom: 24 }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", marginBottom: 6, lineHeight: 1.1 }}>{battleQuestion.question}</div>
+                        {battleQuestion.example && <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic" }}>{battleQuestion.example}</div>}
+                      </div>
+                      <div key={battleQuestion.question + battleQuestion.options.join()}>
+                        {battleQuestion.options.map((opt, i) => { let bg = "#fafafa", border = "#ebebeb", color = "#111"; if (battleAnswered) { if (opt === battleQuestion.correct) { bg = "#f0faf4"; border = "#2d8a4e"; color = "#2d8a4e"; } else if (battleAnswered === "wrong") { bg = "#fff5f5"; border = "#e53e3e"; color = "#e53e3e"; } } return <button key={i} disabled={!!battleAnswered} onClick={e => { e.currentTarget.blur(); handleBattleMCQ(opt); }} style={{ width: "100%", background: bg, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", textAlign: "left", fontFamily: "inherit", fontSize: 14, color, cursor: battleAnswered ? "default" : "pointer", marginBottom: 8, transition: "all 0.15s" }}><span style={{ color: battleAnswered ? "inherit" : "#aaa", marginRight: 10, fontSize: 12, fontWeight: 500, opacity: 0.7 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
+                      </div>
+                      <div style={{ marginTop: 16, textAlign: "center" }}><button onClick={endBattle} style={{ background: "none", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>结束挑战</button></div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {quizMode === "battle" && showBattleResult && battleFinalStats && (
+                <div>
+                  <div style={{ background: "#0f0f0f", borderRadius: 16, padding: "28px 24px", marginBottom: 16, color: "#fff" }}>
+                    <div style={{ fontSize: 11, letterSpacing: "2px", color: "#666", marginBottom: 16, fontWeight: 600 }}>WORDCOMBO · 限时挑战</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 20 }}>
+                      <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 72, lineHeight: 1, color: battleFinalStats.total > 0 && Math.round(battleFinalStats.correct / battleFinalStats.total * 100) >= 80 ? "#4ade80" : battleFinalStats.total > 0 && Math.round(battleFinalStats.correct / battleFinalStats.total * 100) >= 60 ? "#facc15" : "#f87171" }}>{battleFinalStats.correct}</span>
+                      <span style={{ fontSize: 20, color: "#555" }}>/ {battleFinalStats.total} 题</span>
+                    </div>
+                    <div style={{ display: "flex" }}>{[["正确率", battleFinalStats.total > 0 ? Math.round(battleFinalStats.correct / battleFinalStats.total * 100) + "%" : "0%"], ["用时", "60 秒"], ["词库", words.length + " 词"]].map(([label, val]) => <div key={label} style={{ flex: 1 }}><div style={{ fontSize: 11, color: "#555", marginBottom: 4 }}>{label}</div><div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{val}</div></div>)}</div>
+                    {battleFinalStats.words.filter(w => !w.correct).length > 0 && <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #222" }}><div style={{ fontSize: 11, color: "#444", marginBottom: 8 }}>需加强</div><div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{battleFinalStats.words.filter(w => !w.correct).slice(0, 6).map((w, i) => <span key={i} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 20, background: "#1a1a1a", color: "#f87171", border: "1px solid #2a2a2a", fontFamily: "DM Serif Display, serif" }}>{w.word}</span>)}</div></div>}
+                  </div>
+                  <canvas ref={battleCanvasRef} style={{ display: "none" }} />
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => { drawBattleCard(); setTimeout(() => { const canvas = battleCanvasRef.current; if (!canvas) return; const link = document.createElement("a"); link.download = "wordcombo-battle.png"; link.href = canvas.toDataURL("image/png"); link.click(); }, 100); }}>保存战绩图</button>
+                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={startBattle}>再战一局</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           </div>
-        )}
+        )}        )}
 
         {/* Tab 3 */}
         {tab === 3 && (
@@ -3054,12 +3112,22 @@ export default function VocabApp() {
       {/* Bottom Nav */}
       <nav className="bottom-nav">
         <div className="bottom-nav-inner">
-        {NAV.map((item, i) => (
-          <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => { haptic("light"); setTab(i); }}>
-            <em className="nav-icon">{item.icon}</em>
-            <span className="nav-label">{item.label}</span>
-          </button>
-        ))}
+        {NAV.map((item, i) => {
+          if (i === 2) return (
+            <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); if (tab === 2) setQuizLobby(true); }}>
+              <div className="nav-center-btn">
+                <em className="nav-center-icon">◎</em>
+              </div>
+              <span className="nav-label">测验</span>
+            </button>
+          );
+          return (
+            <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => { haptic("light"); setTab(i); }}>
+              <em className="nav-icon">{item.icon}</em>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          );
+        })}
         </div>
       </nav>
     </div>
