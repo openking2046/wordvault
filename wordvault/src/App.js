@@ -1361,19 +1361,67 @@ export default function VocabApp() {
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
         .tab-content { background: #f2f2f7; padding: 16px 16px 100px; flex: 1; overflow-y: auto; }
 
-        /* Press feedback */
-        button, .tag-pill, .word-row, .opt-btn, .nav-item, [role="button"] {
+        /* ── Press feedback — Duolingo-style spring ── */
+        button, .tag-pill, .word-row, .opt-btn, .nav-item, .game-card, [role="button"] {
           -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
-        .game-card { transition: transform 0.12s, box-shadow 0.12s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        .game-card:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important; }
-        button:active, .tag-pill:active, .opt-btn:active, .nav-item:active {
-          transform: scale(0.94);
-          transition: transform 0.08s ease;
-        }
-        button:not(:active), .tag-pill:not(:active), .opt-btn:not(:active), .nav-item:not(:active) {
+
+        /* Default state: spring back with overshoot */
+        button, .tag-pill, .opt-btn, .nav-item {
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                      background 0.15s ease,
+                      border-color 0.15s ease,
+                      box-shadow 0.15s ease;
           transform: scale(1);
-          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          will-change: transform;
+        }
+
+        /* Press down: quick compress */
+        button:active, .tag-pill:active, .nav-item:active {
+          transform: scale(0.91);
+          transition: transform 0.1s cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        /* Opt-btn: slightly larger press area, deeper press */
+        .opt-btn {
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                      background 0.12s ease, border-color 0.12s ease;
+        }
+        .opt-btn:active:not(:disabled) {
+          transform: scale(0.95);
+          transition: transform 0.09s cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        /* Game cards */
+        .game-card {
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                      box-shadow 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .game-card:active {
+          transform: scale(0.93);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+          transition: transform 0.1s cubic-bezier(0.4, 0, 0.6, 1),
+                      box-shadow 0.1s ease;
+        }
+
+        /* Nav center button bounce */
+        .nav-item-center:active .nav-center-btn {
+          transform: scale(0.85);
+          transition: transform 0.1s cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        .nav-center-btn {
+          transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Primary black buttons: big spring */
+        .btn-dark:active {
+          transform: scale(0.92);
+          transition: transform 0.1s cubic-bezier(0.4, 0, 0.6, 1) !important;
+        }
+        .btn-dark {
+          transition: transform 0.4s cubic-bezier(0.34, 1.7, 0.64, 1),
+                      background 0.15s ease !important;
         }
 
         /* Word Unlock */
@@ -1381,6 +1429,10 @@ export default function VocabApp() {
         @keyframes unlockBgOut   { from { opacity:1 } to { opacity:0 } }
         @keyframes unlockWordIn  { 0%{opacity:0;transform:scale(0.4) translateY(20px)} 60%{transform:scale(1.08) translateY(-4px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
         @keyframes unlockBadge   { 0%{opacity:0;transform:scale(0) rotate(-15deg)} 60%{transform:scale(1.15) rotate(4deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+        @keyframes correctPop    { 0%{transform:scale(1)} 30%{transform:scale(1.06)} 60%{transform:scale(0.97)} 100%{transform:scale(1)} }
+        @keyframes wrongShake    { 0%{transform:translateX(0)} 18%{transform:translateX(-7px)} 36%{transform:translateX(7px)} 54%{transform:translateX(-5px)} 72%{transform:translateX(5px)} 100%{transform:translateX(0)} }
+        .opt-btn.correct { animation: correctPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .opt-btn.wrong   { animation: wrongShake 0.4s ease both; }
         @keyframes unlockSub     { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
         @keyframes particleFly {
           0%   { transform: translate(0,0) scale(1); opacity: 1; }
