@@ -1265,121 +1265,90 @@ export default function VocabApp() {
   const LINE1 = "The more you hit,";
   const LINE2 = "the less you forget.";
 
-  useEffect(() => {
+  const [splashStarted, setSplashStarted] = useState(false);
+
+  const startSplashAnim = useCallback(() => {
+    if (splashStarted) return;
+    setSplashStarted(true);
+
     let audioCtx = null;
     const getCtx = () => {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === "suspended") audioCtx.resume();
       return audioCtx;
     };
-
     // Boot whoosh — low rumble sweep up
     const playBoot = () => {
       try {
-        const ctx = getCtx();
-        const t = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
+        const ctx = getCtx(); const t = ctx.currentTime;
+        const osc = ctx.createOscillator(); const gain = ctx.createGain(); const filter = ctx.createBiquadFilter();
         filter.type = "bandpass"; filter.frequency.setValueAtTime(80, t); filter.frequency.exponentialRampToValueAtTime(600, t + 0.7);
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(40, t); osc.frequency.exponentialRampToValueAtTime(220, t + 0.7);
-        gain.gain.setValueAtTime(0.0001, t); gain.gain.exponentialRampToValueAtTime(0.18, t + 0.15);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-        osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 0.85);
+        osc.type = "sawtooth"; osc.frequency.setValueAtTime(40, t); osc.frequency.exponentialRampToValueAtTime(220, t + 0.7);
+        gain.gain.setValueAtTime(0.0001, t); gain.gain.exponentialRampToValueAtTime(0.18, t + 0.15); gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+        osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination); osc.start(t); osc.stop(t + 0.85);
       } catch {}
     };
-
-    // Mechanical key click — sharp noise burst + high tick
+    // Mechanical key click
     const playKey = () => {
       try {
-        const ctx = getCtx();
-        const t = ctx.currentTime;
-        // Noise layer
+        const ctx = getCtx(); const t = ctx.currentTime;
         const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
         const d = buf.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.008));
-        const src = ctx.createBufferSource();
-        const g1 = ctx.createGain();
-        const f1 = ctx.createBiquadFilter(); f1.type = "highpass"; f1.frequency.value = 2200;
+        const src = ctx.createBufferSource(); const g1 = ctx.createGain(); const f1 = ctx.createBiquadFilter();
+        f1.type = "highpass"; f1.frequency.value = 2200;
         src.buffer = buf; src.connect(f1); f1.connect(g1); g1.connect(ctx.destination);
-        g1.gain.setValueAtTime(0.28, t); g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-        src.start(t);
-        // Tone click
+        g1.gain.setValueAtTime(0.28, t); g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.04); src.start(t);
         const osc = ctx.createOscillator(); const g2 = ctx.createGain();
         osc.type = "square"; osc.frequency.setValueAtTime(1800, t); osc.frequency.exponentialRampToValueAtTime(900, t + 0.02);
         g2.gain.setValueAtTime(0.09, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
         osc.connect(g2); g2.connect(ctx.destination); osc.start(t); osc.stop(t + 0.03);
       } catch {}
     };
-
-    // WordCombo reveal — cinematic rising chord
+    // WordCombo reveal chord
     const playReveal = () => {
       try {
-        const ctx = getCtx();
-        const t = ctx.currentTime;
-        const notes = [261.6, 329.6, 392, 523.2]; // C4 E4 G4 C5
-        notes.forEach((freq, idx) => {
+        const ctx = getCtx(); const t = ctx.currentTime;
+        [261.6, 329.6, 392, 523.2].forEach((freq, idx) => {
           const osc = ctx.createOscillator(); const gain = ctx.createGain();
-          const rev = ctx.createConvolver();
           osc.type = "sine"; osc.frequency.value = freq;
           const delay = idx * 0.07;
-          gain.gain.setValueAtTime(0.0001, t + delay);
-          gain.gain.exponentialRampToValueAtTime(0.18 - idx * 0.02, t + delay + 0.12);
-          gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 1.0);
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.start(t + delay); osc.stop(t + delay + 1.1);
+          gain.gain.setValueAtTime(0.0001, t + delay); gain.gain.exponentialRampToValueAtTime(0.18 - idx * 0.02, t + delay + 0.12); gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 1.0);
+          osc.connect(gain); gain.connect(ctx.destination); osc.start(t + delay); osc.stop(t + delay + 1.1);
         });
-        // High shimmer on top
         const shimmer = ctx.createOscillator(); const sg = ctx.createGain();
-        shimmer.type = "triangle"; shimmer.frequency.setValueAtTime(1046, t + 0.28);
-        shimmer.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
-        sg.gain.setValueAtTime(0.0001, t + 0.28); sg.gain.exponentialRampToValueAtTime(0.12, t + 0.4);
-        sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        shimmer.type = "triangle"; shimmer.frequency.setValueAtTime(1046, t + 0.28); shimmer.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
+        sg.gain.setValueAtTime(0.0001, t + 0.28); sg.gain.exponentialRampToValueAtTime(0.12, t + 0.4); sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
         shimmer.connect(sg); sg.connect(ctx.destination); shimmer.start(t + 0.28); shimmer.stop(t + 1.0);
       } catch {}
     };
 
-    const SPEED1 = 55;
-    const SPEED2 = 50;
-    const PAUSE  = 320;
+    const SPEED1 = 55, SPEED2 = 50, PAUSE = 320;
+    playBoot();
+    setSplashPhase(1);
+    let i = 0;
+    const iv1 = setInterval(() => {
+      i++; setTypedText(LINE1.slice(0, i)); playKey();
+      if (i >= LINE1.length) {
+        clearInterval(iv1);
+        setTimeout(() => {
+          setSplashPhase(2);
+          let j = 0;
+          const iv2 = setInterval(() => {
+            j++; setTypedLine2(LINE2.slice(0, j)); playKey();
+            if (j >= LINE2.length) {
+              clearInterval(iv2);
+              setTimeout(() => { setSplashPhase(3); playReveal(); }, 500);
+            }
+          }, SPEED2);
+        }, PAUSE);
+      }
+    }, SPEED1);
 
-    // Boot sound immediately
-    const tBoot = setTimeout(playBoot, 80);
-
-    const tStart = setTimeout(() => {
-      setSplashPhase(1);
-      let i = 0;
-      const iv1 = setInterval(() => {
-        i++;
-        setTypedText(LINE1.slice(0, i));
-        playKey();
-        if (i >= LINE1.length) {
-          clearInterval(iv1);
-          setTimeout(() => {
-            setSplashPhase(2);
-            let j = 0;
-            const iv2 = setInterval(() => {
-              j++;
-              setTypedLine2(LINE2.slice(0, j));
-              playKey();
-              if (j >= LINE2.length) {
-                clearInterval(iv2);
-                setTimeout(() => { setSplashPhase(3); playReveal(); }, 500);
-              }
-            }, SPEED2);
-          }, PAUSE);
-        }
-      }, SPEED1);
-    }, 400);
-
-    const totalMs = 400 + LINE1.length * SPEED1 + PAUSE + LINE2.length * SPEED2 + 500 + 1000;
-    const tOut  = setTimeout(() => setSplash("out"),  totalMs);
-    const tDone = setTimeout(() => setSplash("done"), totalMs + 650);
-
-    return () => { clearTimeout(tBoot); clearTimeout(tStart); clearTimeout(tOut); clearTimeout(tDone); };
-  }, []);
+    const totalMs = LINE1.length * SPEED1 + PAUSE + LINE2.length * SPEED2 + 500 + 1200;
+    setTimeout(() => setSplash("out"),  totalMs);
+    setTimeout(() => setSplash("done"), totalMs + 650);
+  }, [splashStarted]);
 
   return (
     <div style={{ fontFamily: "Inter, -apple-system, sans-serif", minHeight: "100vh", background: "#f2f2f7", color: "#111", display: "flex", flexDirection: "column" }}>
@@ -1607,8 +1576,11 @@ export default function VocabApp() {
       {/* Splash Screen */}
       {splash !== "done" && (
         <div className={splash === "out" ? "splash-exit" : ""}
+          onTouchEnd={!splashStarted ? startSplashAnim : undefined}
+          onClick={!splashStarted ? startSplashAnim : undefined}
           style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden",
-            background: "linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0d0d1a 100%)" }}>
+            background: "linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0d0d1a 100%)",
+            cursor: !splashStarted ? "pointer" : "default" }}>
 
           {/* Grid overlay */}
           <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none" }} />
@@ -1628,7 +1600,22 @@ export default function VocabApp() {
             }} />
           ))}
 
-          {/* Content */}
+          {/* Tap to start — shown before animation begins */}
+          {!splashStarted && (
+            <div style={{ textAlign: "center", position: "relative", zIndex: 1, animation: "splashWelcomeIn 0.8s ease both" }}>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 56, color: "#fff", letterSpacing: "-1.5px", lineHeight: 1, marginBottom: 40,
+                textShadow: "0 0 60px rgba(255,255,255,0.15)" }}>
+                WordCombo
+              </div>
+              <div style={{ fontSize: 11, letterSpacing: "4px", color: "#555", textTransform: "uppercase",
+                animation: "cursorBlink 1.4s ease-in-out infinite" }}>
+                TAP TO START
+              </div>
+            </div>
+          )}
+
+          {/* Typewriter + logo — shown after tap */}
+          {splashStarted && (
           <div style={{ textAlign: "center", padding: "0 40px", position: "relative", zIndex: 1, width: "100%" }}>
 
             {/* Phase 1-2: Typewriter lines */}
@@ -1676,6 +1663,7 @@ export default function VocabApp() {
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 
