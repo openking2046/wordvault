@@ -1267,28 +1267,87 @@ export default function VocabApp() {
 
   useEffect(() => {
     let audioCtx = null;
-    const playKey = () => {
+    const getCtx = () => {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    };
+
+    // Boot whoosh — low rumble sweep up
+    const playBoot = () => {
       try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === "suspended") audioCtx.resume();
-        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.035, audioCtx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++)
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.01));
-        const src = audioCtx.createBufferSource();
-        const gain = audioCtx.createGain();
-        src.buffer = buf; src.connect(gain); gain.connect(audioCtx.destination);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.035);
-        src.start();
+        const ctx = getCtx();
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = "bandpass"; filter.frequency.setValueAtTime(80, t); filter.frequency.exponentialRampToValueAtTime(600, t + 0.7);
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(40, t); osc.frequency.exponentialRampToValueAtTime(220, t + 0.7);
+        gain.gain.setValueAtTime(0.0001, t); gain.gain.exponentialRampToValueAtTime(0.18, t + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+        osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 0.85);
       } catch {}
     };
 
-    const SPEED1 = 55; // ms per char line1
-    const SPEED2 = 50; // ms per char line2
-    const PAUSE  = 320; // pause between lines
+    // Mechanical key click — sharp noise burst + high tick
+    const playKey = () => {
+      try {
+        const ctx = getCtx();
+        const t = ctx.currentTime;
+        // Noise layer
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.008));
+        const src = ctx.createBufferSource();
+        const g1 = ctx.createGain();
+        const f1 = ctx.createBiquadFilter(); f1.type = "highpass"; f1.frequency.value = 2200;
+        src.buffer = buf; src.connect(f1); f1.connect(g1); g1.connect(ctx.destination);
+        g1.gain.setValueAtTime(0.28, t); g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+        src.start(t);
+        // Tone click
+        const osc = ctx.createOscillator(); const g2 = ctx.createGain();
+        osc.type = "square"; osc.frequency.setValueAtTime(1800, t); osc.frequency.exponentialRampToValueAtTime(900, t + 0.02);
+        g2.gain.setValueAtTime(0.09, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+        osc.connect(g2); g2.connect(ctx.destination); osc.start(t); osc.stop(t + 0.03);
+      } catch {}
+    };
 
-    // Start typing line 1 after short delay
+    // WordCombo reveal — cinematic rising chord
+    const playReveal = () => {
+      try {
+        const ctx = getCtx();
+        const t = ctx.currentTime;
+        const notes = [261.6, 329.6, 392, 523.2]; // C4 E4 G4 C5
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator(); const gain = ctx.createGain();
+          const rev = ctx.createConvolver();
+          osc.type = "sine"; osc.frequency.value = freq;
+          const delay = idx * 0.07;
+          gain.gain.setValueAtTime(0.0001, t + delay);
+          gain.gain.exponentialRampToValueAtTime(0.18 - idx * 0.02, t + delay + 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 1.0);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(t + delay); osc.stop(t + delay + 1.1);
+        });
+        // High shimmer on top
+        const shimmer = ctx.createOscillator(); const sg = ctx.createGain();
+        shimmer.type = "triangle"; shimmer.frequency.setValueAtTime(1046, t + 0.28);
+        shimmer.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
+        sg.gain.setValueAtTime(0.0001, t + 0.28); sg.gain.exponentialRampToValueAtTime(0.12, t + 0.4);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        shimmer.connect(sg); sg.connect(ctx.destination); shimmer.start(t + 0.28); shimmer.stop(t + 1.0);
+      } catch {}
+    };
+
+    const SPEED1 = 55;
+    const SPEED2 = 50;
+    const PAUSE  = 320;
+
+    // Boot sound immediately
+    const tBoot = setTimeout(playBoot, 80);
+
     const tStart = setTimeout(() => {
       setSplashPhase(1);
       let i = 0;
@@ -1298,7 +1357,6 @@ export default function VocabApp() {
         playKey();
         if (i >= LINE1.length) {
           clearInterval(iv1);
-          // pause then line 2
           setTimeout(() => {
             setSplashPhase(2);
             let j = 0;
@@ -1308,8 +1366,7 @@ export default function VocabApp() {
               playKey();
               if (j >= LINE2.length) {
                 clearInterval(iv2);
-                // pause then show WordCombo logo
-                setTimeout(() => setSplashPhase(3), 500);
+                setTimeout(() => { setSplashPhase(3); playReveal(); }, 500);
               }
             }, SPEED2);
           }, PAUSE);
@@ -1321,7 +1378,7 @@ export default function VocabApp() {
     const tOut  = setTimeout(() => setSplash("out"),  totalMs);
     const tDone = setTimeout(() => setSplash("done"), totalMs + 650);
 
-    return () => { clearTimeout(tStart); clearTimeout(tOut); clearTimeout(tDone); };
+    return () => { clearTimeout(tBoot); clearTimeout(tStart); clearTimeout(tOut); clearTimeout(tDone); };
   }, []);
 
   return (
@@ -1348,12 +1405,12 @@ export default function VocabApp() {
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
         .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #111; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 20px; line-height: 1; color: #fff; font-style: normal; }
-        .nav-icon { font-size: 17px; line-height: 1; color: #888; font-style: normal; }
+        .nav-icon { font-size: 22px; line-height: 1; color: #888; font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
         .nav-item.active .nav-icon, .nav-item.active .nav-label { color: #111; font-weight: 600; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
