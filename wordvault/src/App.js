@@ -12,7 +12,19 @@ const SAMPLE_WORDS = [
 ];
 
 const DEFAULT_TAGS = ["形容词", "名词", "动词", "生活", "商务", "学术", "口语", "写作"];
-const AVATARS = ["🦊","🐼","🐨","🦁","🐯","🐸","🦋","🐙","🦄","🐺","🦝","🐻","🐧","🦩","🐬","🦊","🌟","🔥","⚡","🌈","🎯","🎪","🎭","🏆","💎","🚀","🌸","🍀"];
+const AVATARS = (() => {
+  // Sprite sheet: avatars.png — 10 cols × 3 rows, display size 64×64
+  const positions = [
+    [0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],
+    [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],
+    [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],
+  ];
+  return positions.map(([c, r], i) => ({
+    id: i,
+    x: -c * 64,
+    y: -r * 81,
+  }));
+})();
 
 // ── Task Definitions ──────────────────────────────────────────
 // type: "daily" resets each day | "achievement" one-time unlock
@@ -246,7 +258,7 @@ export default function VocabApp() {
   const [profile, setProfile] = useState(() => { try { const s = localStorage.getItem("wv_profile"); return s ? JSON.parse(s) : null; } catch { return null; } });
   const [showProfileSetup, setShowProfileSetup] = useState(() => !localStorage.getItem("wv_profile"));
   const [setupStep, setSetupStep] = useState(0); // 0=avatar, 1=name, 2=done
-  const [setupAvatar, setSetupAvatar] = useState("🦊");
+  const [setupAvatar, setSetupAvatar] = useState(0); // avatar id
   const [setupName, setSetupName] = useState("");
   const [editingProfile, setEditingProfile] = useState(false);
 
@@ -444,6 +456,30 @@ export default function VocabApp() {
     setShowProfileSetup(false);
     setEditingProfile(false);
   }
+
+  // Render sprite avatar — size in px
+  const SpriteAvatar = ({ id, size = 56 }) => {
+    const av = AVATARS[id] || AVATARS[0];
+    const scale = size / 64;
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: size * 0.28,
+        overflow: "hidden", flexShrink: 0, background: "#f5f5f5",
+        position: "relative",
+      }}>
+        <div style={{
+          width: 64, height: 64,
+          backgroundImage: "url(/avatars.png)",
+          backgroundSize: "640px 244px",
+          backgroundPosition: `${av.x}px ${av.y}px`,
+          backgroundRepeat: "no-repeat",
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          position: "absolute", top: 0, left: 0,
+        }} />
+      </div>
+    );
+  };
 
   // Build task progress context from current state
   function getTaskCtx() {
@@ -1162,38 +1198,56 @@ export default function VocabApp() {
 
       {/* Profile Setup */}
       {showProfileSetup && (
-        <div style={{ position: "fixed", inset: 0, background: "#111", zIndex: 900, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28 }}>
+        <div style={{ position: "fixed", inset: 0, background: "#111", zIndex: 900, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
           {setupStep === 0 && (
-            <div style={{ width: "100%", maxWidth: 400, textAlign: "center" }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>{setupAvatar}</div>
-              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#fff", marginBottom: 6 }}>选择你的头像</div>
-              <div style={{ fontSize: 13, color: "#666", marginBottom: 28 }}>这是别人看到你的样子</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 36 }}>
-                {AVATARS.map(a => (
-                  <div key={a} onClick={() => setSetupAvatar(a)}
-                    style={{ width: 52, height: 52, borderRadius: 14, background: setupAvatar === a ? "#fff" : "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, cursor: "pointer", border: setupAvatar === a ? "2px solid #fff" : "2px solid #333", transition: "all 0.15s", transform: setupAvatar === a ? "scale(1.1)" : "scale(1)" }}>
-                    {a}
-                  </div>
-                ))}
+            <div style={{ width: "100%", maxWidth: 420, textAlign: "center", display: "flex", flexDirection: "column", height: "100%", justifyContent: "center" }}>
+              {/* Preview */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                <div style={{ position: "relative" }}>
+                  <SpriteAvatar id={setupAvatar} size={88} />
+                  <div style={{ position: "absolute", bottom: -4, right: -4, width: 24, height: 24, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✓</div>
+                </div>
               </div>
-              <button className="btn btn-dark" style={{ width: "100%", background: "#fff", color: "#111", fontSize: 15, padding: "14px 0", borderRadius: 14 }}
-                onClick={() => setSetupStep(1)}>下一步</button>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#fff", marginBottom: 4 }}>选择你的角色</div>
+              <div style={{ fontSize: 12, color: "#555", marginBottom: 24 }}>选一个代表你的角色</div>
+
+              {/* Avatar grid — scrollable */}
+              <div style={{ flex: 1, overflowY: "auto", marginBottom: 20, maxHeight: "55vh" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, padding: "4px 4px 16px" }}>
+                  {AVATARS.map(av => (
+                    <div key={av.id} onClick={() => setSetupAvatar(av.id)}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                        borderRadius: 16, padding: 4,
+                        border: setupAvatar === av.id ? "2.5px solid #fff" : "2.5px solid transparent",
+                        background: setupAvatar === av.id ? "rgba(255,255,255,0.08)" : "transparent",
+                        transform: setupAvatar === av.id ? "scale(1.08)" : "scale(1)",
+                        transition: "all 0.15s cubic-bezier(0.34,1.56,0.64,1)" }}>
+                      <SpriteAvatar id={av.id} size={52} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button style={{ width: "100%", background: "#fff", color: "#111", fontSize: 15, fontWeight: 700, padding: "15px 0", borderRadius: 14, border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                onClick={() => setSetupStep(1)}>下一步 →</button>
             </div>
           )}
+
           {setupStep === 1 && (
             <div style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>{setupAvatar}</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                <SpriteAvatar id={setupAvatar} size={80} />
+              </div>
               <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#fff", marginBottom: 6 }}>你想叫什么？</div>
-              <div style={{ fontSize: 13, color: "#666", marginBottom: 28 }}>可以是匿名，没人知道是你</div>
+              <div style={{ fontSize: 13, color: "#555", marginBottom: 28 }}>可以是匿名，没人知道是你</div>
               <input value={setupName} onChange={e => setSetupName(e.target.value)}
-                placeholder="输入昵称（可留空）"
-                maxLength={16}
+                placeholder="输入昵称（可留空）" maxLength={16}
                 onKeyDown={e => e.key === "Enter" && saveProfile(setupAvatar, setupName)}
                 style={{ background: "#1e1e1e", border: "1.5px solid #333", color: "#fff", borderRadius: 12, padding: "14px 16px", fontSize: 16, marginBottom: 16, textAlign: "center" }} />
               <div style={{ fontSize: 11, color: "#444", marginBottom: 24 }}>最多 16 个字符</div>
-              <button className="btn btn-dark" style={{ width: "100%", background: "#fff", color: "#111", fontSize: 15, padding: "14px 0", borderRadius: 14, marginBottom: 12 }}
-                onClick={() => saveProfile(setupAvatar, setupName)}>开始学习</button>
-              <button onClick={() => setSetupStep(0)} style={{ background: "none", border: "none", color: "#444", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>← 返回</button>
+              <button style={{ width: "100%", background: "#fff", color: "#111", fontSize: 15, fontWeight: 700, padding: "15px 0", borderRadius: 14, border: "none", cursor: "pointer", fontFamily: "inherit", marginBottom: 12 }}
+                onClick={() => saveProfile(setupAvatar, setupName)}>开始学习 🎉</button>
+              <button onClick={() => setSetupStep(0)} style={{ background: "none", border: "none", color: "#444", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>← 重新选角色</button>
             </div>
           )}
         </div>
@@ -1384,7 +1438,7 @@ export default function VocabApp() {
           {/* Avatar left */}
           {profile && (
             <div onClick={() => setTab(4)} style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{profile.avatar}</div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, overflow: "hidden" }}><SpriteAvatar id={profile.avatar} size={36} /></div>
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#111", lineHeight: 1.2 }}>{profile.name}</div>
                 <div style={{ fontSize: 10, color: "#aaa" }}>查看资料</div>
@@ -2327,9 +2381,7 @@ export default function VocabApp() {
               <div>
                 <div style={{ background: "#111", borderRadius: 20, padding: 24, color: "#fff", position: "relative" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 18, background: "#222", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>
-                      {profile.avatar}
-                    </div>
+                    <SpriteAvatar id={profile.avatar} size={64} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", marginBottom: 3 }}>{profile.name}</div>
                       <div style={{ fontSize: 12, color: "#555" }}>加入于 {profile.joinDate}</div>
@@ -2367,15 +2419,24 @@ export default function VocabApp() {
             {/* Edit Profile Modal */}
             {editingProfile && (
               <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 700, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 28 }}>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#111", marginBottom: 20, textAlign: "center" }}>编辑资料</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 20 }}>
-                    {AVATARS.map(a => (
-                      <div key={a} onClick={() => setSetupAvatar(a)}
-                        style={{ width: 44, height: 44, borderRadius: 12, background: setupAvatar === a ? "#111" : "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", border: setupAvatar === a ? "2px solid #111" : "2px solid transparent", transition: "all 0.15s" }}>
-                        {a}
-                      </div>
-                    ))}
+                <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 36px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+                    <SpriteAvatar id={setupAvatar} size={64} />
+                  </div>
+                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#111", marginBottom: 14, textAlign: "center" }}>编辑资料</div>
+                  <div style={{ flex: 1, overflowY: "auto", marginBottom: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+                      {AVATARS.map(av => (
+                        <div key={av.id} onClick={() => setSetupAvatar(av.id)}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, padding: 3, cursor: "pointer",
+                            border: setupAvatar === av.id ? "2.5px solid #111" : "2.5px solid transparent",
+                            background: setupAvatar === av.id ? "#f0f0f0" : "transparent",
+                            transform: setupAvatar === av.id ? "scale(1.08)" : "scale(1)",
+                            transition: "all 0.15s" }}>
+                          <SpriteAvatar id={av.id} size={48} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <input value={setupName} onChange={e => setSetupName(e.target.value)}
                     placeholder="昵称" maxLength={16}
