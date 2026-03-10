@@ -1365,7 +1365,7 @@ export default function VocabApp() {
         button, .tag-pill, .word-row, .opt-btn, .nav-item, [role="button"] {
           -webkit-tap-highlight-color: transparent;
         }
-        .game-card { transition: transform 0.12s, box-shadow 0.12s; }
+        .game-card { transition: transform 0.12s, box-shadow 0.12s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         .game-card:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important; }
         button:active, .tag-pill:active, .opt-btn:active, .nav-item:active {
           transform: scale(0.94);
@@ -2170,21 +2170,25 @@ export default function VocabApp() {
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
-                const renderCard = (g) => (
+                const renderCard = (g) => {
+                  function handleCardActivate(e) {
+                    e.preventDefault();
+                    haptic("medium");
+                    if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
+                    else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
+                    else if (g.id === "battle") { setQuizMode("battle"); setQuizLobby(false); if (!battleActive && !showBattleResult) startBattle(); }
+                    else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
+                  }
+                  return (
                   <div key={g.id}
-                    onClick={() => {
-                      haptic("medium");
-                      if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
-                      else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
-                      else if (g.id === "battle") { setQuizMode("battle"); setQuizLobby(false); if (!battleActive && !showBattleResult) startBattle(); }
-                      else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
-                    }}
+                    onPointerDown={handleCardActivate}
                     className="game-card"
                     style={{ background: "#fff", borderRadius: 18, padding: "18px 16px", marginBottom: 10, cursor: "pointer",
                       boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                       border: g.alert ? "1.5px solid " + g.color + "33" : "1.5px solid transparent",
                       minHeight: 150, display: "flex", flexDirection: "column", justifyContent: "space-between",
-                      position: "relative", overflow: "hidden" }}
+                      position: "relative", overflow: "hidden",
+                      WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
                   >
                     {/* Big background number */}
                     <div style={{
@@ -2206,7 +2210,8 @@ export default function VocabApp() {
                       <span style={{ fontSize: 16, color: "#ccc" }}>›</span>
                     </div>
                   </div>
-                );
+                  );
+                };
                 return (
                   <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>{left.map(renderCard)}</div>
