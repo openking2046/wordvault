@@ -1433,105 +1433,93 @@ export default function VocabApp() {
       )}
 
       {/* Header Card */}
-      <div style={{ background: "#111", position: "sticky", top: 0, zIndex: 50 }}
-        onClick={() => setHeaderExpanded(e => !e)}>
-        <div style={{ maxWidth: 520, margin: "0 auto", padding: "48px 20px 18px", cursor: "pointer" }}>
+      <div style={{ background: "#f2f2f7", position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 12px" }}>
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
+          <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", cursor: "pointer" }}
+            onClick={() => setHeaderExpanded(e => !e)}>
 
-          {/* Collapsed: single row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            {/* Avatar */}
-            {profile && (
-              <div style={{ flexShrink: 0 }}>
-                <SpriteAvatar id={profile.avatar} size={44} />
-              </div>
-            )}
+            {/* Collapsed row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              {/* Avatar */}
+              {profile && <div style={{ flexShrink: 0 }}><SpriteAvatar id={profile.avatar} size={44} /></div>}
 
-            {/* Center: name + title + stats */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {profile && (
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#888", marginBottom: 2, letterSpacing: "0.3px" }}>
-                  {profile.name}
+              {/* Name + title + stats */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {profile && (
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 1 }}>{profile.name}</div>
+                )}
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", letterSpacing: "-0.5px", lineHeight: 1.1 }}>
+                  WordCombo
                 </div>
-              )}
-              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#fff", letterSpacing: "-0.5px", lineHeight: 1 }}>
-                WordCombo
+                <div style={{ fontSize: 11, color: "#999", marginTop: 3 }}>
+                  {words.length} 词 · 正确率 {correctRate}%
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>
-                {words.length} 词 · 正确率 {correctRate}%
-              </div>
+
+              {/* Rank + streak */}
+              {(() => {
+                const r = getRank(words.length, streakData.count);
+                return (
+                  <div style={{ flexShrink: 0, textAlign: "right" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: r.color, background: r.bg, border: "1px solid " + r.color + "66", borderRadius: 8, padding: "4px 10px", marginBottom: 4, whiteSpace: "nowrap" }}>
+                      {r.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#999" }}>
+                      🔥 {streakData.count} 天连续
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Arrow */}
+              <div style={{ color: "#ccc", fontSize: 13, transition: "transform 0.3s", transform: headerExpanded ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0, marginLeft: 2 }}>▾</div>
             </div>
 
-            {/* Right: rank + streak */}
-            {(() => {
+            {/* Expanded */}
+            {headerExpanded && (() => {
               const r = getRank(words.length, streakData.count);
+              const nextR = getNextRank(words.length, streakData.count);
+              const mastered = words.filter(w => w.mastery >= 4).length;
               return (
-                <div style={{ flexShrink: 0, textAlign: "right" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: r.color, background: "rgba(255,255,255,0.05)", border: "1px solid " + r.color + "55", borderRadius: 8, padding: "4px 10px", marginBottom: 4, whiteSpace: "nowrap" }}>
-                    {r.name}
+                <div onClick={e => e.stopPropagation()} style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f0f0f0", animation: "unlockSub 0.25s ease both" }}>
+                  {/* Stats grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+                    {[["词库", words.length, "词"], ["掌握", mastered, "个"], ["正确率", correctRate, "%"], ["连续", streakData.count, "天"]].map(([label, val, unit]) => (
+                      <div key={label} style={{ background: "#f7f7f7", borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 19, color: "#111", lineHeight: 1 }}>
+                          {val}<span style={{ fontSize: 10, color: "#bbb", marginLeft: 1 }}>{unit}</span>
+                        </div>
+                        <div style={{ fontSize: 10, color: "#aaa", marginTop: 3 }}>{label}</div>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ fontSize: 11, color: "#555" }}>
-                    🔥 {streakData.count} 天连续
+
+                  {/* Rank bar */}
+                  <div style={{ background: "#f7f7f7", borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: r.color }}>{r.name}</div>
+                      {nextR && <div style={{ fontSize: 11, color: "#bbb" }}>距 {nextR.name} · {Math.max(0, nextR.words - words.length)} 词</div>}
+                    </div>
+                    <div style={{ height: 4, background: "#e8e8e8", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 2, background: r.color,
+                        width: nextR ? Math.min(100, Math.round(Math.max(words.length - r.words, 0) / Math.max(nextR.words - r.words, 1) * 100)) + "%" : "100%" }} />
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 11, color: "#bbb" }}>加入于 {profile?.joinDate || "—"}</div>
+                    <button onClick={e => { e.stopPropagation(); setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); setHeaderExpanded(false); }}
+                      style={{ fontSize: 11, color: "#666", background: "#f0f0f0", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
+                      编辑资料
+                    </button>
                   </div>
                 </div>
               );
             })()}
-
-            {/* Expand arrow */}
-            <div style={{ color: "#333", fontSize: 12, transition: "transform 0.3s", transform: headerExpanded ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>▾</div>
           </div>
-
-          {/* Expanded: full profile card */}
-          {headerExpanded && (() => {
-            const r = getRank(words.length, streakData.count);
-            const nextR = getNextRank(words.length, streakData.count);
-            const mastered = words.filter(w => w.mastery >= 4).length;
-            return (
-              <div onClick={e => e.stopPropagation()}
-                style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #222", animation: "unlockSub 0.3s ease both" }}>
-
-                {/* Stats grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-                  {[
-                    ["词库", words.length, "词"],
-                    ["掌握", mastered, "个"],
-                    ["正确率", correctRate, "%"],
-                    ["连续", streakData.count, "天"],
-                  ].map(([label, val, unit]) => (
-                    <div key={label} style={{ background: "#1a1a1a", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", lineHeight: 1 }}>
-                        {val}<span style={{ fontSize: 11, color: "#555", marginLeft: 2 }}>{unit}</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>{label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Rank progress */}
-                <div style={{ background: "#1a1a1a", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: r.color }}>{r.name}</div>
-                    {nextR && <div style={{ fontSize: 11, color: "#444" }}>距 {nextR.name} · {Math.max(0, nextR.words - words.length)} 词</div>}
-                  </div>
-                  <div style={{ height: 4, background: "#2a2a2a", borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ height: "100%", borderRadius: 2, background: r.color,
-                      width: nextR ? Math.min(100, Math.round(Math.max(words.length - r.words, 0) / Math.max(nextR.words - r.words, 1) * 100)) + "%" : "100%" }} />
-                  </div>
-                </div>
-
-                {/* Join date + edit */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: 11, color: "#444" }}>加入于 {profile?.joinDate || "—"}</div>
-                  <button onClick={e => { e.stopPropagation(); setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); setHeaderExpanded(false); }}
-                    style={{ fontSize: 11, color: "#555", background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
-                    编辑资料
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
         </div>
       </div>
-
       {/* Content */}
       <div className="tab-content">
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
