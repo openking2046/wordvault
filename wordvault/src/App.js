@@ -2258,9 +2258,9 @@ export default function VocabApp() {
           {/* ── GAME LOBBY ── */}
           {quizLobby && !pairActive && (
             <div>
-              <div style={{ marginBottom: 22 }}>
-                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", letterSpacing: "-0.5px" }}>选择游戏</div>
-                <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>练习词库 · 积累 Combo · 提升段位</div>
+              <div style={{ marginBottom: 22, textAlign: "center" }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.5px" }}>Combo 挑战</div>
+                <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>练习词库 · 积累 Combo · 提升段位</div>
               </div>
               {(() => {
                 const dueCount = getDueWords(words).length;
