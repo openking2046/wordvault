@@ -298,15 +298,19 @@ export default function VocabApp() {
 
   // Combo Pair Game state
   const [pairActive, setPairActive] = useState(false);
-  const [pairCards, setPairCards] = useState([]); // {id, text, type:'word'|'meaning', wordId, matched, selected}
+  const [pairCards, setPairCards] = useState([]); // {id, text, type:'word'|'meaning', wordId, pairKey, matched, selected, entering, wrong}
   const [pairSelected, setPairSelected] = useState(null);
   const [pairMatched, setPairMatched] = useState([]);
-  const [pairTimer, setPairTimer] = useState(90);
+  const [pairTimer, setPairTimer] = useState(60);
   const [pairCombo, setPairCombo] = useState(0);
   const [pairMaxCombo, setPairMaxCombo] = useState(0);
   const [pairDone, setPairDone] = useState(false);
   const [pairScore, setPairScore] = useState(0);
+  const [pairTotalMatched, setPairTotalMatched] = useState(0);
   const pairTimerRef = useRef(null);
+  const pairPoolRef = useRef([]); // shuffled word pool for continuous flow
+  const pairPoolIdxRef = useRef(0);
+  const pairCardCounterRef = useRef(0); // unique id counter
   const [isPro, setIsPro] = useState(() => localStorage.getItem("wv_pro") === "1");
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [spellingInput, setSpellingInput] = useState("");
@@ -794,67 +798,185 @@ export default function VocabApp() {
   }
 
   // ── Combo Pair Game ──
+  const pairSoundRef = useRef(null);
+
+  function playPairSound(type) {
+    try {
+      if (!pairSoundRef.current) pairSoundRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = pairSoundRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+
+      if (type === "match") {
+        // Two-note success chime
+        [0, 0.12].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          osc.connect(gain);
+          osc.frequency.value = i === 0 ? 523 : 784; // C5, G5
+          osc.type = "sine";
+          gain.gain.setValueAtTime(0.18, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.22);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.25);
+        });
+      } else if (type === "combo") {
+        // Ascending 3-note combo fanfare
+        [0, 0.1, 0.2].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          osc.connect(gain);
+          osc.frequency.value = [523, 659, 1047][i];
+          osc.type = "triangle";
+          gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.18);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.2);
+        });
+      } else if (type === "wrong") {
+        const osc = ctx.createOscillator();
+        osc.connect(gain);
+        osc.frequency.value = 200;
+        osc.type = "sawtooth";
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.18);
+      } else if (type === "end") {
+        [0, 0.15, 0.3, 0.5].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          osc.connect(gain);
+          osc.frequency.value = [523, 659, 784, 1047][i];
+          osc.type = "sine";
+          gain.gain.setValueAtTime(0.14, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.28);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.3);
+        });
+      }
+    } catch {}
+  }
+
+  function makePairFromPool() {
+    const pool = pairPoolRef.current;
+    if (!pool.length) return null;
+    const idx = pairPoolIdxRef.current % pool.length;
+    pairPoolIdxRef.current++;
+    const w = pool[idx];
+    const key = ++pairCardCounterRef.current;
+    return {
+      wordCard: { id: "w" + key, text: w.word, type: "word", pairKey: key, matched: false, selected: false, entering: true, wrong: false },
+      meaningCard: { id: "m" + key, text: w.meaning.split("；")[0].split(";")[0].replace(/[，,。.]/g, "").slice(0, 14), type: "meaning", pairKey: key, matched: false, selected: false, entering: true, wrong: false },
+    };
+  }
+
   function startPairGame() {
-    const pool = words.length >= 5 ? words : null;
-    if (!pool) { showMsg("至少需要 5 个单词才能配对"); return; }
-    const selected = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
-    const leftCards = selected.map((w, i) => ({ id: 'w'+i, text: w.word, type: 'word', wordId: i, matched: false, selected: false }));
-    const rightCards = [...selected].sort(() => Math.random() - 0.5).map((w, i) => {
-      const idx = selected.findIndex(s => s.id === w.id);
-      return { id: 'm'+i, text: w.meaning.split('；')[0].split(';')[0].slice(0,12), type: 'meaning', wordId: idx, matched: false, selected: false };
-    });
-    setPairCards([...leftCards, ...rightCards]);
+    if (words.length < 4) { showMsg("至少需要 4 个单词才能配对"); return; }
+    // Build shuffled infinite pool
+    const shuffled = [...words].sort(() => Math.random() - 0.5);
+    pairPoolRef.current = shuffled;
+    pairPoolIdxRef.current = 0;
+    pairCardCounterRef.current = 0;
+
+    // Build initial 5 slots: left=words, right=meanings (shuffled independently)
+    const initial = Array.from({ length: 5 }, () => makePairFromPool()).filter(Boolean);
+    const leftCards  = initial.map(p => p.wordCard);
+    const rightCards = [...initial.map(p => p.meaningCard)].sort(() => Math.random() - 0.5);
+    const allCards = [...leftCards, ...rightCards].map(c => ({ ...c, entering: false }));
+
+    setPairCards(allCards);
     setPairSelected(null);
     setPairMatched([]);
     setPairCombo(0);
     setPairMaxCombo(0);
     setPairScore(0);
-    setPairTimer(90);
+    setPairTotalMatched(0);
+    setPairTimer(60);
     setPairDone(false);
     setPairActive(true);
+
     clearInterval(pairTimerRef.current);
     pairTimerRef.current = setInterval(() => {
       setPairTimer(t => {
-        if (t <= 1) { clearInterval(pairTimerRef.current); setPairDone(true); return 0; }
+        if (t <= 1) {
+          clearInterval(pairTimerRef.current);
+          setPairDone(true);
+          playPairSound("end");
+          return 0;
+        }
         return t - 1;
       });
     }, 1000);
   }
 
   function handlePairTap(card) {
-    if (card.matched || pairDone) return;
+    if (card.matched || card.entering || pairDone) return;
+
     setPairCards(cards => {
-      const updated = cards.map(c => ({ ...c, selected: c.id === card.id ? true : (c.type !== card.type ? c.selected : false) }));
-      const wordSel = updated.find(c => c.type === 'word' && c.selected);
-      const meanSel = updated.find(c => c.type === 'meaning' && c.selected);
-      if (wordSel && meanSel) {
-        if (wordSel.wordId === meanSel.wordId) {
-          // Match!
-          haptic('success');
-          const newCards = updated.map(c => c.id === wordSel.id || c.id === meanSel.id ? { ...c, matched: true, selected: false } : c);
-          setPairMatched(m => [...m, wordSel.wordId]);
-          setPairCombo(c => {
-            const nc = c + 1;
-            setPairMaxCombo(mx => Math.max(mx, nc));
-            setPairScore(s => s + 10 + nc * 5);
-            return nc;
+      // Deselect same-type cards, select tapped card
+      const after = cards.map(c => ({
+        ...c,
+        selected: c.id === card.id ? !c.selected : (c.type === card.type ? false : c.selected),
+      }));
+
+      const wordSel    = after.find(c => c.type === "word"    && c.selected && !c.matched);
+      const meaningSel = after.find(c => c.type === "meaning" && c.selected && !c.matched);
+
+      if (!wordSel || !meaningSel) return after;
+
+      if (wordSel.pairKey === meaningSel.pairKey) {
+        // ✅ Match
+        haptic("success");
+        setPairTotalMatched(n => n + 1);
+        setPairCombo(c => {
+          const nc = c + 1;
+          setPairMaxCombo(mx => Math.max(mx, nc));
+          setPairScore(s => s + 10 + nc * 3);
+          if (nc >= 3) playPairSound("combo"); else playPairSound("match");
+          return nc;
+        });
+
+        // Mark matched with flash
+        const matched = after.map(c =>
+          c.id === wordSel.id || c.id === meaningSel.id
+            ? { ...c, matched: true, selected: false }
+            : c
+        );
+
+        // After delay, replace matched pair with new cards
+        setTimeout(() => {
+          const next = makePairFromPool();
+          if (!next) return;
+          // Insert new word in same position as matched word card, new meaning in random meaning slot
+          setPairCards(cs => {
+            const newWord    = { ...next.wordCard,    entering: true };
+            const newMeaning = { ...next.meaningCard, entering: true };
+            // Replace matched word slot
+            let replaced = cs.map(c => c.id === wordSel.id ? newWord : c);
+            // Replace matched meaning slot
+            replaced = replaced.map(c => c.id === meaningSel.id ? newMeaning : c);
+            // Clear entering after animation
+            setTimeout(() => setPairCards(cs2 => cs2.map(c =>
+              c.id === newWord.id || c.id === newMeaning.id ? { ...c, entering: false } : c
+            )), 350);
+            return replaced;
           });
-          if (newCards.filter(c => !c.matched).length === 0) {
-            clearInterval(pairTimerRef.current);
-            setTimeout(() => setPairDone(true), 400);
-          }
-          return newCards;
-        } else {
-          // Wrong
-          haptic('error');
-          setPairCombo(0);
-          setTimeout(() => setPairCards(cs => cs.map(c => ({ ...c, selected: false }))), 600);
-          return updated.map(c => ({ ...c, selected: c.id === wordSel.id || c.id === meanSel.id ? false : c.selected, wrong: c.id === wordSel.id || c.id === meanSel.id ? true : false }));
-        }
+        }, 380);
+
+        return matched;
+      } else {
+        // ❌ Wrong
+        haptic("error");
+        playPairSound("wrong");
+        setPairCombo(0);
+        const wrong = after.map(c =>
+          c.id === wordSel.id || c.id === meaningSel.id
+            ? { ...c, wrong: true, selected: false }
+            : c
+        );
+        setTimeout(() => setPairCards(cs => cs.map(c => ({ ...c, wrong: false }))), 500);
+        return wrong;
       }
-      return updated;
     });
-    setTimeout(() => setPairCards(cs => cs.map(c => ({ ...c, wrong: false }))), 500);
   }
 
   function endPairGame() {
@@ -2102,10 +2224,10 @@ export default function VocabApp() {
                             border: "2px solid " + (card.matched ? "#2d8a4e" : card.wrong ? "#e53e3e" : card.selected ? "#111" : "#ebebeb"),
                             color: card.matched ? "#2d8a4e" : card.selected ? "#fff" : "#111",
                             fontFamily: "DM Serif Display, serif", fontSize: 15, letterSpacing: "-0.2px",
-                            opacity: card.matched ? 0.4 : 1,
-                            transition: "all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
-                            transform: card.selected ? "scale(1.04)" : "scale(1)" }}>
-                          {card.matched ? "✓" : card.text}
+                            opacity: card.matched ? 0 : card.entering ? 0 : 1,
+                            transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                            transform: card.entering ? "scale(0.85) translateY(8px)" : card.selected ? "scale(1.04)" : "scale(1)" }}>
+                          {card.text}
                         </div>
                       ))}
                     </div>
@@ -2116,11 +2238,11 @@ export default function VocabApp() {
                             background: card.matched ? "#f0faf4" : card.wrong ? "#fff0f0" : card.selected ? "#0891b2" : "#fff",
                             border: "2px solid " + (card.matched ? "#2d8a4e" : card.wrong ? "#e53e3e" : card.selected ? "#0891b2" : "#ebebeb"),
                             color: card.matched ? "#2d8a4e" : card.selected ? "#fff" : "#555",
-                            fontSize: 11, lineHeight: 1.4,
-                            opacity: card.matched ? 0.4 : 1,
-                            transition: "all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
-                            transform: card.selected ? "scale(1.04)" : "scale(1)" }}>
-                          {card.matched ? "✓" : card.text}
+                            fontSize: 12, lineHeight: 1.4,
+                            opacity: card.matched ? 0 : card.entering ? 0 : 1,
+                            transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                            transform: card.entering ? "scale(0.85) translateY(8px)" : card.selected ? "scale(1.04)" : "scale(1)" }}>
+                          {card.text}
                         </div>
                       ))}
                     </div>
@@ -2130,10 +2252,12 @@ export default function VocabApp() {
                 <div style={{ textAlign: "center" }}>
                   <div style={{ background: "#111", borderRadius: 20, padding: "28px 24px", color: "#fff", marginBottom: 20 }}>
                     <div style={{ fontSize: 11, letterSpacing: "3px", color: "#555", marginBottom: 16 }}>COMBO PAIR · 结果</div>
-                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 72, color: pairMatched.length === 5 ? "#4ade80" : "#facc15", lineHeight: 1 }}>{pairScore}</div>
-                    <div style={{ fontSize: 13, color: "#555", marginTop: 6, marginBottom: 20 }}>{pairMatched.length === 5 ? "全部配对成功 🎉" : "配对 " + pairMatched.length + " / 5 对"}</div>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 72, color: pairTotalMatched >= 10 ? "#4ade80" : pairTotalMatched >= 5 ? "#facc15" : "#fff", lineHeight: 1 }}>{pairScore}</div>
+                    <div style={{ fontSize: 13, color: "#555", marginTop: 6, marginBottom: 20 }}>
+                      {pairTotalMatched >= 10 ? "🔥 词汇达人！" : pairTotalMatched >= 5 ? "⚡ 干得不错！" : "继续加油 💪"} · 配对 {pairTotalMatched} 对
+                    </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                      {[["得分", pairScore], ["最高连击", "×" + pairMaxCombo], ["剩余时间", pairTimer + "s"]].map(([label, val]) => (
+                      {[["配对数", pairTotalMatched + "对"], ["最高连击", "×" + pairMaxCombo], ["每秒得分", (pairScore / 60).toFixed(1)]].map(([label, val]) => (
                         <div key={label} style={{ background: "#1a1a1a", borderRadius: 10, padding: "10px 8px" }}>
                           <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#fff" }}>{val}</div>
                           <div style={{ fontSize: 10, color: "#555", marginTop: 3 }}>{label}</div>
