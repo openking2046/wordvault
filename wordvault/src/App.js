@@ -992,66 +992,69 @@ export default function VocabApp() {
   const [splash, setSplash] = useState("in");
   const [typedText, setTypedText] = useState("");
   const [typedLine2, setTypedLine2] = useState("");
-  const [showCursor, setShowCursor] = useState(true);
-  const [splashPhase, setSplashPhase] = useState(0); // 0=logo, 1=typing line1, 2=typing line2, 3=done typing
+  const [splashPhase, setSplashPhase] = useState(0);
+  // 0=idle, 1=typing line1, 2=typing line2, 3=show logo, 4=done
 
-  const LINE1 = "The more you hit, the less you forget.";
-  const LINE2 = "Welcome to WordCombo";
+  const LINE1 = "The more you hit,";
+  const LINE2 = "the less you forget.";
 
   useEffect(() => {
-    // Typewriter audio
     let audioCtx = null;
     const playKey = () => {
       try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.04, audioCtx.sampleRate);
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.035, audioCtx.sampleRate);
         const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.012));
+        for (let i = 0; i < data.length; i++)
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.01));
         const src = audioCtx.createBufferSource();
         const gain = audioCtx.createGain();
         src.buffer = buf; src.connect(gain); gain.connect(audioCtx.destination);
-        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.035);
         src.start();
       } catch {}
     };
 
-    // Phase 0: logo appears (0.6s)
-    const t0 = setTimeout(() => setSplashPhase(1), 700);
+    const SPEED1 = 55; // ms per char line1
+    const SPEED2 = 50; // ms per char line2
+    const PAUSE  = 320; // pause between lines
 
-    // Phase 1: type line 1
-    let idx1 = 0;
-    const t1 = setTimeout(() => {
-      const iv = setInterval(() => {
-        idx1++;
-        setTypedText(LINE1.slice(0, idx1));
+    // Start typing line 1 after short delay
+    const tStart = setTimeout(() => {
+      setSplashPhase(1);
+      let i = 0;
+      const iv1 = setInterval(() => {
+        i++;
+        setTypedText(LINE1.slice(0, i));
         playKey();
-        if (idx1 >= LINE1.length) {
-          clearInterval(iv);
-          setSplashPhase(2);
-          // Phase 2: type line 2 after pause
-          let idx2 = 0;
+        if (i >= LINE1.length) {
+          clearInterval(iv1);
+          // pause then line 2
           setTimeout(() => {
+            setSplashPhase(2);
+            let j = 0;
             const iv2 = setInterval(() => {
-              idx2++;
-              setTypedLine2(LINE2.slice(0, idx2));
+              j++;
+              setTypedLine2(LINE2.slice(0, j));
               playKey();
-              if (idx2 >= LINE2.length) {
+              if (j >= LINE2.length) {
                 clearInterval(iv2);
-                setSplashPhase(3);
+                // pause then show WordCombo logo
+                setTimeout(() => setSplashPhase(3), 500);
               }
-            }, 55);
-          }, 400);
+            }, SPEED2);
+          }, PAUSE);
         }
-      }, 42);
-    }, 700);
+      }, SPEED1);
+    }, 400);
 
-    // Exit
-    const totalTypingMs = 700 + LINE1.length * 42 + 400 + LINE2.length * 55 + 600;
-    const tOut = setTimeout(() => setSplash("out"), totalTypingMs);
-    const tDone = setTimeout(() => setSplash("done"), totalTypingMs + 700);
+    const totalMs = 400 + LINE1.length * SPEED1 + PAUSE + LINE2.length * SPEED2 + 500 + 1000;
+    const tOut  = setTimeout(() => setSplash("out"),  totalMs);
+    const tDone = setTimeout(() => setSplash("done"), totalMs + 650);
 
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(tOut); clearTimeout(tDone); };
+    return () => { clearTimeout(tStart); clearTimeout(tOut); clearTimeout(tDone); };
   }, []);
 
   return (
@@ -1120,6 +1123,15 @@ export default function VocabApp() {
         @keyframes splashLogoIn {
           0%   { opacity: 0; transform: scale(0.6) translateY(10px); filter: blur(8px); }
           60%  { opacity: 1; transform: scale(1.06) translateY(-2px); filter: blur(0); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes splashWelcomeIn {
+          0%   { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes splashWordComboIn {
+          0%   { opacity: 0; transform: scale(0.75) translateY(16px); filter: blur(6px); }
+          65%  { opacity: 1; transform: scale(1.04) translateY(-3px); filter: blur(0); }
           100% { opacity: 1; transform: scale(1) translateY(0); }
         }
         @keyframes splashScanline {
@@ -1193,63 +1205,69 @@ export default function VocabApp() {
           style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden",
             background: "linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0d0d1a 100%)" }}>
 
-          {/* Subtle grid overlay */}
+          {/* Grid overlay */}
           <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none" }} />
 
-          {/* Scanline sweep */}
+          {/* Scanline */}
           <div style={{ position: "absolute", left: 0, right: 0, height: "30%", background: "linear-gradient(transparent, rgba(255,255,255,0.03), transparent)", animation: "splashScanline 3s linear infinite", pointerEvents: "none" }} />
 
-          {/* Corner brackets — game HUD feel */}
-          {[["0 0","border-top border-left"],["0 auto 0 0","border-top border-right"],["auto 0 0 0","border-bottom border-left"],["auto 0 0 auto","border-bottom border-right"]].map(([inset], i) => (
-            <div key={i} style={{ position: "absolute", width: 24, height: 24, border: "1.5px solid rgba(255,255,255,0.15)",
-              top: i < 2 ? 28 : "auto", bottom: i >= 2 ? 28 : "auto",
-              left: i % 2 === 0 ? 24 : "auto", right: i % 2 === 1 ? 24 : "auto",
-              borderRight: i % 2 === 0 ? "none" : undefined, borderLeft: i % 2 === 1 ? "none" : undefined,
-              borderBottom: i < 2 ? "none" : undefined, borderTop: i >= 2 ? "none" : undefined,
+          {/* HUD corners */}
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ position: "absolute", width: 22, height: 22,
+              top: i < 2 ? 32 : "auto", bottom: i >= 2 ? 32 : "auto",
+              left: i % 2 === 0 ? 28 : "auto", right: i % 2 === 1 ? 28 : "auto",
+              borderTop:    i < 2  ? "1.5px solid rgba(255,255,255,0.18)" : "none",
+              borderBottom: i >= 2 ? "1.5px solid rgba(255,255,255,0.18)" : "none",
+              borderLeft:   i % 2 === 0 ? "1.5px solid rgba(255,255,255,0.18)" : "none",
+              borderRight:  i % 2 === 1 ? "1.5px solid rgba(255,255,255,0.18)" : "none",
             }} />
           ))}
 
-          {/* Main content */}
-          <div style={{ textAlign: "center", padding: "0 32px", position: "relative", zIndex: 1 }}>
+          {/* Content */}
+          <div style={{ textAlign: "center", padding: "0 40px", position: "relative", zIndex: 1, width: "100%" }}>
 
-            {/* Logo */}
-            {splashPhase >= 0 && (
-              <div className="splash-logo-anim" style={{ fontFamily: "DM Serif Display, serif", fontSize: 52, color: "#fff", letterSpacing: "-1px", lineHeight: 1, marginBottom: 8 }}>
-                WordCombo
-              </div>
-            )}
-
-            {/* Version tag */}
-            <div className="splash-badge" style={{ display: "inline-block", fontSize: 10, letterSpacing: "3px", color: "#444", textTransform: "uppercase", marginBottom: 48 }}>
-              VOCABULARY · UNLEASHED
-            </div>
-
-            {/* Typewriter line 1 */}
-            <div style={{ minHeight: 60, marginBottom: 8 }}>
+            {/* Phase 1-2: Typewriter lines */}
+            <div style={{ minHeight: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: splashPhase >= 3 ? 32 : 0, transition: "margin 0.4s ease" }}>
               {splashPhase >= 1 && (
-                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", lineHeight: 1.4, letterSpacing: "-0.3px" }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#fff", lineHeight: 1.3, letterSpacing: "-0.3px", marginBottom: 2 }}>
                   {typedText}
                   {splashPhase === 1 && <span className="splash-cursor" />}
                 </div>
               )}
-            </div>
-
-            {/* Typewriter line 2 */}
-            <div style={{ minHeight: 32 }}>
               {splashPhase >= 2 && (
-                <div style={{ fontSize: 13, color: "#555", letterSpacing: "1px" }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#aaa", lineHeight: 1.3, letterSpacing: "-0.3px" }}>
                   {typedLine2}
                   {splashPhase === 2 && <span className="splash-cursor" />}
                 </div>
               )}
             </div>
 
-            {/* Done indicator */}
-            {splashPhase === 3 && (
-              <div style={{ marginTop: 36, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, animation: "splashBadgeIn 0.4s ease both" }}>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#333", animation: "cursorBlink 0.8s ease infinite" }} />
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#444", animation: "cursorBlink 0.8s ease 0.15s infinite" }} />
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#333", animation: "cursorBlink 0.8s ease 0.3s infinite" }} />
+            {/* Phase 3: Welcome + WordCombo */}
+            {splashPhase >= 3 && (
+              <div>
+                {/* Divider line */}
+                <div style={{ width: 40, height: 1, background: "rgba(255,255,255,0.15)", margin: "0 auto 20px", animation: "splashWelcomeIn 0.4s ease both" }} />
+
+                {/* Welcome label */}
+                <div style={{ fontSize: 11, letterSpacing: "4px", color: "#555", textTransform: "uppercase", marginBottom: 10,
+                  animation: "splashWelcomeIn 0.5s ease 0.05s both" }}>
+                  Welcome
+                </div>
+
+                {/* WordCombo big */}
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 56, color: "#fff", letterSpacing: "-1.5px", lineHeight: 1,
+                  animation: "splashWordComboIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.1s both",
+                  textShadow: "0 0 60px rgba(255,255,255,0.15)" }}>
+                  WordCombo
+                </div>
+
+                {/* Dots loading */}
+                <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#333",
+                      animation: `cursorBlink 1s ease ${i * 0.2}s infinite` }} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
