@@ -253,6 +253,8 @@ export default function VocabApp() {
   const [tab, setTab] = useState(0);
   const [words, setWords] = useState(() => { try { const s = localStorage.getItem("wv_words"); return s ? JSON.parse(s) : SAMPLE_WORDS; } catch { return SAMPLE_WORDS; } });
   const [score, setScore] = useState(() => { try { const s = localStorage.getItem("wv_score"); return s ? JSON.parse(s) : { correct: 0, total: 0 }; } catch { return { correct: 0, total: 0 }; } });
+  const [globalCombo, setGlobalCombo] = useState(0);
+  const [globalMaxCombo, setGlobalMaxCombo] = useState(() => { try { return parseInt(localStorage.getItem("wv_max_combo") || "0"); } catch { return 0; } });
 
   // Profile
   const [profile, setProfile] = useState(() => { try { const s = localStorage.getItem("wv_profile"); return s ? JSON.parse(s) : null; } catch { return null; } });
@@ -619,6 +621,7 @@ export default function VocabApp() {
     haptic(correct ? "success" : "error");
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+    updateGlobalCombo(correct);
     if (correct) {
       try {
         const d = JSON.parse(localStorage.getItem("wv_today_correct") || "{}");
@@ -626,6 +629,22 @@ export default function VocabApp() {
         localStorage.setItem("wv_today_correct", JSON.stringify({ date: todayKey2, count: (d.date === todayKey2 ? d.count : 0) + 1 }));
       } catch {}
       setTimeout(() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }, 1200);
+    }
+  }
+
+  function updateGlobalCombo(correct) {
+    if (correct) {
+      setGlobalCombo(c => {
+        const next = c + 1;
+        setGlobalMaxCombo(m => {
+          const newMax = Math.max(m, next);
+          try { localStorage.setItem("wv_max_combo", String(newMax)); } catch {}
+          return newMax;
+        });
+        return next;
+      });
+    } else {
+      setGlobalCombo(0);
     }
   }
 
@@ -638,8 +657,7 @@ export default function VocabApp() {
     }
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
-
-    // Update mastery + schedule next review via Ebbinghaus
+    updateGlobalCombo(correct);
     setWords(ws => ws.map(w => {
       if (w.word !== quizState.correctWord) return w;
       const updated = scheduleReview(w, correct);
@@ -958,6 +976,7 @@ export default function VocabApp() {
           if (nc >= 3) playPairSound("combo"); else playPairSound("match");
           return nc;
         });
+        updateGlobalCombo(true);
 
         // Mark matched with flash
         const matched = after.map(c =>
@@ -992,6 +1011,7 @@ export default function VocabApp() {
         haptic("error");
         playPairSound("wrong");
         setPairCombo(0);
+        updateGlobalCombo(false);
         const wrong = after.map(c =>
           c.id === wordSel.id || c.id === meaningSel.id
             ? { ...c, wrong: true, selected: false }
@@ -2261,6 +2281,21 @@ export default function VocabApp() {
               <div style={{ marginBottom: 22, textAlign: "center" }}>
                 <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.5px" }}>Combo 挑战</div>
                 <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>练习词库 · 积累 Combo · 提升段位</div>
+                <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 14, padding: "10px 20px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#bbb", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 2 }}>当前连击</div>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, lineHeight: 1, color: globalCombo >= 5 ? "#d97706" : globalCombo >= 3 ? "#0891b2" : "#111", transition: "color 0.3s" }}>
+                      {globalCombo > 0 ? "×" + globalCombo : "—"}
+                    </div>
+                  </div>
+                  <div style={{ width: 1, height: 32, background: "#f0f0f0" }} />
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#bbb", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 2 }}>最高记录</div>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, lineHeight: 1, color: globalMaxCombo >= 10 ? "#d97706" : "#111" }}>
+                      {globalMaxCombo > 0 ? "×" + globalMaxCombo : "—"}
+                    </div>
+                  </div>
+                </div>
               </div>
               {(() => {
                 const dueCount = getDueWords(words).length;
@@ -2269,10 +2304,10 @@ export default function VocabApp() {
                   { id: "normal",    num: 1, icon: "📖", name: "释义选词", desc: "看单词，选正确释义", sub: "经典模式", color: "#111" },
                   { id: "listen",    num: 2, icon: "🔊", name: "听音辨词", desc: "听发音，判断正确单词", sub: "耳力训练", color: "#2d6bcf" },
                   { id: "spell",     num: 3, icon: "✍️", name: "拼写练习", desc: "看释义，打出完整单词", sub: "手感养成", color: "#7c3aed" },
-                  { id: "review",    num: 4, icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
+                  { id: "pair",      num: 4, icon: "🔗", name: "Combo配对", desc: "点击配对单词与释义，连击得分", sub: "连击模式", color: "#0891b2" },
                   { id: "wrong",     num: 5, icon: "🎯", name: "错词研究", desc: "专项攻克做错的单词", sub: wrongCount > 0 ? wrongCount + " 词待攻克" : "暂无错词", color: wrongCount > 0 ? "#e53e3e" : "#888", alert: wrongCount > 0 },
                   { id: "battle",    num: 6, icon: "⚡", name: "限时挑战", desc: "60秒内答对最多题，生成战绩图", sub: "高压竞速", color: "#c2410c" },
-                  { id: "pair",      num: 7, icon: "🔗", name: "Combo配对", desc: "点击配对单词与释义，连击得分", sub: "连击模式", color: "#0891b2" },
+                  { id: "review",    num: 7, icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
                   { id: "challenge", num: 8, icon: "👥", name: "好友挑战", desc: "选词生成链接，发给朋友对战", sub: "社交对战", color: "#7c3aed" },
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
