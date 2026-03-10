@@ -464,7 +464,7 @@ export default function VocabApp() {
     if (m === "listen") setTimeout(() => speak(target.word), 200);
   }, [words, filterTag, quizMode, wrongBank]);
 
-  useEffect(() => { if (tab === 2) startQuiz(); }, [tab, startQuiz]);
+  useEffect(() => { if (tab === 2) { setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); startQuiz(); } }, [tab, startQuiz]);
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(""), 2500); };
 
@@ -3348,7 +3348,7 @@ export default function VocabApp() {
         <div className="bottom-nav-inner">
         {NAV.map((item, i) => {
           if (i === 2) return (
-            <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); if (tab === 2) setQuizLobby(true); }}>
+            <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); }}>
               <div className="nav-center-btn">
                 <em className="nav-center-icon">◎</em>
               </div>
