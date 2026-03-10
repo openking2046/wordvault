@@ -605,6 +605,22 @@ export default function VocabApp() {
     showMsg("标签已更新");
   }
 
+  function submitSpelling() {
+    if (!spellingInput.trim() || !quizState) return;
+    const correct = spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase();
+    haptic(correct ? "success" : "error");
+    setQuizResult(correct ? "correct" : "wrong");
+    setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+    if (correct) {
+      try {
+        const d = JSON.parse(localStorage.getItem("wv_today_correct") || "{}");
+        const todayKey2 = new Date().toISOString().slice(0, 10);
+        localStorage.setItem("wv_today_correct", JSON.stringify({ date: todayKey2, count: (d.date === todayKey2 ? d.count : 0) + 1 }));
+      } catch {}
+      setTimeout(() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }, 1200);
+    }
+  }
+
   function handleMCQ(option) {
     const correct = option === quizState.correct;
     haptic(correct ? "success" : "error");
@@ -2323,129 +2339,133 @@ export default function VocabApp() {
                     );
                   })()}
 
-                  {quizState.isSpell ? (() => {
-                    const answer = quizState.correct;
-                    const isCorrect = spellingInput.trim().toLowerCase() === answer.toLowerCase();
+                  {quizState.isSpell ? (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>看释义，拼出英文单词</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 8, lineHeight: 1.3 }}>{quizState.question}</div>
 
-                    function submitSpelling() {
-                      if (!spellingInput.trim()) return;
-                      const correct = spellingInput.trim().toLowerCase() === answer.toLowerCase();
-                      haptic(correct ? "success" : "error");
-                      setQuizResult(correct ? "correct" : "wrong");
-                      setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
-                      if (correct) {
-                        try {
-                          const d = JSON.parse(localStorage.getItem("wv_today_correct") || "{}");
-                          const todayKey2 = new Date().toISOString().slice(0, 10);
-                          localStorage.setItem("wv_today_correct", JSON.stringify({ date: todayKey2, count: (d.date === todayKey2 ? d.count : 0) + 1 }));
-                        } catch {}
-                      }
-                    }
-
-                    return (
-                      <div>
-                        {/* Prompt */}
-                        <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>看释义，拼出英文单词</div>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 8, lineHeight: 1.3 }}>{quizState.question}</div>
-
-                        {/* Example sentence with blanks */}
-                        {quizState.example && (
-                          <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 24, lineHeight: 1.6, background: "#f9f9f9", borderRadius: 10, padding: "10px 14px", borderLeft: "3px solid #e0e0e0" }}>
-                            {quizResult
-                              ? quizState.example
-                              : quizState.example.replace(new RegExp(answer, "gi"), "＿".repeat(answer.length))}
-                          </div>
-                        )}
-
-                        {/* Letter boxes — live preview */}
-                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 20 }}>
-                          {answer.split("").map((letter, i) => {
-                            const isHinted = i < hintRevealed;
-                            const typed = spellingInput[i] || "";
-                            const isDone = !!quizResult;
-                            const isCorrectLetter = typed.toLowerCase() === letter.toLowerCase();
-                            let bg = "#f5f5f5", borderColor = "#e0e0e0", color = "#111";
-                            if (isHinted)      { bg = "#fffbec"; borderColor = "#c8900a"; color = "#c8900a"; }
-                            else if (isDone && typed) {
-                              bg = isCorrectLetter ? "#f0fff4" : "#fff5f5";
-                              borderColor = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
-                              color = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
-                            } else if (!isDone && typed) {
-                              bg = "#fff"; borderColor = "#111"; color = "#111";
-                            }
-                            return (
-                              <div key={i} style={{ width: 36, height: 44, borderRadius: 9, background: bg, border: "2px solid " + borderColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color, fontFamily: "DM Serif Display, serif", transition: "all 0.12s" }}>
-                                {isHinted ? letter : (typed || "")}
-                              </div>
-                            );
-                          })}
-                          {/* Show length hint if no input yet */}
-                          {!spellingInput && !quizResult && (
-                            <div style={{ fontSize: 11, color: "#ccc", alignSelf: "center", marginLeft: 6 }}>{answer.length} 个字母</div>
-                          )}
+                      {quizState.example && (
+                        <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 16, lineHeight: 1.6, background: "#f9f9f9", borderRadius: 10, padding: "10px 14px", borderLeft: "3px solid #e0e0e0" }}>
+                          {quizResult ? quizState.example : quizState.example.replace(new RegExp(quizState.correct, "gi"), "＿".repeat(quizState.correct.length))}
                         </div>
+                      )}
 
-                        {/* Input + hint row */}
-                        {!quizResult && (
-                          <div style={{ marginBottom: 14 }}>
-                            <input
-                              value={spellingInput}
-                              onChange={e => setSpellingInput(e.target.value.replace(/[^a-zA-Z\-\s']/g, ""))}
-                              placeholder={`输入 ${answer.length} 个字母…`}
-                              maxLength={answer.length + 3}
-                              autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                              autoFocus
-                              onKeyDown={e => { if (e.key === "Enter" && spellingInput.trim()) submitSpelling(); }}
-                              style={{ width: "100%", fontSize: 18, fontWeight: 600, letterSpacing: "2px", textAlign: "center", borderRadius: 14, border: "2px solid #e0e0e0", padding: "14px 16px", marginBottom: 10, fontFamily: "DM Serif Display, serif", background: "#fff" }}
-                            />
+                      {/* Letter boxes */}
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 14 }}>
+                        {quizState.correct.split("").map((letter, i) => {
+                          const isHinted = i < hintRevealed;
+                          const typed = spellingInput[i] || "";
+                          const isDone = !!quizResult;
+                          const isCorrectLetter = typed.toLowerCase() === letter.toLowerCase();
+                          let bg = "#f5f5f5", borderColor = "#e0e0e0", color = "#bbb";
+                          if (isHinted) { bg = "#fffbec"; borderColor = "#c8900a"; color = "#c8900a"; }
+                          else if (isDone && quizResult === "correct") { bg = "#f0faf4"; borderColor = "#2d8a4e"; color = "#2d8a4e"; }
+                          else if (isDone && quizResult === "wrong" && typed) {
+                            bg = isCorrectLetter ? "#f0faf4" : "#fff5f5";
+                            borderColor = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
+                            color = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
+                          } else if (!isDone && typed) { bg = "#fff"; borderColor = "#111"; color = "#111"; }
+                          return (
+                            <div key={i} style={{ width: 36, height: 44, borderRadius: 9, background: bg, border: "2px solid " + borderColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color, fontFamily: "DM Serif Display, serif", transition: "all 0.15s" }}>
+                              {isHinted ? letter : (typed || "")}
+                            </div>
+                          );
+                        })}
+                        {!spellingInput && !quizResult && (
+                          <div style={{ fontSize: 11, color: "#ccc", alignSelf: "center", marginLeft: 4 }}>{quizState.correct.length} 个字母</div>
+                        )}
+                      </div>
+
+                      {/* Input + buttons (before submit) */}
+                      {!quizResult && (() => {
+                        const isComplete = spellingInput.trim().length >= quizState.correct.length;
+                        return (
+                          <div>
+                            {/* ✅ Confirm button ABOVE input — always visible above keyboard */}
+                            <button onClick={() => { if (spellingInput.trim()) submitSpelling(); }}
+                              style={{ width: "100%", padding: "15px 0", borderRadius: 14, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16, marginBottom: 10,
+                                background: isComplete ? "#111" : "#f0f0f0",
+                                color: isComplete ? "#fff" : "#bbb",
+                                transition: "all 0.2s", cursor: isComplete ? "pointer" : "default" }}>
+                              {isComplete ? "✓  确认答案" : "还差 " + (quizState.correct.length - spellingInput.length) + " 个字母"}
+                            </button>
                             <div style={{ display: "flex", gap: 8 }}>
-                              {/* Submit button — big and clear */}
-                              <button
-                                onClick={submitSpelling}
-                                disabled={!spellingInput.trim()}
-                                style={{ flex: 3, padding: "15px 0", borderRadius: 14, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16, cursor: spellingInput.trim() ? "pointer" : "not-allowed",
-                                  background: spellingInput.trim() ? "#111" : "#f0f0f0",
-                                  color: spellingInput.trim() ? "#fff" : "#ccc",
-                                  transition: "all 0.15s" }}>
-                                ✓ 确认答案
-                              </button>
-                              {/* Hint button */}
-                              <button
-                                onClick={() => setHintRevealed(h => Math.min(h + 1, answer.length))}
-                                style={{ flex: 1, padding: "15px 0", borderRadius: 14, border: "1.5px solid #e0e0e0", background: "#fff", color: "#888", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                                提示
+                              <input
+                                value={spellingInput}
+                                onChange={e => {
+                                  const val = e.target.value.replace(/[^a-zA-Z\-']/g, "");
+                                  setSpellingInput(val);
+                                  // Auto-submit when full length reached
+                                  if (val.length >= quizState.correct.length) {
+                                    setTimeout(() => submitSpelling(), 280);
+                                  }
+                                }}
+                                placeholder={"输入 " + quizState.correct.length + " 个字母…"}
+                                maxLength={quizState.correct.length + 1}
+                                autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                                onKeyDown={e => { if (e.key === "Enter" && spellingInput.trim()) submitSpelling(); }}
+                                style={{ flex: 1, fontSize: 18, fontWeight: 600, letterSpacing: "3px", textAlign: "center", borderRadius: 12, border: "2px solid #e0e0e0", padding: "12px 10px", fontFamily: "DM Serif Display, serif", background: "#fff", boxSizing: "border-box" }}
+                              />
+                              <button onClick={() => setHintRevealed(h => Math.min(h + 1, quizState.correct.length))}
+                                style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e0e0e0", background: "#fff", color: "#888", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                                💡 提示
                               </button>
                             </div>
                           </div>
-                        )}
+                        );
+                      })()}
 
-                        {/* Result feedback */}
-                        {quizResult && (
-                          <div style={{ marginBottom: 16 }}>
-                            {quizResult === "correct" ? (
-                              <div style={{ background: "#f0faf4", border: "1.5px solid #2d8a4e", borderRadius: 14, padding: "16px 20px", textAlign: "center", marginBottom: 14 }}>
-                                <div style={{ fontSize: 22, marginBottom: 4 }}>✓</div>
-                                <div style={{ fontSize: 15, fontWeight: 700, color: "#2d8a4e" }}>拼写正确！</div>
-                              </div>
-                            ) : (
-                              <div style={{ background: "#fff5f5", border: "1.5px solid #e53e3e", borderRadius: 14, padding: "16px 20px", marginBottom: 14 }}>
-                                <div style={{ fontSize: 13, color: "#e53e3e", fontWeight: 600, marginBottom: 6 }}>✗ 拼写有误，你写的是：</div>
-                                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#e53e3e", letterSpacing: "2px", marginBottom: 10 }}>{spellingInput}</div>
-                                <div style={{ fontSize: 12, color: "#999", marginBottom: 4 }}>正确拼写：</div>
-                                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "2px", fontWeight: 700 }}>{answer}</div>
-                              </div>
-                            )}
-                            <button
-                              className="btn btn-dark"
-                              style={{ width: "100%", padding: "16px 0", borderRadius: 14, fontSize: 15, fontWeight: 700 }}
-                              onClick={() => { setSpellingInput(""); setHintRevealed(0); startQuiz(); }}>
-                              下一题 →
-                            </button>
+                      {/* ✅ Correct — green flash, auto-advances in 1.2s */}
+                      {quizResult === "correct" && (
+                        <div style={{ background: "#f0faf4", border: "2px solid #2d8a4e", borderRadius: 14, padding: "20px", textAlign: "center", animation: "unlockBadge 0.3s ease both" }}>
+                          <div style={{ fontSize: 32, marginBottom: 4 }}>✓</div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: "#2d8a4e" }}>拼写正确！</div>
+                          <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>自动进入下一题…</div>
+                        </div>
+                      )}
+
+                      {/* ❌ Wrong — show answer, user must retype to unlock next */}
+                      {quizResult === "wrong" && (
+                        <div>
+                          <div style={{ background: "#fff5f5", border: "2px solid #e53e3e", borderRadius: 14, padding: "16px 18px", marginBottom: 14 }}>
+                            <div style={{ fontSize: 12, color: "#e53e3e", fontWeight: 600, marginBottom: 10 }}>✗ 拼写有误，正确答案：</div>
+                            <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "3px", fontWeight: 700, textAlign: "center", marginBottom: 10 }}>{quizState.correct}</div>
+                            <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                              {quizState.correct.split("").map((letter, i) => {
+                                const typed = (spellingInput[i] || "").toLowerCase();
+                                const ok = typed === letter.toLowerCase();
+                                return <div key={i} style={{ width: 28, height: 32, borderRadius: 7, background: ok ? "#f0faf4" : "#fff0f0", border: "1.5px solid " + (ok ? "#2d8a4e" : "#e53e3e"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: ok ? "#2d8a4e" : "#e53e3e", fontFamily: "DM Serif Display, serif" }}>{letter}</div>;
+                              })}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })()
+                          <div style={{ fontSize: 11, color: "#888", marginBottom: 10, textAlign: "center" }}>
+                            {spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "✓ 纠正完成，可以继续" : "请输入正确答案以继续 👇"}
+                          </div>
+                          <input
+                            value={spellingInput}
+                            onChange={e => setSpellingInput(e.target.value.replace(/[^a-zA-Z\-']/g, ""))}
+                            placeholder={"重新拼写: " + quizState.correct}
+                            maxLength={quizState.correct.length + 2}
+                            autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                            style={{ width: "100%", fontSize: 18, fontWeight: 600, letterSpacing: "3px", textAlign: "center", borderRadius: 12,
+                              border: "2px solid " + (spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#2d8a4e" : "#e0e0e0"),
+                              padding: "12px 10px", marginBottom: 10, fontFamily: "DM Serif Display, serif",
+                              background: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#f0faf4" : "#fff",
+                              color: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#2d8a4e" : "#111",
+                              boxSizing: "border-box" }}
+                          />
+                          <button
+                            onClick={() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }}
+                            disabled={spellingInput.trim().toLowerCase() !== quizState.correct.toLowerCase()}
+                            style={{ width: "100%", padding: "15px 0", borderRadius: 14, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16,
+                              background: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#111" : "#f0f0f0",
+                              color: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#fff" : "#ccc",
+                              cursor: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
+                            {spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "下一题 →" : "输入正确拼写后继续"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : quizState.isListen ? (
                     <div>
                       <div style={{ marginBottom: 28, textAlign: "center" }}>
