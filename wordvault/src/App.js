@@ -2278,9 +2278,17 @@ export default function VocabApp() {
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
                 const renderCard = (g) => {
-                  function go(e) {
+                  let touchStartY = 0;
+                  let touchStartX = 0;
+                  function onTouchStart(e) {
+                    touchStartY = e.touches[0].clientY;
+                    touchStartX = e.touches[0].clientX;
+                  }
+                  function onTouchEnd(e) {
+                    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+                    const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
+                    if (dy > 8 || dx > 8) return; // was a scroll, ignore
                     e.preventDefault();
-                    e.stopPropagation();
                     haptic("medium");
                     if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
                     else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
@@ -2289,8 +2297,15 @@ export default function VocabApp() {
                   }
                   return (
                     <div key={g.id}
-                      onTouchEnd={go}
-                      onClick={go}
+                      onTouchStart={onTouchStart}
+                      onTouchEnd={onTouchEnd}
+                      onClick={() => {
+                        haptic("medium");
+                        if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
+                        else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
+                        else if (g.id === "battle") { setQuizMode("battle"); setQuizLobby(false); if (!battleActive && !showBattleResult) startBattle(); }
+                        else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
+                      }}
                       role="button"
                       className="game-card-btn"
                       style={{ display: "flex", flexDirection: "column", justifyContent: "space-between",
