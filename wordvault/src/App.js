@@ -12,6 +12,105 @@ const SAMPLE_WORDS = [
 ];
 
 const DEFAULT_TAGS = ["形容词", "名词", "动词", "生活", "商务", "学术", "口语", "写作"];
+const AVATARS = ["🦊","🐼","🐨","🦁","🐯","🐸","🦋","🐙","🦄","🐺","🦝","🐻","🐧","🦩","🐬","🦊","🌟","🔥","⚡","🌈","🎯","🎪","🎭","🏆","💎","🚀","🌸","🍀"];
+
+// ── Task Definitions ──────────────────────────────────────────
+// type: "daily" resets each day | "achievement" one-time unlock
+// progress(ctx) returns current value; target is goal value
+const TASKS = [
+  // ── 每日任务 ──
+  {
+    id: "daily_quiz_5", type: "daily", icon: "🎯",
+    title: "答题热身", desc: "今日答对 5 题",
+    target: 5, xp: 20,
+    progress: ctx => ctx.todayCorrect,
+  },
+  {
+    id: "daily_quiz_20", type: "daily", icon: "🔥",
+    title: "题海冲浪", desc: "今日答对 20 题",
+    target: 20, xp: 50,
+    progress: ctx => ctx.todayCorrect,
+  },
+  {
+    id: "daily_add_1", type: "daily", icon: "➕",
+    title: "收录新词", desc: "今日添加 1 个单词",
+    target: 1, xp: 15,
+    progress: ctx => ctx.todayWords,
+  },
+  {
+    id: "daily_add_3", type: "daily", icon: "📚",
+    title: "词汇扩充", desc: "今日添加 3 个单词",
+    target: 3, xp: 40,
+    progress: ctx => ctx.todayWords,
+  },
+  {
+    id: "daily_streak", type: "daily", icon: "📅",
+    title: "坚持打卡", desc: "保持连续学习不断签",
+    target: 1, xp: 30,
+    progress: ctx => ctx.streakToday ? 1 : 0,
+  },
+  {
+    id: "daily_battle", type: "daily", icon: "⚡",
+    title: "今日对战", desc: "完成一局限时对战",
+    target: 1, xp: 35,
+    progress: ctx => ctx.todayBattle,
+  },
+  // ── 成就任务（一次性）──
+  {
+    id: "ach_words_10", type: "achievement", icon: "🌱",
+    title: "初出茅庐", desc: "词库收录 10 个单词",
+    target: 10, xp: 50,
+    progress: ctx => ctx.totalWords,
+  },
+  {
+    id: "ach_words_30", type: "achievement", icon: "🌿",
+    title: "词汇猎人", desc: "词库收录 30 个单词",
+    target: 30, xp: 100,
+    progress: ctx => ctx.totalWords,
+  },
+  {
+    id: "ach_words_100", type: "achievement", icon: "🌳",
+    title: "百词大师", desc: "词库收录 100 个单词",
+    target: 100, xp: 300,
+    progress: ctx => ctx.totalWords,
+  },
+  {
+    id: "ach_correct_50", type: "achievement", icon: "🎖️",
+    title: "答题达人", desc: "累计答对 50 题",
+    target: 50, xp: 80,
+    progress: ctx => ctx.totalCorrect,
+  },
+  {
+    id: "ach_correct_200", type: "achievement", icon: "🏅",
+    title: "刷题狂魔", desc: "累计答对 200 题",
+    target: 200, xp: 200,
+    progress: ctx => ctx.totalCorrect,
+  },
+  {
+    id: "ach_streak_7", type: "achievement", icon: "🔥",
+    title: "一周无间", desc: "连续学习 7 天",
+    target: 7, xp: 150,
+    progress: ctx => ctx.streakCount,
+  },
+  {
+    id: "ach_streak_30", type: "achievement", icon: "💎",
+    title: "月度传说", desc: "连续学习 30 天",
+    target: 30, xp: 500,
+    progress: ctx => ctx.streakCount,
+  },
+  {
+    id: "ach_mastery_5", type: "achievement", icon: "⭐",
+    title: "精通初探", desc: "精通 5 个单词（掌握度满级）",
+    target: 5, xp: 100,
+    progress: ctx => ctx.masteredWords,
+  },
+  {
+    id: "ach_mastery_20", type: "achievement", icon: "🌟",
+    title: "词汇宗师", desc: "精通 20 个单词",
+    target: 20, xp: 250,
+    progress: ctx => ctx.masteredWords,
+  },
+];
 const NAV = [
   { icon: "☰", label: "单词库" },
   { icon: "+", label: "添加" },
@@ -142,6 +241,21 @@ export default function VocabApp() {
   const [tab, setTab] = useState(0);
   const [words, setWords] = useState(() => { try { const s = localStorage.getItem("wv_words"); return s ? JSON.parse(s) : SAMPLE_WORDS; } catch { return SAMPLE_WORDS; } });
   const [score, setScore] = useState(() => { try { const s = localStorage.getItem("wv_score"); return s ? JSON.parse(s) : { correct: 0, total: 0 }; } catch { return { correct: 0, total: 0 }; } });
+
+  // Profile
+  const [profile, setProfile] = useState(() => { try { const s = localStorage.getItem("wv_profile"); return s ? JSON.parse(s) : null; } catch { return null; } });
+  const [showProfileSetup, setShowProfileSetup] = useState(() => !localStorage.getItem("wv_profile"));
+  const [setupStep, setSetupStep] = useState(0); // 0=avatar, 1=name, 2=done
+  const [setupAvatar, setSetupAvatar] = useState("🦊");
+  const [setupName, setSetupName] = useState("");
+  const [editingProfile, setEditingProfile] = useState(false);
+
+  // XP & Tasks
+  const [xp, setXp] = useState(() => parseInt(localStorage.getItem("wv_xp") || "0"));
+  const [completedTasks, setCompletedTasks] = useState(() => { try { return JSON.parse(localStorage.getItem("wv_tasks_done") || "{}"); } catch { return {}; } });
+  const [taskTab, setTaskTab] = useState("daily");
+  const [showTaskReward, setShowTaskReward] = useState(null); // {title, xp, icon}
+  const [todayBattle, setTodayBattle] = useState(() => { try { const d = JSON.parse(localStorage.getItem("wv_today_battle")||"{}"); return d.date === new Date().toISOString().slice(0,10) ? 1 : 0; } catch { return 0; } });
   const [newWord, setNewWord] = useState("");
   const [newMeaning, setNewMeaning] = useState("");
   const [newExample, setNewExample] = useState("");
@@ -323,6 +437,51 @@ export default function VocabApp() {
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(""), 2500); };
 
+  function saveProfile(avatar, name) {
+    const p = { avatar, name: name.trim() || "匿名学习者", joinDate: profile?.joinDate || new Date().toISOString().slice(0,10) };
+    setProfile(p);
+    localStorage.setItem("wv_profile", JSON.stringify(p));
+    setShowProfileSetup(false);
+    setEditingProfile(false);
+  }
+
+  // Build task progress context from current state
+  function getTaskCtx() {
+    const todayKey = new Date().toISOString().slice(0,10);
+    const todayQuizData = (() => { try { return JSON.parse(localStorage.getItem("wv_daily_quiz")||"{}"); } catch { return {}; } });
+    return {
+      todayWords: words.filter(w => w.id && new Date(w.id).toISOString().slice(0,10) === todayKey).length,
+      todayCorrect: (() => { try { const d = JSON.parse(localStorage.getItem("wv_today_correct")||"{}"); return d.date === todayKey ? d.count : 0; } catch { return 0; } })(),
+      totalWords: words.length,
+      totalCorrect: score.correct,
+      streakCount: streakData.count,
+      streakToday: streakData.lastDate === todayKey,
+      masteredWords: words.filter(w => w.mastery >= 5).length,
+      todayBattle,
+    };
+  }
+
+  // Award XP and mark task done, show reward popup
+  function claimTask(task) {
+    const todayKey = new Date().toISOString().slice(0,10);
+    const key = task.type === "daily" ? `${task.id}_${todayKey}` : task.id;
+    if (completedTasks[key]) return;
+    const next = { ...completedTasks, [key]: true };
+    setCompletedTasks(next);
+    localStorage.setItem("wv_tasks_done", JSON.stringify(next));
+    const newXp = xp + task.xp;
+    setXp(newXp);
+    localStorage.setItem("wv_xp", String(newXp));
+    setShowTaskReward({ title: task.title, xp: task.xp, icon: task.icon });
+    setTimeout(() => setShowTaskReward(null), 2000);
+  }
+
+  function isTaskDone(task) {
+    const todayKey = new Date().toISOString().slice(0,10);
+    const key = task.type === "daily" ? `${task.id}_${todayKey}` : task.id;
+    return !!completedTasks[key];
+  }
+
   // Haptic feedback helper
   const haptic = (type = "light") => {
     if (!navigator.vibrate) return;
@@ -394,6 +553,10 @@ export default function VocabApp() {
   function handleMCQ(option) {
     const correct = option === quizState.correct;
     haptic(correct ? "success" : "error");
+    if (correct) {
+      const todayKey = new Date().toISOString().slice(0,10);
+      try { const d = JSON.parse(localStorage.getItem("wv_today_correct")||"{}"); localStorage.setItem("wv_today_correct", JSON.stringify({ date: todayKey, count: (d.date === todayKey ? d.count : 0) + 1 })); } catch {}
+    }
     setQuizResult(correct ? "correct" : "wrong");
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
 
@@ -536,6 +699,9 @@ export default function VocabApp() {
     setBattleActive(false);
     setBattleStats(s => { setBattleFinalStats(s); setShowBattleResult(true); return s; });
     setBattleTimeLeft(0);
+    const todayKey = new Date().toISOString().slice(0,10);
+    setTodayBattle(1);
+    try { localStorage.setItem("wv_today_battle", JSON.stringify({ date: todayKey })); } catch {}
   }
 
   function drawBattleCard() {
@@ -914,6 +1080,45 @@ export default function VocabApp() {
         .splash-exit  { animation: splashExit 0.55s cubic-bezier(0.4,0,1,1) forwards; }
       `}</style>
 
+      {/* Profile Setup */}
+      {showProfileSetup && (
+        <div style={{ position: "fixed", inset: 0, background: "#111", zIndex: 900, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28 }}>
+          {setupStep === 0 && (
+            <div style={{ width: "100%", maxWidth: 400, textAlign: "center" }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>{setupAvatar}</div>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#fff", marginBottom: 6 }}>选择你的头像</div>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 28 }}>这是别人看到你的样子</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 36 }}>
+                {AVATARS.map(a => (
+                  <div key={a} onClick={() => setSetupAvatar(a)}
+                    style={{ width: 52, height: 52, borderRadius: 14, background: setupAvatar === a ? "#fff" : "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, cursor: "pointer", border: setupAvatar === a ? "2px solid #fff" : "2px solid #333", transition: "all 0.15s", transform: setupAvatar === a ? "scale(1.1)" : "scale(1)" }}>
+                    {a}
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-dark" style={{ width: "100%", background: "#fff", color: "#111", fontSize: 15, padding: "14px 0", borderRadius: 14 }}
+                onClick={() => setSetupStep(1)}>下一步</button>
+            </div>
+          )}
+          {setupStep === 1 && (
+            <div style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>{setupAvatar}</div>
+              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#fff", marginBottom: 6 }}>你想叫什么？</div>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 28 }}>可以是匿名，没人知道是你</div>
+              <input value={setupName} onChange={e => setSetupName(e.target.value)}
+                placeholder="输入昵称（可留空）"
+                maxLength={16}
+                onKeyDown={e => e.key === "Enter" && saveProfile(setupAvatar, setupName)}
+                style={{ background: "#1e1e1e", border: "1.5px solid #333", color: "#fff", borderRadius: 12, padding: "14px 16px", fontSize: 16, marginBottom: 16, textAlign: "center" }} />
+              <div style={{ fontSize: 11, color: "#444", marginBottom: 24 }}>最多 16 个字符</div>
+              <button className="btn btn-dark" style={{ width: "100%", background: "#fff", color: "#111", fontSize: 15, padding: "14px 0", borderRadius: 14, marginBottom: 12 }}
+                onClick={() => saveProfile(setupAvatar, setupName)}>开始学习</button>
+              <button onClick={() => setSetupStep(0)} style={{ background: "none", border: "none", color: "#444", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>← 返回</button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Splash Screen */}
       {splash !== "done" && (
         <div className={splash === "out" ? "splash-exit" : ""}
@@ -1037,6 +1242,16 @@ export default function VocabApp() {
       <div style={{ padding: "54px 20px 14px", borderBottom: "1px solid #f2f2f2", background: "#fff", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
         <div style={{ textAlign: "center", position: "relative" }}>
+          {/* Avatar left */}
+          {profile && (
+            <div onClick={() => setTab(4)} style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{profile.avatar}</div>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#111", lineHeight: 1.2 }}>{profile.name}</div>
+                <div style={{ fontSize: 10, color: "#aaa" }}>查看资料</div>
+              </div>
+            </div>
+          )}
           <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.3px" }}>WordVault</div>
           <div style={{ fontSize: 12, color: "#777", marginTop: 3 }}>
             {words.length} 个单词{score.total > 0 ? ` · 正确率 ${correctRate}%` : ""} · 已掌握 {words.filter(w => w.mastery >= 4).length}/{words.length}
@@ -1679,7 +1894,84 @@ export default function VocabApp() {
         {tab === 3 && (
           <div style={{ maxWidth: 480 }}>
 
-            {/* Today's Goal */}
+            {/* XP Bar */}
+            {(() => {
+              const level = Math.floor(xp / 100) + 1;
+              const progress = xp % 100;
+              return (
+                <div style={{ background: "#111", borderRadius: 16, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "#222", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff" }}>Lv{level}</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{xp} XP</div>
+                      <div style={{ fontSize: 11, color: "#555" }}>下一级 {100 - progress} XP</div>
+                    </div>
+                    <div style={{ height: 5, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: progress + "%", background: "#FFD700", borderRadius: 3, transition: "width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Task Tabs */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {[["daily","每日任务"],["achievement","成就"]].map(([key, label]) => (
+                <button key={key} onClick={() => setTaskTab(key)}
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1.5px solid " + (taskTab === key ? "#111" : "#e8e8e8"), background: taskTab === key ? "#111" : "#fff", color: taskTab === key ? "#fff" : "#888", fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}>
+                  {label}
+                  {key === "daily" && (() => {
+                    const ctx = getTaskCtx();
+                    const claimable = TASKS.filter(t => t.type === "daily" && !isTaskDone(t) && t.progress(ctx) >= t.target).length;
+                    return claimable > 0 ? <span style={{ marginLeft: 6, background: "#e53e3e", color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10 }}>{claimable}</span> : null;
+                  })()}
+                </button>
+              ))}
+            </div>
+
+            {/* Task List */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+              {(() => {
+                const ctx = getTaskCtx();
+                const tasks = TASKS.filter(t => t.type === taskTab);
+                return tasks.map(task => {
+                  const done = isTaskDone(task);
+                  const prog = Math.min(task.progress(ctx), task.target);
+                  const pct = Math.round(prog / task.target * 100);
+                  const claimable = !done && prog >= task.target;
+                  return (
+                    <div key={task.id} style={{ border: "1.5px solid " + (done ? "#e8f5e9" : claimable ? "#111" : "#ebebeb"), borderRadius: 14, padding: "14px 16px", background: done ? "#f9fdf9" : "#fff", opacity: done ? 0.7 : 1, transition: "all 0.2s" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ fontSize: 28, flexShrink: 0, width: 40, textAlign: "center" }}>{task.icon}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: done ? "#2d8a4e" : "#111" }}>{task.title}</div>
+                            {done && <span style={{ fontSize: 11, color: "#2d8a4e" }}>✓ 已完成</span>}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>{task.desc}</div>
+                          {/* Progress bar */}
+                          <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
+                            <div style={{ height: "100%", width: pct + "%", background: done ? "#2d8a4e" : claimable ? "#111" : "#ddd", borderRadius: 2, transition: "width 0.5s ease" }} />
+                          </div>
+                          <div style={{ fontSize: 11, color: "#aaa" }}>{prog} / {task.target}</div>
+                        </div>
+                        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#FFD700", background: "#111", borderRadius: 8, padding: "3px 8px" }}>+{task.xp} XP</div>
+                          {claimable && (
+                            <button onClick={() => claimTask(task)}
+                              style={{ background: "#111", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                              领取
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
             <div className="sec-title">今日目标</div>
             <div style={{ border: "1px solid #ebebeb", borderRadius: 12, padding: 20, marginBottom: 28 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
@@ -1843,6 +2135,72 @@ export default function VocabApp() {
         {/* Tab 4 */}
         {tab === 4 && (
           <div style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 28 }}>
+
+            {/* Profile Card */}
+            {profile && (
+              <div>
+                <div style={{ background: "#111", borderRadius: 20, padding: 24, color: "#fff", position: "relative" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 18, background: "#222", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>
+                      {profile.avatar}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", marginBottom: 3 }}>{profile.name}</div>
+                      <div style={{ fontSize: 12, color: "#555" }}>加入于 {profile.joinDate}</div>
+                    </div>
+                    <button onClick={() => { setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); }}
+                      style={{ background: "#1e1e1e", border: "1px solid #333", borderRadius: 8, color: "#888", fontSize: 12, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit" }}>编辑</button>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    {[
+                      ["词库", words.length + " 词"],
+                      ["连续", streakData.count + " 天"],
+                      ["正确率", (score.total ? Math.round(score.correct/score.total*100) : 0) + "%"],
+                    ].map(([label, val]) => (
+                      <div key={label} style={{ background: "#1a1a1a", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#fff", marginBottom: 2 }}>{val}</div>
+                        <div style={{ fontSize: 11, color: "#555" }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Rank badge */}
+                  {(() => {
+                    const r = getRank(words.length, streakData.count);
+                    return (
+                      <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#1a1a1a", borderRadius: 12 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
+                        <div style={{ fontSize: 13, color: r.color, fontWeight: 600 }}>{r.name}</div>
+                        <div style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{r.tier}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Edit Profile Modal */}
+            {editingProfile && (
+              <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 700, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 28 }}>
+                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#111", marginBottom: 20, textAlign: "center" }}>编辑资料</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 20 }}>
+                    {AVATARS.map(a => (
+                      <div key={a} onClick={() => setSetupAvatar(a)}
+                        style={{ width: 44, height: 44, borderRadius: 12, background: setupAvatar === a ? "#111" : "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", border: setupAvatar === a ? "2px solid #111" : "2px solid transparent", transition: "all 0.15s" }}>
+                        {a}
+                      </div>
+                    ))}
+                  </div>
+                  <input value={setupName} onChange={e => setSetupName(e.target.value)}
+                    placeholder="昵称" maxLength={16}
+                    style={{ marginBottom: 14, textAlign: "center", fontSize: 16 }} />
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => saveProfile(setupAvatar, setupName)}>保存</button>
+                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setEditingProfile(false)}>取消</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Rank Section */}
             <div>
               <div className="sec-title">段位系统</div>
@@ -2182,6 +2540,21 @@ export default function VocabApp() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Task Reward Popup */}
+      {showTaskReward && (
+        <div style={{ position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)", zIndex: 900, pointerEvents: "none",
+          animation: "unlockWordIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+          <div style={{ background: "#111", borderRadius: 20, padding: "14px 24px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}>
+            <span style={{ fontSize: 28 }}>{showTaskReward.icon}</span>
+            <div>
+              <div style={{ fontSize: 13, color: "#aaa" }}>任务完成</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{showTaskReward.title}</div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#FFD700", marginLeft: 8 }}>+{showTaskReward.xp} XP</div>
           </div>
         </div>
       )}
