@@ -464,7 +464,15 @@ export default function VocabApp() {
     // listen mode: do NOT auto-play, user taps the button
   }, [words, filterTag, quizMode, wrongBank]);
 
-  useEffect(() => { if (tab === 2) { setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); startQuiz(); } }, [tab, startQuiz]);
+  const prevTabRef = useRef(tab);
+  useEffect(() => {
+    if (tab === 2 && prevTabRef.current !== 2) {
+      setQuizLobby(true);
+      setPairActive(false);
+      clearInterval(pairTimerRef.current);
+    }
+    prevTabRef.current = tab;
+  }, [tab]);
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(""), 2500); };
 
