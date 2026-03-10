@@ -2060,7 +2060,7 @@ export default function VocabApp() {
                   </div>
                 );
                 return (
-                  <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>{left.map(renderCard)}</div>
                     <div style={{ flex: 1 }}>{right.map(renderCard)}</div>
                   </div>
@@ -2325,7 +2325,7 @@ export default function VocabApp() {
             </div>
           )}
           </div>
-        )}        )}
+        )}
 
         {/* Tab 3 */}
         {tab === 3 && (
