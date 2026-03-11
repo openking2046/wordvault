@@ -1581,15 +1581,16 @@ export default function VocabApp() {
         /* Game card buttons */
         .game-card-btn {
           -webkit-tap-highlight-color: transparent;
-          touch-action: manipulation;
+          touch-action: pan-y;
           user-select: none;
           -webkit-user-select: none;
-          transition: border-color 0.08s ease, transform 0.08s ease;
+          transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.1s ease;
         }
         .game-card-btn:active {
-          border-color: #111 !important;
-          box-shadow: 0 0 0 2px #111 !important;
-          transform: scale(0.95);
+          transform: scale(0.94);
+          opacity: 0.88;
+          box-shadow: 0 2px 20px rgba(0,0,0,0.13) !important;
+          transition: transform 0.08s ease, opacity 0.08s ease, box-shadow 0.08s ease;
         }
 
         /* Nav center button bounce */
@@ -2447,14 +2448,19 @@ export default function VocabApp() {
                 const renderCard = (g) => {
                   let touchStartY = 0;
                   let touchStartX = 0;
+                  let touchMoved = false;
                   function onTouchStart(e) {
                     touchStartY = e.touches[0].clientY;
                     touchStartX = e.touches[0].clientX;
+                    touchMoved = false;
+                  }
+                  function onTouchMove(e) {
+                    const dy = Math.abs(e.touches[0].clientY - touchStartY);
+                    const dx = Math.abs(e.touches[0].clientX - touchStartX);
+                    if (dy > 12 || dx > 12) touchMoved = true;
                   }
                   function onTouchEnd(e) {
-                    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
-                    const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
-                    if (dy > 8 || dx > 8) return; // was a scroll, ignore
+                    if (touchMoved) return;
                     e.preventDefault();
                     haptic("medium");
                     if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
@@ -2466,6 +2472,7 @@ export default function VocabApp() {
                   return (
                     <div key={g.id}
                       onTouchStart={onTouchStart}
+                      onTouchMove={onTouchMove}
                       onTouchEnd={onTouchEnd}
                       onClick={() => {
                         haptic("medium");
@@ -2494,8 +2501,12 @@ export default function VocabApp() {
                         <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 17, color: "#111", marginBottom: 5, letterSpacing: "-0.3px" }}>{g.name}</div>
                         <div style={{ fontSize: 11, color: "#999", lineHeight: 1.5 }}>{g.desc}</div>
                       </div>
-                      <div style={{ marginTop: 14, position: "relative", pointerEvents: "none" }}>
+                      <div style={{ marginTop: 14, position: "relative", pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span style={{ fontSize: 10, fontWeight: 700, color: g.color, background: g.color + "14", borderRadius: 6, padding: "3px 8px" }}>{g.sub}</span>
+                        {/* Combo tick marks — design accent */}
+                        <div style={{ display: "flex", gap: 2, opacity: 0.25 }}>
+                          {[1,2,3].map(i => <div key={i} style={{ width: 3, height: i * 5 + 4, borderRadius: 2, background: g.color }} />)}
+                        </div>
                       </div>
                     </div>
                   );
