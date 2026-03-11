@@ -300,7 +300,7 @@ export default function VocabApp() {
 
   // Combo Pair Game state
   const [pairActive, setPairActive] = useState(false);
-  const [pairCards, setPairCards] = useState([]); // {id, text, type:'word'|'meaning', wordId, pairKey, matched, selected, entering, wrong}
+  const [pairCards, setPairCards] = useState([]);
   const [pairSelected, setPairSelected] = useState(null);
   const [pairMatched, setPairMatched] = useState([]);
   const [pairTimer, setPairTimer] = useState(60);
@@ -310,10 +310,21 @@ export default function VocabApp() {
   const [pairScore, setPairScore] = useState(0);
   const [pairTotalMatched, setPairTotalMatched] = useState(0);
   const pairTimerRef = useRef(null);
-  const pairPoolRef = useRef([]); // shuffled word pool for continuous flow
+  const pairPoolRef = useRef([]);
   const pairPoolIdxRef = useRef(0);
-  const pairCardCounterRef = useRef(0); // unique id counter
+  const pairCardCounterRef = useRef(0);
   const pairSoundRef = useRef(null);
+
+  // Fill-in-the-blank game state
+  const [fillActive, setFillActive] = useState(false);
+  const [fillQuestion, setFillQuestion] = useState(null); // {sentence, blank, answer, meaning, options, wordObj}
+  const [fillSelected, setFillSelected] = useState(null); // chosen tile
+  const [fillResult, setFillResult] = useState(null); // 'correct'|'wrong'
+  const [fillScore, setFillScore] = useState(0);
+  const [fillTotal, setFillTotal] = useState(0);
+  const [fillCombo, setFillCombo] = useState(0);
+  const [fillMaxCombo, setFillMaxCombo] = useState(0);
+  const [fillQueue, setFillQueue] = useState([]); // remaining words
   const [isPro, setIsPro] = useState(() => localStorage.getItem("wv_pro") === "1");
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [spellingInput, setSpellingInput] = useState("");
@@ -471,6 +482,7 @@ export default function VocabApp() {
     if (tab === 2 && prevTabRef.current !== 2) {
       setQuizLobby(true);
       setPairActive(false);
+      setFillActive(false);
       clearInterval(pairTimerRef.current);
     }
     prevTabRef.current = tab;
@@ -1030,6 +1042,74 @@ export default function VocabApp() {
     setQuizLobby(true);
   }
 
+  function buildFillQuestion(wordObj, allWords) {
+    const sentence = wordObj.example || "";
+    const word = wordObj.word;
+    // Replace word in sentence (case-insensitive) with blank
+    const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    if (!sentence || !regex.test(sentence)) return null;
+    const blank = "___________";
+    const displayed = sentence.replace(regex, blank);
+    // Pick 3 distractors from other words
+    const others = allWords.filter(w => w.word !== word && w.word.length > 0);
+    const shuffled = [...others].sort(() => Math.random() - 0.5).slice(0, 3);
+    const options = [...shuffled.map(w => w.word), word].sort(() => Math.random() - 0.5);
+    return { sentence: displayed, answer: word, meaning: wordObj.meaning, options, wordObj };
+  }
+
+  function startFillGame() {
+    const valid = words.filter(w => w.example && w.example.toLowerCase().includes(w.word.toLowerCase()));
+    if (valid.length < 2) { showMsg("需要至少 2 个带例句的单词"); return; }
+    const shuffled = [...valid].sort(() => Math.random() - 0.5);
+    setFillQueue(shuffled.slice(1));
+    const q = buildFillQuestion(shuffled[0], words);
+    if (!q) return;
+    setFillQuestion(q);
+    setFillSelected(null);
+    setFillResult(null);
+    setFillScore(0);
+    setFillTotal(0);
+    setFillCombo(0);
+    setFillMaxCombo(0);
+    setFillActive(true);
+    setQuizLobby(false);
+  }
+
+  function nextFillQuestion() {
+    if (fillQueue.length === 0) {
+      // Reshuffle and continue
+      const valid = words.filter(w => w.example && w.example.toLowerCase().includes(w.word.toLowerCase()));
+      const reshuffled = [...valid].sort(() => Math.random() - 0.5);
+      const q = buildFillQuestion(reshuffled[0], words);
+      if (q) { setFillQuestion(q); setFillQueue(reshuffled.slice(1)); }
+    } else {
+      const [next, ...rest] = fillQueue;
+      const q = buildFillQuestion(next, words);
+      if (q) { setFillQuestion(q); setFillQueue(rest); }
+      else { setFillQueue(rest); setTimeout(nextFillQuestion, 0); }
+    }
+    setFillSelected(null);
+    setFillResult(null);
+  }
+
+  function handleFillTap(option) {
+    if (fillResult) return;
+    setFillSelected(option);
+    const correct = option.toLowerCase() === fillQuestion.answer.toLowerCase();
+    setFillResult(correct ? "correct" : "wrong");
+    setFillTotal(t => t + 1);
+    updateGlobalCombo(correct);
+    if (correct) {
+      setFillScore(s => s + 10);
+      setFillCombo(c => { const n = c + 1; setFillMaxCombo(m => Math.max(m, n)); return n; });
+      haptic("success");
+      setTimeout(nextFillQuestion, 900);
+    } else {
+      setFillCombo(0);
+      haptic("error");
+    }
+  }
+
   // ── Challenge Link functions ──
   function generateChallengeLink() {
     if (challengeSelectedWords.length === 0) { showMsg("请至少选择 1 个单词"); return; }
@@ -1446,6 +1526,10 @@ export default function VocabApp() {
           transform: scale(0.95);
           transition: transform 0.09s cubic-bezier(0.4, 0, 0.6, 1);
         }
+
+        /* Fill tile */
+        .fill-tile { -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), border-color 0.1s, box-shadow 0.1s; }
+        .fill-tile:active { transform: scale(0.92); border-color: #111 !important; transition: transform 0.09s ease; }
 
         /* Game card buttons */
         .game-card-btn {
@@ -2276,7 +2360,7 @@ export default function VocabApp() {
           <div style={{ maxWidth: 480 }}>
 
           {/* ── GAME LOBBY ── */}
-          {quizLobby && !pairActive && (
+          {quizLobby && !pairActive && !fillActive && (
             <div>
               <div style={{ marginBottom: 22, textAlign: "center" }}>
                 <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "-0.5px" }}>Combo 挑战</div>
@@ -2305,10 +2389,11 @@ export default function VocabApp() {
                   { id: "listen",    num: 2, icon: "🔊", name: "听音辨词", desc: "听发音，判断正确单词", sub: "耳力训练", color: "#2d6bcf" },
                   { id: "spell",     num: 3, icon: "✍️", name: "拼写练习", desc: "看释义，打出完整单词", sub: "手感养成", color: "#7c3aed" },
                   { id: "pair",      num: 4, icon: "🔗", name: "Combo配对", desc: "点击配对单词与释义，连击得分", sub: "连击模式", color: "#0891b2" },
-                  { id: "wrong",     num: 5, icon: "🎯", name: "错词研究", desc: "专项攻克做错的单词", sub: wrongCount > 0 ? wrongCount + " 词待攻克" : "暂无错词", color: wrongCount > 0 ? "#e53e3e" : "#888", alert: wrongCount > 0 },
-                  { id: "battle",    num: 6, icon: "⚡", name: "限时挑战", desc: "60秒内答对最多题，生成战绩图", sub: "高压竞速", color: "#c2410c" },
-                  { id: "review",    num: 7, icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
-                  { id: "challenge", num: 8, icon: "👥", name: "好友挑战", desc: "选词生成链接，发给朋友对战", sub: "社交对战", color: "#7c3aed" },
+                  { id: "fill",      num: 5, icon: "✏️", name: "句子填词", desc: "看例句，选出缺失的单词", sub: "语境记忆", color: "#059669" },
+                  { id: "wrong",     num: 6, icon: "🎯", name: "错词研究", desc: "专项攻克做错的单词", sub: wrongCount > 0 ? wrongCount + " 词待攻克" : "暂无错词", color: wrongCount > 0 ? "#e53e3e" : "#888", alert: wrongCount > 0 },
+                  { id: "battle",    num: 7, icon: "⚡", name: "限时挑战", desc: "60秒内答对最多题，生成战绩图", sub: "高压竞速", color: "#c2410c" },
+                  { id: "review",    num: 8, icon: "🧠", name: "遗忘复习", desc: "艾宾浩斯曲线追踪复习", sub: dueCount > 0 ? dueCount + " 词待复习" : "记忆巩固", color: dueCount > 0 ? "#d97706" : "#2d8a4e", alert: dueCount > 0 },
+                  { id: "challenge", num: 9, icon: "👥", name: "好友挑战", desc: "选词生成链接，发给朋友对战", sub: "社交对战", color: "#7c3aed" },
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
@@ -2326,6 +2411,7 @@ export default function VocabApp() {
                     e.preventDefault();
                     haptic("medium");
                     if (g.id === "pair") { startPairGame(); setQuizLobby(false); }
+                    else if (g.id === "fill") { startFillGame(); }
                     else if (g.id === "challenge") { setShowCreateChallenge(true); setGeneratedLink(""); setChallengeSelectedWords([]); }
                     else if (g.id === "battle") { setQuizMode("battle"); setQuizLobby(false); if (!battleActive && !showBattleResult) startBattle(); }
                     else { setQuizMode(g.id); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz(g.id); setQuizLobby(false); }
@@ -2460,8 +2546,108 @@ export default function VocabApp() {
             </div>
           )}
 
+          {/* ── FILL-IN-THE-BLANK GAME ── */}
+          {fillActive && fillQuestion && (
+            <div>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <button onClick={() => { setFillActive(false); setQuizLobby(true); }}
+                  style={{ background: "#f5f5f5", border: "none", borderRadius: 10, padding: "6px 14px 6px 10px", fontSize: 12, color: "#555", cursor: "pointer", fontFamily: "inherit" }}>
+                  ‹ 游戏大厅
+                </button>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>句子填词</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {fillCombo >= 2 && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: fillCombo >= 5 ? "#d97706" : "#059669", background: fillCombo >= 5 ? "#fffbeb" : "#ecfdf5", borderRadius: 8, padding: "4px 10px", animation: "unlockBadge 0.3s ease both" }}>
+                      COMBO ×{fillCombo}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: "#aaa" }}>{fillTotal} 题</div>
+                </div>
+              </div>
+
+              {/* Progress dots */}
+              <div style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap" }}>
+                {Array.from({ length: Math.min(fillTotal + 1, 12) }).map((_, i) => (
+                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i < fillTotal ? "#059669" : "#e0e0e0" }} />
+                ))}
+              </div>
+
+              {/* Chinese meaning hint */}
+              <div style={{ fontSize: 12, color: "#aaa", marginBottom: 10, letterSpacing: "0.3px" }}>
+                🀄 {fillQuestion.meaning}
+              </div>
+
+              {/* Sentence card */}
+              <div style={{ background: "#fff", borderRadius: 18, padding: "24px 20px", marginBottom: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.07)", minHeight: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", lineHeight: 1.6, textAlign: "center", letterSpacing: "-0.2px" }}>
+                  {fillQuestion.sentence.split("___________").map((part, i, arr) => (
+                    <span key={i}>
+                      {part}
+                      {i < arr.length - 1 && (
+                        <span style={{
+                          display: "inline-block", minWidth: 120, borderBottom: "3px solid",
+                          borderColor: fillResult === "correct" ? "#059669" : fillResult === "wrong" ? "#e53e3e" : "#111",
+                          margin: "0 4px", verticalAlign: "bottom", textAlign: "center",
+                          color: fillResult === "correct" ? "#059669" : fillResult === "wrong" ? "#e53e3e" : "#111",
+                          fontWeight: 700, fontSize: 22, transition: "all 0.2s",
+                          paddingBottom: 2
+                        }}>
+                          {fillSelected || ""}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Result feedback */}
+              {fillResult && (
+                <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 14, textAlign: "center",
+                  background: fillResult === "correct" ? "#f0faf4" : "#fff5f5",
+                  border: "1.5px solid " + (fillResult === "correct" ? "#2d8a4e" : "#e53e3e"),
+                  animation: "unlockBadge 0.3s ease both" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: fillResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 4 }}>
+                    {fillResult === "correct" ? "✓ 正确！" : "✗ 正确答案是：" + fillQuestion.answer}
+                  </div>
+                  {fillResult === "wrong" && (
+                    <button onClick={nextFillQuestion}
+                      style={{ marginTop: 8, padding: "10px 28px", borderRadius: 12, border: "none", background: "#111", color: "#fff", fontFamily: "inherit", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                      下一题 →
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Word tiles */}
+              {!fillResult && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+                  {fillQuestion.options.map((opt, i) => (
+                    <button key={i} onClick={() => handleFillTap(opt)}
+                      className="fill-tile"
+                      style={{ padding: "12px 22px", borderRadius: 14, border: "2.5px solid #e0e0e0", background: "#fff",
+                        fontFamily: "DM Serif Display, serif", fontSize: 17, color: "#111", cursor: "pointer",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)", letterSpacing: "-0.3px" }}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Score bar */}
+              <div style={{ marginTop: 32, display: "flex", justifyContent: "space-around", padding: "14px 0", borderTop: "1px solid #f0f0f0" }}>
+                {[["得分", fillScore], ["最高连击", "×" + fillMaxCombo], ["正确率", fillTotal > 0 ? Math.round(fillScore / fillTotal) + "%" : "—"]].map(([label, val]) => (
+                  <div key={label} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#bbb", marginBottom: 3, letterSpacing: "0.5px", textTransform: "uppercase" }}>{label}</div>
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#111" }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── ACTIVE QUIZ ── */}
-          {!quizLobby && !pairActive && (
+          {!quizLobby && !pairActive && !fillActive && (
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                 <button onClick={() => { setQuizLobby(true); setBattleActive(false); setShowBattleResult(false); }}
