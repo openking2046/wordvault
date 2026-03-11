@@ -2573,10 +2573,16 @@ export default function VocabApp() {
                 ))}
               </div>
 
-              {/* Chinese meaning hint */}
-              <div style={{ fontSize: 12, color: "#aaa", marginBottom: 10, letterSpacing: "0.3px" }}>
-                🀄 {fillQuestion.meaning}
-              </div>
+              {/* Chinese meaning — hidden until answered */}
+              {fillResult ? (
+                <div style={{ fontSize: 13, color: fillResult === "correct" ? "#059669" : "#888", marginBottom: 10, letterSpacing: "0.3px", animation: "unlockBadge 0.3s ease both" }}>
+                  🀄 {fillQuestion.meaning}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: "#ddd", marginBottom: 10, letterSpacing: "0.3px", userSelect: "none" }}>
+                  🀄 ···
+                </div>
+              )}
 
               {/* Sentence card */}
               <div style={{ background: "#fff", borderRadius: 18, padding: "24px 20px", marginBottom: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.07)", minHeight: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
