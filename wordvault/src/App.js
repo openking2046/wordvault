@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */ // v3.9-noimport
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import { useState, useEffect, useCallback, useRef } from "react";
+import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
