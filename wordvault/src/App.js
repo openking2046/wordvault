@@ -314,6 +314,7 @@ export default function VocabApp() {
   const pairPoolIdxRef = useRef(0);
   const pairCardCounterRef = useRef(0);
   const pairSoundRef = useRef(null);
+  const quizSoundRef = useRef(null);
 
   // Fill-in-the-blank game state
   const [fillActive, setFillActive] = useState(false);
@@ -648,6 +649,7 @@ export default function VocabApp() {
     if (correct) {
       setGlobalCombo(c => {
         const next = c + 1;
+        playQuizSound(next);
         setGlobalMaxCombo(m => {
           const newMax = Math.max(m, next);
           try { localStorage.setItem("wv_max_combo", String(newMax)); } catch {}
@@ -853,6 +855,51 @@ export default function VocabApp() {
   }
 
   // ── Combo Pair Game ──
+
+  function playQuizSound(comboCount) {
+    try {
+      if (!quizSoundRef.current) quizSoundRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = quizSoundRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const t = ctx.currentTime;
+
+      if (comboCount > 0 && comboCount % 6 === 0) {
+        // 🎉 Combo ×6 celebration — 6-note ascending fanfare + shimmer burst
+        const freqs = [523, 587, 659, 784, 880, 1047, 1319];
+        freqs.forEach((freq, i) => {
+          const osc = ctx.createOscillator(); const g = ctx.createGain();
+          osc.type = i < 4 ? "triangle" : "sine";
+          osc.frequency.setValueAtTime(freq, t + i * 0.07);
+          g.gain.setValueAtTime(0.0001, t + i * 0.07);
+          g.gain.exponentialRampToValueAtTime(0.2, t + i * 0.07 + 0.06);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.28);
+          osc.connect(g); g.connect(ctx.destination);
+          osc.start(t + i * 0.07); osc.stop(t + i * 0.07 + 0.32);
+        });
+        // Noise shimmer burst on top
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.04));
+        const src = ctx.createBufferSource(); const ng = ctx.createGain();
+        const nf = ctx.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = 4000;
+        src.buffer = buf; src.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+        ng.gain.setValueAtTime(0.12, t + 0.35); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+        src.start(t + 0.35);
+      } else {
+        // ✅ Regular correct — soft two-note chime (pitch rises slightly with combo)
+        const base = 523 + Math.min(comboCount, 8) * 30; // C5 → rises with combo
+        [[base, 0], [base * 1.5, 0.1]].forEach(([freq, delay]) => {
+          const osc = ctx.createOscillator(); const g = ctx.createGain();
+          osc.type = "sine"; osc.frequency.value = freq;
+          g.gain.setValueAtTime(0.0001, t + delay);
+          g.gain.exponentialRampToValueAtTime(0.16, t + delay + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.22);
+          osc.connect(g); g.connect(ctx.destination);
+          osc.start(t + delay); osc.stop(t + delay + 0.25);
+        });
+      }
+    } catch {}
+  }
 
   function playPairSound(type) {
     try {
