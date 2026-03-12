@@ -268,6 +268,7 @@ export default function VocabApp() {
   const [setupOccupation, setSetupOccupation] = useState("");
   const [editingProfile, setEditingProfile] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showRankSheet, setShowRankSheet] = useState(false);
   const [headerExpanded, setHeaderExpanded] = useState(false);
 
   // XP & Tasks
@@ -3263,14 +3264,15 @@ export default function VocabApp() {
                       </div>
                     ))}
                   </div>
-                  {/* Rank badge */}
+                  {/* Rank badge — tap to open rank sheet */}
                   {(() => {
                     const r = getRank(words.length, streakData.count);
                     return (
-                      <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#1a1a1a", borderRadius: 12 }}>
+                      <div onClick={() => setShowRankSheet(true)} style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#1a1a1a", borderRadius: 12, cursor: "pointer" }}>
                         <div style={{ width: 10, height: 10, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
                         <div style={{ fontSize: 13, color: r.color, fontWeight: 600 }}>{r.name}</div>
                         <div style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{r.tier}</div>
+                        <div style={{ fontSize: 12, color: "#555" }}>›</div>
                       </div>
                     );
                   })()}
@@ -3361,69 +3363,98 @@ export default function VocabApp() {
                 </div>
               </div>
             )}
-            {/* Rank Section */}
-            <div>
-              <div className="sec-title">段位系统</div>
-              {(() => {
-                const curRank = getRank(words.length, streakData.count);
-                const nextRank = getNextRank(words.length, streakData.count);
-                const curIdx = RANKS.findIndex(r => r.id === curRank.id);
-                return (
-                  <div>
-                    <div style={{ border: "2px solid " + curRank.color, borderRadius: 16, padding: 20, background: curRank.bg, marginBottom: 16, textAlign: "center" }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "2px", color: curRank.color, marginBottom: 4 }}>当前段位</div>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 13, color: "#888" }}>{curRank.tier}</div>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: curRank.color, fontWeight: 700, marginBottom: nextRank ? 14 : 8 }}>{curRank.name}</div>
-                      {nextRank ? (
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 5 }}>
-                            <span>距离 {nextRank.name}</span>
-                            <span>还需 {Math.max(0, nextRank.words - words.length)} 词 · {Math.max(0, nextRank.days - streakData.count)} 天连续</span>
+
+            {/* Rank Sheet Modal */}
+            {showRankSheet && (() => {
+              const curRank = getRank(words.length, streakData.count);
+              const nextRank = getNextRank(words.length, streakData.count);
+              const curIdx = RANKS.findIndex(r => r.id === curRank.id);
+              const lastRank = RANKS[RANKS.length - 1];
+              return (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 700, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+                  onClick={() => setShowRankSheet(false)}>
+                  <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 36px", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
+                    onClick={e => e.stopPropagation()}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>段位系统</div>
+                      <button onClick={() => setShowRankSheet(false)} style={{ background: "none", border: "none", fontSize: 22, color: "#aaa", cursor: "pointer", lineHeight: 1 }}>×</button>
+                    </div>
+                    <div style={{ flex: 1, overflowY: "auto" }}>
+                      {/* Current rank */}
+                      <div style={{ border: "2px solid " + curRank.color, borderRadius: 16, padding: 20, background: curRank.bg, marginBottom: 14, textAlign: "center" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "2px", color: curRank.color, marginBottom: 4 }}>当前段位</div>
+                        <div style={{ fontSize: 13, color: "#888", marginBottom: 4 }}>{curRank.tier}</div>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: curRank.color, fontWeight: 700, marginBottom: 14 }}>{curRank.name}</div>
+                        {nextRank ? (
+                          <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 5 }}>
+                              <span>距离 {nextRank.name}</span>
+                              <span>还需 {Math.max(0, nextRank.words - words.length)} 词 · {Math.max(0, nextRank.days - streakData.count)} 天连续</span>
+                            </div>
+                            <div style={{ background: "#e8e8e8", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                              <div style={{ height: "100%", borderRadius: 4, background: curRank.color, transition: "width 0.5s", width: Math.min(100, Math.round(Math.max(words.length - curRank.words, 0) / Math.max(nextRank.words - curRank.words, 1) * 100)) + "%" }} />
+                            </div>
                           </div>
-                          <div style={{ background: "#e8e8e8", borderRadius: 4, height: 6, overflow: "hidden" }}>
-                            <div style={{ height: "100%", borderRadius: 4, background: curRank.color, transition: "width 0.5s", width: Math.min(100, Math.round(Math.max(words.length - curRank.words, 0) / Math.max(nextRank.words - curRank.words, 1) * 100)) + "%" }} />
+                        ) : (
+                          <div style={{ fontSize: 13, color: curRank.color, fontWeight: 700 }}>🏆 已达到最高段位！</div>
+                        )}
+                      </div>
+                      {/* Distance to final rank */}
+                      {nextRank && (
+                        <div style={{ background: "#f7f7f7", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontSize: 11, color: "#aaa", marginBottom: 2 }}>距离最终段位</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#b8860b" }}>{lastRank.name}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 11, color: "#aaa" }}>还需词数</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{Math.max(0, lastRank.words - words.length)} 词</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 11, color: "#aaa" }}>进度</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{curIdx + 1} / {RANKS.length}</div>
                           </div>
                         </div>
-                      ) : (
-                        <div style={{ fontSize: 13, color: curRank.color, fontWeight: 700 }}>已达到最高段位！</div>
                       )}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10 }}>段位进度 {curIdx + 1} / {RANKS.length}</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {["倔强青铜","秩序白银","荣耀黄金","尊贵铂金","永恒钻石","至尊星耀","最强王者"].map(tierName => {
-                        const tierRanks = RANKS.filter(r => r.tier === tierName);
-                        const tierColor = tierRanks[0].color;
-                        const tierBg = tierRanks[0].bg;
-                        const unlockedCount = tierRanks.filter(r => RANKS.indexOf(r) <= curIdx).length;
-                        const anyUnlocked = unlockedCount > 0;
-                        return (
-                          <div key={tierName} style={{ border: "1px solid " + (anyUnlocked ? tierColor : "#ebebeb"), borderRadius: 12, padding: "12px 14px", background: anyUnlocked ? tierBg : "#fafafa", opacity: anyUnlocked ? 1 : 0.4, transition: "all 0.2s" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: anyUnlocked ? 10 : 0 }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: anyUnlocked ? tierColor : "#bbb" }}>{tierName}</span>
-                              <span style={{ fontSize: 11, color: anyUnlocked ? tierColor : "#ccc" }}>{unlockedCount}/{tierRanks.length}</span>
-                            </div>
-                            {anyUnlocked && (
-                              <div style={{ display: "flex", gap: 6 }}>
-                                {tierRanks.map(r => {
-                                  const unlocked = RANKS.indexOf(r) <= curIdx;
-                                  const isCurrent = r.id === curRank.id;
-                                  return (
-                                    <div key={r.id} style={{ flex: 1, textAlign: "center", padding: "7px 4px", borderRadius: 8, background: isCurrent ? tierColor : unlocked ? "rgba(0,0,0,0.07)" : "transparent", border: isCurrent ? "none" : "1px solid " + (unlocked ? tierColor : "#e0e0e0"), opacity: unlocked ? 1 : 0.3 }}>
-                                      <div style={{ fontSize: 11, fontWeight: 700, color: isCurrent ? "#fff" : tierColor }}>{r.name.split(" ")[1] || "王者"}</div>
-                                      {isCurrent && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.85)" }}>当前</div>}
-                                    </div>
-                                  );
-                                })}
+                      {/* All tiers */}
+                      <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10, fontWeight: 600, letterSpacing: "1px" }}>所有段位</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
+                        {["倔强青铜","秩序白银","荣耀黄金","尊贵铂金","永恒钻石","至尊星耀","最强王者"].map(tierName => {
+                          const tierRanks = RANKS.filter(r => r.tier === tierName);
+                          const tierColor = tierRanks[0].color;
+                          const tierBg = tierRanks[0].bg;
+                          const unlockedCount = tierRanks.filter(r => RANKS.indexOf(r) <= curIdx).length;
+                          const anyUnlocked = unlockedCount > 0;
+                          return (
+                            <div key={tierName} style={{ border: "1px solid " + (anyUnlocked ? tierColor : "#ebebeb"), borderRadius: 12, padding: "12px 14px", background: anyUnlocked ? tierBg : "#fafafa", opacity: anyUnlocked ? 1 : 0.45 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: anyUnlocked ? 10 : 0 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: anyUnlocked ? tierColor : "#bbb" }}>{tierName}</span>
+                                <span style={{ fontSize: 11, color: anyUnlocked ? tierColor : "#ccc" }}>{unlockedCount}/{tierRanks.length}</span>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              {anyUnlocked && (
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  {tierRanks.map(r => {
+                                    const unlocked = RANKS.indexOf(r) <= curIdx;
+                                    const isCurrent = r.id === curRank.id;
+                                    return (
+                                      <div key={r.id} style={{ flex: 1, textAlign: "center", padding: "7px 4px", borderRadius: 8, background: isCurrent ? tierColor : unlocked ? "rgba(0,0,0,0.07)" : "transparent", border: isCurrent ? "none" : "1px solid " + (unlocked ? tierColor : "#e0e0e0"), opacity: unlocked ? 1 : 0.3 }}>
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: isCurrent ? "#fff" : tierColor }}>{r.name.split(" ")[1] || "王者"}</div>
+                                        {isCurrent && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.85)" }}>当前</div>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
+              );
+            })()}
+
             {/* Wrong Bank */}
             <div>
               <div className="sec-title">错词库</div>
