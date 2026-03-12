@@ -339,6 +339,9 @@ export default function VocabApp() {
   const [wrongBank, setWrongBank] = useState(() => {
     try { return JSON.parse(localStorage.getItem("wv_wrong_bank") || "[]"); } catch { return []; }
   }); // array of word strings (English words)
+  const [wrongCounts, setWrongCounts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("wv_wrong_counts") || "{}"); } catch { return {}; }
+  }); // { word: errorCount }
   const [unlockedAchievements, setUnlockedAchievements] = useState(() => {
     try { return JSON.parse(localStorage.getItem("wv_achievements") || "[]"); } catch { return []; }
   });
@@ -390,6 +393,7 @@ export default function VocabApp() {
 
   useEffect(() => { try { localStorage.setItem("wv_words", JSON.stringify(words)); } catch {} }, [words]);
   useEffect(() => { try { localStorage.setItem("wv_wrong_bank", JSON.stringify(wrongBank)); } catch {} }, [wrongBank]);
+  useEffect(() => { try { localStorage.setItem("wv_wrong_counts", JSON.stringify(wrongCounts)); } catch {} }, [wrongCounts]);
   // Check rank up whenever relevant data changes
   useEffect(() => {
     const currentRank = getRank(words.length, streakData.count);
@@ -458,9 +462,11 @@ export default function VocabApp() {
       if (due.length === 0 || words.length < 4) return;
       pool = words; target = weightedPick(due, wrongBank);
     } else if (m === "wrong") {
-      const wrongWords = words.filter(w => wrongBank.includes(w.word));
-      if (wrongWords.length === 0 || words.length < 4) return;
-      pool = words; target = weightedPick(wrongWords, wrongBank);
+      // Use top 20 most-wrong words sorted by error count
+      const allWrong = words.filter(w => wrongBank.includes(w.word));
+      if (allWrong.length === 0 || words.length < 4) return;
+      const top20 = [...allWrong].sort((a, b) => (wrongCounts[b.word] || 0) - (wrongCounts[a.word] || 0)).slice(0, 20);
+      pool = words; target = weightedPick(top20, wrongBank);
     } else if (m === "listen") {
       pool = filterTag === "全部" ? words : words.filter(w => (w.tags || []).includes(filterTag));
       if (pool.length < 4) return;
@@ -657,6 +663,14 @@ export default function VocabApp() {
     }
   }
 
+  function addWrongCount(wordStr) {
+    setWrongCounts(prev => {
+      const next = { ...prev, [wordStr]: (prev[wordStr] || 0) + 1 };
+      localStorage.setItem("wv_wrong_counts", JSON.stringify(next));
+      return next;
+    });
+  }
+
   function updateGlobalCombo(correct) {
     if (correct) {
       setGlobalCombo(c => {
@@ -693,6 +707,7 @@ export default function VocabApp() {
     // Update wrong bank (store word string for reliability)
     if (!correct) {
       const wStr = quizState.correctWord;
+      addWrongCount(wStr);
       setWrongBank(prev => {
         const next = [...new Set([...prev, wStr])];
         localStorage.setItem("wv_wrong_bank", JSON.stringify(next));
@@ -740,6 +755,7 @@ export default function VocabApp() {
     }));
     if (!correct) {
       const wStr = quizState.correctWord;
+      addWrongCount(wStr);
       setWrongBank(prev => { const n = [...new Set([...prev, wStr])]; localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; });
     } else if (quizMode === "spell") {
       const wStr = quizState.correctWord;
@@ -2443,7 +2459,7 @@ export default function VocabApp() {
               </div>
               {(() => {
                 const dueCount = getDueWords(words).length;
-                const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
+                const wrongCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const games = [
                   { id: "normal",    num: 1, icon: "📖", name: "释义选词", desc: "看单词，选正确释义", sub: "经典模式", color: "#111" },
                   { id: "listen",    num: 2, icon: "🔊", name: "听音辨词", desc: "听发音，判断正确单词", sub: "耳力训练", color: "#2d6bcf" },
@@ -3146,7 +3162,7 @@ export default function VocabApp() {
             {/* Review Stats */}
             {(() => {
               const due = getDueWords(words);
-              const wrongCount = wrongBank.filter(ww => words.find(x => x.word === ww)).length;
+              const wrongCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
               if (due.length === 0 && wrongCount === 0) return null;
               return (
                 <div style={{ marginBottom: 28 }}>
@@ -3459,49 +3475,82 @@ export default function VocabApp() {
             <div>
               <div className="sec-title">错词库</div>
               {(() => {
-                const wrongWords = words.filter(w => wrongBank.includes(w.word));
-                if (wrongWords.length === 0) return (
+                // All words that have ever been wrong (have a count), sorted by count desc
+                const allTracked = words
+                  .filter(w => wrongCounts[w.word] && wrongCounts[w.word] > 0)
+                  .sort((a, b) => (wrongCounts[b.word] || 0) - (wrongCounts[a.word] || 0));
+
+                if (allTracked.length === 0) return (
                   <div style={{ fontSize: 13, color: "#aaa", padding: "20px 0", textAlign: "center" }}>答错的词会自动收录在这里</div>
                 );
-                // Group by tag
-                const allWrongTags = ["未分类", ...new Set(wrongWords.flatMap(w => w.tags && w.tags.length ? w.tags : ["未分类"]))].filter((t, i, a) => a.indexOf(t) === i);
-                const grouped = allWrongTags.map(tag => ({
-                  tag,
-                  words: tag === "未分类"
-                    ? wrongWords.filter(w => !w.tags || w.tags.length === 0)
-                    : wrongWords.filter(w => (w.tags || []).includes(tag))
-                })).filter(g => g.words.length > 0);
+
+                const top20 = allTracked.slice(0, 20);
+                const rest = allTracked.slice(20);
+                const maxCount = wrongCounts[allTracked[0].word] || 1;
+
                 return (
                   <div>
+                    {/* Header */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                      <div style={{ fontSize: 12, color: "#777" }}>共 {wrongWords.length} 个错词</div>
+                      <div style={{ fontSize: 12, color: "#777" }}>共 {allTracked.length} 个错词 · 按错误次数排列</div>
                       <button onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
-                        className="btn btn-dark btn-sm">开始错词复习</button>
+                        className="btn btn-dark btn-sm">训练前 20 词</button>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      {grouped.map(({ tag, words: gw }) => (
-                        <div key={tag}>
-                          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#888", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                            <span>{tag}</span>
-                            <span style={{ background: "#f0f0f0", color: "#888", borderRadius: 10, padding: "1px 8px", fontSize: 10 }}>{gw.length}</span>
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            {gw.map(w => (
-                              <div key={w.word} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", background: "#fff5f5" }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</div>
-                                  <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{w.meaning}</div>
-                                </div>
-                                <button onClick={() => setWrongBank(prev => { const n = prev.filter(ww => ww !== w.word); localStorage.setItem("wv_wrong_bank", JSON.stringify(n)); return n; })}
-                                  style={{ fontSize: 11, color: "#e53e3e", background: "none", border: "1px solid #fecaca", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: 8 }}>移出</button>
+
+                    {/* Top 20 leaderboard */}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#e53e3e", letterSpacing: "1px", marginBottom: 8 }}>🔥 重点攻克 TOP 20</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+                      {top20.map((w, idx) => {
+                        const count = wrongCounts[w.word] || 0;
+                        const barW = Math.round(count / maxCount * 100);
+                        const rankColor = idx === 0 ? "#e53e3e" : idx < 3 ? "#dd6b20" : idx < 10 ? "#d69e2e" : "#888";
+                        return (
+                          <div key={w.word} style={{ background: "#fff", border: "1px solid #fee2e2", borderRadius: 12, padding: "10px 14px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: rankColor, width: 22, textAlign: "center", flexShrink: 0 }}>
+                                {idx + 1}
                               </div>
-                            ))}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                                  <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</span>
+                                  <span style={{ fontSize: 11, color: "#aaa" }}>{w.meaning}</span>
+                                </div>
+                              </div>
+                              <div style={{ flexShrink: 0, background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 8, padding: "3px 8px", fontSize: 12, fontWeight: 700, color: "#e53e3e" }}>
+                                ×{count}
+                              </div>
+                            </div>
+                            {/* Error bar */}
+                            <div style={{ marginLeft: 32, height: 3, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
+                              <div style={{ height: "100%", borderRadius: 2, background: rankColor, width: barW + "%", transition: "width 0.4s" }} />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                    <button onClick={() => { setWrongBank([]); localStorage.setItem("wv_wrong_bank", "[]"); showMsg("错词库已清空"); }}
-                      className="btn btn-outline btn-sm" style={{ width: "100%", marginTop: 16, color: "#e53e3e", borderColor: "#fecaca" }}>清空错词库</button>
+
+                    {/* Rest of wrong words (compact) */}
+                    {rest.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: "1px", marginBottom: 8 }}>其他错词</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                          {rest.map(w => (
+                            <div key={w.word} style={{ background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "5px 10px", fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 5 }}>
+                              <span>{w.word}</span>
+                              <span style={{ fontSize: 10, color: "#e53e3e", fontWeight: 600 }}>×{wrongCounts[w.word] || 0}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <button onClick={() => {
+                      setWrongBank([]);
+                      setWrongCounts({});
+                      localStorage.setItem("wv_wrong_bank", "[]");
+                      localStorage.setItem("wv_wrong_counts", "{}");
+                      showMsg("错词库已清空");
+                    }} className="btn btn-outline btn-sm" style={{ width: "100%", color: "#e53e3e", borderColor: "#fecaca" }}>清空错词库</button>
                   </div>
                 );
               })()}
