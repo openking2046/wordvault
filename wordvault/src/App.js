@@ -1404,6 +1404,7 @@ export default function VocabApp() {
   const correctRate = score.total ? Math.round(score.correct / score.total * 100) : 0;
 
   // Splash screen state: "in" | "out" | "done"
+  const logoVideoRef = useRef(null);
   const [splash, setSplash] = useState("in");
   const [typedText, setTypedText] = useState("");
   const [typedLine2, setTypedLine2] = useState("");
@@ -1418,6 +1419,13 @@ export default function VocabApp() {
   const startSplashAnim = useCallback(() => {
     if (splashStarted) return;
     setSplashStarted(true);
+
+    // Unmute and replay the logo video now that user has interacted
+    if (logoVideoRef.current) {
+      logoVideoRef.current.muted = false;
+      logoVideoRef.current.currentTime = 0;
+      logoVideoRef.current.play().catch(() => {});
+    }
 
     let audioCtx = null;
     const getCtx = () => {
@@ -1757,8 +1765,9 @@ export default function VocabApp() {
           {!splashStarted && (
             <div style={{ textAlign: "center", position: "relative", zIndex: 1, animation: "splashWelcomeIn 0.8s ease both" }}>
               <video
+                ref={logoVideoRef}
                 src={LOGO_VIDEO}
-                autoPlay loop playsInline
+                autoPlay loop muted playsInline
                 style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 28,
                   filter: "drop-shadow(0 0 30px rgba(0,255,180,0.4)) drop-shadow(0 0 70px rgba(0,200,255,0.25))" }}
               />
