@@ -2758,13 +2758,51 @@ export default function VocabApp() {
                   <div style={{ fontSize: 13, color: "#888" }}>所有单词都在记忆中，明天再来巩固</div>
                 </div>
               )}
-              {quizMode === "wrong" && wrongBank.length === 0 && (
-                <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>错词库是空的</div>
-                  <div style={{ fontSize: 13, color: "#888" }}>做题时答错的词会自动加入这里</div>
-                </div>
-              )}
+              {quizMode === "wrong" && (() => {
+                const allTracked = words
+                  .filter(w => wrongCounts[w.word] && wrongCounts[w.word] > 0)
+                  .sort((a, b) => (wrongCounts[b.word] || 0) - (wrongCounts[a.word] || 0));
+                const hasWrong = wrongBank.length > 0 && allTracked.length > 0;
+                if (!hasWrong) return (
+                  <div style={{ textAlign: "center", padding: "48px 0" }}>
+                    <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: "#111", marginBottom: 6 }}>错词库是空的</div>
+                    <div style={{ fontSize: 13, color: "#888" }}>做题时答错的词会自动加入这里</div>
+                  </div>
+                );
+                const top20 = allTracked.slice(0, 20);
+                const maxCount = wrongCounts[allTracked[0].word] || 1;
+                return (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: "#777" }}>共 {allTracked.length} 个错词 · 前20重点训练</div>
+                      <button onClick={() => startQuiz("wrong")} className="btn btn-dark btn-sm">开始训练</button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {top20.map((w, idx) => {
+                        const count = wrongCounts[w.word] || 0;
+                        const barW = Math.round(count / maxCount * 100);
+                        const rankColor = idx === 0 ? "#e53e3e" : idx < 3 ? "#dd6b20" : idx < 10 ? "#d69e2e" : "#888";
+                        return (
+                          <div key={w.word} style={{ background: "#fff", border: "1px solid #fee2e2", borderRadius: 12, padding: "10px 14px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: rankColor, width: 22, textAlign: "center", flexShrink: 0 }}>{idx + 1}</div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</span>
+                                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 8 }}>{w.meaning}</span>
+                              </div>
+                              <div style={{ flexShrink: 0, background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 8, padding: "3px 8px", fontSize: 12, fontWeight: 700, color: "#e53e3e" }}>×{count}</div>
+                            </div>
+                            <div style={{ marginLeft: 32, height: 3, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
+                              <div style={{ height: "100%", borderRadius: 2, background: rankColor, width: barW + "%" }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {(quizMode === "normal" || quizMode === "listen" || quizMode === "spell") && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
@@ -3470,91 +3508,6 @@ export default function VocabApp() {
                 </div>
               );
             })()}
-
-            {/* Wrong Bank */}
-            <div>
-              <div className="sec-title">错词库</div>
-              {(() => {
-                // All words that have ever been wrong (have a count), sorted by count desc
-                const allTracked = words
-                  .filter(w => wrongCounts[w.word] && wrongCounts[w.word] > 0)
-                  .sort((a, b) => (wrongCounts[b.word] || 0) - (wrongCounts[a.word] || 0));
-
-                if (allTracked.length === 0) return (
-                  <div style={{ fontSize: 13, color: "#aaa", padding: "20px 0", textAlign: "center" }}>答错的词会自动收录在这里</div>
-                );
-
-                const top20 = allTracked.slice(0, 20);
-                const rest = allTracked.slice(20);
-                const maxCount = wrongCounts[allTracked[0].word] || 1;
-
-                return (
-                  <div>
-                    {/* Header */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                      <div style={{ fontSize: 12, color: "#777" }}>共 {allTracked.length} 个错词 · 按错误次数排列</div>
-                      <button onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
-                        className="btn btn-dark btn-sm">训练前 20 词</button>
-                    </div>
-
-                    {/* Top 20 leaderboard */}
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#e53e3e", letterSpacing: "1px", marginBottom: 8 }}>🔥 重点攻克 TOP 20</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
-                      {top20.map((w, idx) => {
-                        const count = wrongCounts[w.word] || 0;
-                        const barW = Math.round(count / maxCount * 100);
-                        const rankColor = idx === 0 ? "#e53e3e" : idx < 3 ? "#dd6b20" : idx < 10 ? "#d69e2e" : "#888";
-                        return (
-                          <div key={w.word} style={{ background: "#fff", border: "1px solid #fee2e2", borderRadius: 12, padding: "10px 14px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: rankColor, width: 22, textAlign: "center", flexShrink: 0 }}>
-                                {idx + 1}
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                                  <span style={{ fontFamily: "DM Serif Display, serif", fontSize: 15, color: "#111" }}>{w.word}</span>
-                                  <span style={{ fontSize: 11, color: "#aaa" }}>{w.meaning}</span>
-                                </div>
-                              </div>
-                              <div style={{ flexShrink: 0, background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 8, padding: "3px 8px", fontSize: 12, fontWeight: 700, color: "#e53e3e" }}>
-                                ×{count}
-                              </div>
-                            </div>
-                            {/* Error bar */}
-                            <div style={{ marginLeft: 32, height: 3, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
-                              <div style={{ height: "100%", borderRadius: 2, background: rankColor, width: barW + "%", transition: "width 0.4s" }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Rest of wrong words (compact) */}
-                    {rest.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: "1px", marginBottom: 8 }}>其他错词</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-                          {rest.map(w => (
-                            <div key={w.word} style={{ background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "5px 10px", fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 5 }}>
-                              <span>{w.word}</span>
-                              <span style={{ fontSize: 10, color: "#e53e3e", fontWeight: 600 }}>×{wrongCounts[w.word] || 0}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <button onClick={() => {
-                      setWrongBank([]);
-                      setWrongCounts({});
-                      localStorage.setItem("wv_wrong_bank", "[]");
-                      localStorage.setItem("wv_wrong_counts", "{}");
-                      showMsg("错词库已清空");
-                    }} className="btn btn-outline btn-sm" style={{ width: "100%", color: "#e53e3e", borderColor: "#fecaca" }}>清空错词库</button>
-                  </div>
-                );
-              })()}
-            </div>
 
             <div>
             <div>
