@@ -1947,13 +1947,10 @@ export default function VocabApp() {
               {/* Name + title + stats */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 {profile && (
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 1 }}>{profile.name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 1 }}>{profile.name}</div>
                 )}
-                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", letterSpacing: "-0.5px", lineHeight: 1.1 }}>
-                  WordCombo
-                </div>
-                <div style={{ fontSize: 11, color: "#999", marginTop: 3 }}>
-                  {words.length} 词 · 正确率 {correctRate}%
+                <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>
+                  {words.length} 词 · 正确率 {correctRate}% · 🔥 {streakData.count} 天
                 </div>
               </div>
 
@@ -1962,11 +1959,8 @@ export default function VocabApp() {
                 const r = getRank(words.length, streakData.count);
                 return (
                   <div style={{ flexShrink: 0, textAlign: "right" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: r.color, background: r.bg, border: "1px solid " + r.color + "66", borderRadius: 8, padding: "4px 10px", marginBottom: 4, whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: r.color, background: r.bg, border: "1px solid " + r.color + "66", borderRadius: 8, padding: "4px 10px", whiteSpace: "nowrap" }}>
                       {r.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#999" }}>
-                      🔥 {streakData.count} 天连续
                     </div>
                   </div>
                 );
@@ -1985,7 +1979,7 @@ export default function VocabApp() {
                 <div onClick={e => e.stopPropagation()} style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f0f0f0", animation: "unlockSub 0.25s ease both" }}>
                   {/* Stats grid */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                    {[["词库", words.length, "词"], ["掌握", mastered, "个"], ["正确率", correctRate, "%"], ["连续", streakData.count, "天"]].map(([label, val, unit]) => (
+                    {[[`${words.length}`, "词", "词库"], [`${mastered}`, "个", "掌握"], [`${correctRate}`, "%", "正确率"], [`${globalMaxCombo}`, "×", "最高Combo"]].map(([val, unit, label]) => (
                       <div key={label} style={{ background: "#f7f7f7", borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
                         <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 19, color: "#111", lineHeight: 1 }}>
                           {val}<span style={{ fontSize: 10, color: "#bbb", marginLeft: 1 }}>{unit}</span>
@@ -2010,8 +2004,10 @@ export default function VocabApp() {
                   {/* Footer */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontSize: 11, color: "#bbb" }}>加入于 {profile?.joinDate || "—"}</div>
-                    <button onClick={e => { e.stopPropagation(); setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); setHeaderExpanded(false); }}
-                      style={{ fontSize: 11, color: "#666", background: "#f0f0f0", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}>
+                    <button
+                      onPointerUp={e => { e.stopPropagation(); e.preventDefault(); setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); setHeaderExpanded(false); }}
+                      onClick={e => { e.stopPropagation(); e.preventDefault(); }}
+                      style={{ fontSize: 12, fontWeight: 600, color: "#fff", background: "#111", border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontFamily: "inherit" }}>
                       编辑资料
                     </button>
                   </div>
@@ -3286,6 +3282,30 @@ export default function VocabApp() {
                     <SpriteAvatar id={setupAvatar} size={64} />
                   </div>
                   <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#111", marginBottom: 14, textAlign: "center" }}>编辑资料</div>
+
+                  {/* XP info */}
+                  {(() => {
+                    const level = Math.floor(xp / 100) + 1;
+                    const xpInLevel = xp % 100;
+                    return (
+                      <div style={{ background: "#111", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{ background: "#333", borderRadius: 10, padding: "6px 12px", fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff", flexShrink: 0 }}>Lv{level}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{xp} XP</div>
+                            <div style={{ fontSize: 11, color: "#888" }}>下一级 {100 - xpInLevel} XP</div>
+                          </div>
+                          <div style={{ height: 4, background: "#333", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{ height: "100%", borderRadius: 2, background: "#f5c542", width: xpInLevel + "%" }} />
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#666", flexShrink: 0, textAlign: "right" }}>
+                          <div>最高Combo</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>×{globalMaxCombo}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div style={{ flex: 1, overflowY: "auto", marginBottom: 16 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
                       {AVATARS.map(av => (
