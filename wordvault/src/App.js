@@ -263,7 +263,11 @@ export default function VocabApp() {
   const [setupStep, setSetupStep] = useState(0); // 0=avatar, 1=name, 2=done
   const [setupAvatar, setSetupAvatar] = useState(0); // avatar id
   const [setupName, setSetupName] = useState("");
+  const [setupBirthYear, setSetupBirthYear] = useState("");
+  const [setupBirthMonth, setSetupBirthMonth] = useState("");
+  const [setupOccupation, setSetupOccupation] = useState("");
   const [editingProfile, setEditingProfile] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [headerExpanded, setHeaderExpanded] = useState(false);
 
   // XP & Tasks
@@ -493,11 +497,17 @@ export default function VocabApp() {
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(""), 2500); };
 
   function saveProfile(avatar, name) {
-    const p = { avatar, name: name.trim() || "匿名学习者", joinDate: profile?.joinDate || new Date().toISOString().slice(0,10) };
+    const p = {
+      avatar, name: name.trim() || "匿名学习者",
+      joinDate: profile?.joinDate || new Date().toISOString().slice(0,10),
+      birthYear: setupBirthYear, birthMonth: setupBirthMonth,
+      occupation: setupOccupation,
+    };
     setProfile(p);
     localStorage.setItem("wv_profile", JSON.stringify(p));
     setShowProfileSetup(false);
     setEditingProfile(false);
+    setShowAvatarPicker(false);
   }
 
   // Render sprite avatar — size in px
@@ -3238,7 +3248,7 @@ export default function VocabApp() {
                       <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", marginBottom: 3 }}>{profile.name}</div>
                       <div style={{ fontSize: 12, color: "#555" }}>加入于 {profile.joinDate}</div>
                     </div>
-                    <button onClick={() => { setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); }}
+                    <button onClick={() => { setSetupAvatar(profile.avatar); setSetupName(profile.name); setSetupBirthYear(profile.birthYear||""); setSetupBirthMonth(profile.birthMonth||""); setSetupOccupation(profile.occupation||""); setShowAvatarPicker(false); setEditingProfile(true); }}
                       style={{ background: "#1e1e1e", border: "1px solid #333", borderRadius: 8, color: "#888", fontSize: 12, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit" }}>编辑</button>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
@@ -3270,56 +3280,83 @@ export default function VocabApp() {
 
             {/* Edit Profile Modal */}
             {editingProfile && (
-              <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 700, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 36px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-                    <SpriteAvatar id={setupAvatar} size={64} />
-                  </div>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#111", marginBottom: 14, textAlign: "center" }}>编辑资料</div>
+              <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 700, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+                onClick={() => { setEditingProfile(false); setShowAvatarPicker(false); }}>
+                <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 36px", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
+                  onClick={e => e.stopPropagation()}>
 
-                  {/* XP info */}
-                  {(() => {
-                    const level = Math.floor(xp / 100) + 1;
-                    const xpInLevel = xp % 100;
-                    return (
-                      <div style={{ background: "#111", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ background: "#333", borderRadius: 10, padding: "6px 12px", fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff", flexShrink: 0 }}>Lv{level}</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{xp} XP</div>
-                            <div style={{ fontSize: 11, color: "#888" }}>下一级 {100 - xpInLevel} XP</div>
-                          </div>
-                          <div style={{ height: 4, background: "#333", borderRadius: 2, overflow: "hidden" }}>
-                            <div style={{ height: "100%", borderRadius: 2, background: "#f5c542", width: xpInLevel + "%" }} />
+                  {/* Title */}
+                  <div style={{ fontSize: 17, fontWeight: 700, color: "#111", marginBottom: 20, textAlign: "center" }}>编辑资料</div>
+
+                  <div style={{ flex: 1, overflowY: "auto" }}>
+                    {/* Avatar — tap to toggle picker */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
+                      <div onClick={() => setShowAvatarPicker(v => !v)} style={{ cursor: "pointer", position: "relative" }}>
+                        <SpriteAvatar id={setupAvatar} size={80} />
+                        <div style={{ position: "absolute", bottom: 0, right: 0, background: "#111", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff" }}>✎</div>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>点击头像更换</div>
+
+                      {/* Avatar picker — shown only after tap */}
+                      {showAvatarPicker && (
+                        <div style={{ marginTop: 14, width: "100%" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+                            {AVATARS.map(av => (
+                              <div key={av.id} onClick={() => { setSetupAvatar(av.id); setShowAvatarPicker(false); }}
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, padding: 3, cursor: "pointer",
+                                  border: setupAvatar === av.id ? "2.5px solid #111" : "2.5px solid transparent",
+                                  background: setupAvatar === av.id ? "#f0f0f0" : "transparent",
+                                  transform: setupAvatar === av.id ? "scale(1.08)" : "scale(1)",
+                                  transition: "all 0.15s" }}>
+                                <SpriteAvatar id={av.id} size={48} />
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <div style={{ fontSize: 11, color: "#666", flexShrink: 0, textAlign: "right" }}>
-                          <div>最高Combo</div>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>×{globalMaxCombo}</div>
+                      )}
+                    </div>
+
+                    {/* Fields */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {/* Name */}
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 5 }}>昵称</div>
+                        <input value={setupName} onChange={e => setSetupName(e.target.value)}
+                          placeholder="你的昵称" maxLength={16}
+                          style={{ width: "100%", fontSize: 15, padding: "10px 14px", borderRadius: 12, border: "1.5px solid #e8e8e8", background: "#fafafa", boxSizing: "border-box" }} />
+                      </div>
+
+                      {/* Birth */}
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 5 }}>出生年月</div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input value={setupBirthYear} onChange={e => setSetupBirthYear(e.target.value)}
+                            placeholder="年份 (如 1995)" maxLength={4} type="number"
+                            style={{ flex: 1, fontSize: 15, padding: "10px 14px", borderRadius: 12, border: "1.5px solid #e8e8e8", background: "#fafafa" }} />
+                          <select value={setupBirthMonth} onChange={e => setSetupBirthMonth(e.target.value)}
+                            style={{ flex: 1, fontSize: 15, padding: "10px 14px", borderRadius: 12, border: "1.5px solid #e8e8e8", background: "#fafafa", color: setupBirthMonth ? "#111" : "#aaa" }}>
+                            <option value="">月份</option>
+                            {["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"].map((m,i) => (
+                              <option key={i} value={String(i+1)}>{m}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
-                    );
-                  })()}
-                  <div style={{ flex: 1, overflowY: "auto", marginBottom: 16 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
-                      {AVATARS.map(av => (
-                        <div key={av.id} onClick={() => setSetupAvatar(av.id)}
-                          style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, padding: 3, cursor: "pointer",
-                            border: setupAvatar === av.id ? "2.5px solid #111" : "2.5px solid transparent",
-                            background: setupAvatar === av.id ? "#f0f0f0" : "transparent",
-                            transform: setupAvatar === av.id ? "scale(1.08)" : "scale(1)",
-                            transition: "all 0.15s" }}>
-                          <SpriteAvatar id={av.id} size={48} />
-                        </div>
-                      ))}
+
+                      {/* Occupation */}
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 5 }}>职业</div>
+                        <input value={setupOccupation} onChange={e => setSetupOccupation(e.target.value)}
+                          placeholder="如：学生、工程师、设计师…" maxLength={20}
+                          style={{ width: "100%", fontSize: 15, padding: "10px 14px", borderRadius: 12, border: "1.5px solid #e8e8e8", background: "#fafafa", boxSizing: "border-box" }} />
+                      </div>
                     </div>
                   </div>
-                  <input value={setupName} onChange={e => setSetupName(e.target.value)}
-                    placeholder="昵称" maxLength={16}
-                    style={{ marginBottom: 14, textAlign: "center", fontSize: 16 }} />
-                  <div style={{ display: "flex", gap: 10 }}>
+
+                  {/* Buttons */}
+                  <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
                     <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => saveProfile(setupAvatar, setupName)}>保存</button>
-                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setEditingProfile(false)}>取消</button>
+                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setEditingProfile(false); setShowAvatarPicker(false); }}>取消</button>
                   </div>
                 </div>
               </div>
