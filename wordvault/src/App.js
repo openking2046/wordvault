@@ -1934,7 +1934,7 @@ export default function VocabApp() {
       )}
 
       {/* Header Card */}
-      <div style={{ background: "#f2f2f7", position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 12px" }}>
+      {tab !== 4 && <div style={{ background: "#f2f2f7", position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 12px" }}>
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
           <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", cursor: "pointer" }}
             onClick={() => setHeaderExpanded(e => !e)}>
@@ -2002,21 +2002,15 @@ export default function VocabApp() {
                   </div>
 
                   {/* Footer */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
                     <div style={{ fontSize: 11, color: "#bbb" }}>加入于 {profile?.joinDate || "—"}</div>
-                    <button
-                      onPointerUp={e => { e.stopPropagation(); e.preventDefault(); setSetupAvatar(profile.avatar); setSetupName(profile.name); setEditingProfile(true); setHeaderExpanded(false); }}
-                      onClick={e => { e.stopPropagation(); e.preventDefault(); }}
-                      style={{ fontSize: 12, fontWeight: 600, color: "#fff", background: "#111", border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontFamily: "inherit" }}>
-                      编辑资料
-                    </button>
                   </div>
                 </div>
               );
             })()}
           </div>
         </div>
-      </div>
+      </div>}
       {/* Content */}
       <div className="tab-content">
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
