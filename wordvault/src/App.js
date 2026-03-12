@@ -1758,14 +1758,10 @@ export default function VocabApp() {
             <div style={{ textAlign: "center", position: "relative", zIndex: 1, animation: "splashWelcomeIn 0.8s ease both" }}>
               <video
                 src={LOGO_VIDEO}
-                autoPlay loop muted playsInline
-                style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 4,
+                autoPlay loop playsInline
+                style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 28,
                   filter: "drop-shadow(0 0 30px rgba(0,255,180,0.4)) drop-shadow(0 0 70px rgba(0,200,255,0.25))" }}
               />
-              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 32, color: "#fff", letterSpacing: "-1px", lineHeight: 1, marginBottom: 28,
-                textShadow: "0 0 40px rgba(255,255,255,0.2)" }}>
-                WordCombo
-              </div>
               <div style={{ fontSize: 10, letterSpacing: "5px", color: "#444", textTransform: "uppercase",
                 animation: "cursorBlink 1.4s ease-in-out infinite" }}>
                 TAP TO START
