@@ -1534,41 +1534,41 @@ export default function VocabApp() {
   }, [splashStarted]);
 
   return (
-    <div style={{ fontFamily: "Inter, -apple-system, sans-serif", minHeight: "100vh", background: "#f2f2f7", color: "#111", display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "Inter, -apple-system, sans-serif", minHeight: "100vh", background: "#faf8f5", color: "#111", display: "flex", flexDirection: "column" }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         input, textarea { background: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px; color: #111; padding: 10px 14px; font-family: inherit; font-size: 14px; outline: none; width: 100%; transition: border 0.15s; }
-        input:focus, textarea:focus { border-color: #111; background: #fff; }
+        input:focus, textarea:focus { border-color: #FF8000; background: #fff; box-shadow: 0 0 0 3px rgba(255,128,0,0.1); }
         input::placeholder, textarea::placeholder { color: #777; }
         .btn { border-radius: 8px; padding: 10px 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; border: none; transition: all 0.15s; display: inline-block; }
-        .btn-dark { background: #111; color: #fff; }
-        .btn-dark:hover { background: #333; }
+        .btn-dark { background: #FF8000; color: #fff; }
+        .btn-dark:hover { background: #e07000; }
         .btn-dark:disabled { background: #777; cursor: not-allowed; }
         .btn-outline { background: #fff; color: #111; border: 1.5px solid #ddd; }
         .btn-outline:hover { background: #f5f5f5; }
         .btn-sm { padding: 7px 14px; font-size: 13px; }
         .tag-pill { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #e0e0e0; background: #fff; color: #777; transition: all 0.12s; }
-        .tag-pill.active { background: #111; color: #fff; border-color: #111; }
+        .tag-pill.active { background: #FF8000; color: #fff; border-color: #FF8000; }
         .word-row { border-bottom: 1px solid #f2f2f2; padding: 9px 0; cursor: pointer; }
         .word-row:last-child { border-bottom: none; }
         .opt-btn { width: 100%; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 10px; padding: 14px 16px; text-align: left; font-family: inherit; font-size: 14px; color: #111; cursor: pointer; transition: all 0.12s; margin-bottom: 8px; }
-        .opt-btn:hover:not(:disabled) { border-color: #111; background: #fff; }
+        .opt-btn:hover:not(:disabled) { border-color: #FF8000; background: #fff8ee; }
         .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; }
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1.5px solid #ffe0b2; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
-        .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #111; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 14px rgba(0,0,0,0.22); transition: transform 0.15s; }
+        .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #FF8000; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 18px rgba(255,128,0,0.45); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 20px; line-height: 1; color: #fff; font-style: normal; }
         .nav-icon { font-size: 22px; line-height: 1; color: #888; font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
-        .nav-item.active .nav-icon, .nav-item.active .nav-label { color: #111; font-weight: 600; }
+        .nav-item.active .nav-icon, .nav-item.active .nav-label { color: #FF8000; font-weight: 700; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
-        .nav-item-center.active .nav-label { color: #111; font-weight: 600; }
-        .nav-item-center.active .nav-center-btn { background: #000; }
-        .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; }
+        .nav-item-center.active .nav-label { color: #FF8000; font-weight: 700; }
+        .nav-item-center.active .nav-center-btn { background: #FF8000; }
+        .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#FF8000,#FFB347); color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; box-shadow: 0 4px 16px rgba(255,128,0,0.4); }
         .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
         .swipe-container { position: relative; overflow: hidden; }
@@ -1576,7 +1576,7 @@ export default function VocabApp() {
         .swipe-content.swiped { transform: translateX(-72px); }
         .swipe-delete { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #e53e3e; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 0 0 0 0; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
-        .tab-content { background: #f2f2f7; padding: 16px 16px 100px; flex: 1; overflow-y: auto; }
+        .tab-content { background: #faf8f5; padding: 16px 16px 100px; flex: 1; overflow-y: auto; }
 
         /* ── Press feedback — Duolingo-style spring ── */
         button, .tag-pill, .word-row, .opt-btn, .nav-item, .game-card, [role="button"] {
@@ -1976,7 +1976,7 @@ export default function VocabApp() {
           : r.color === "#ff4444" ? ["#cc0000","#ff6b6b"]
           : ["#6c47ff","#a78bfa"];
         return (
-          <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#f2f2f7" }}>
+          <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#faf8f5" }}>
             <div style={{ maxWidth: 520, margin: "0 auto" }}>
               <div
                 onClick={() => setHeaderExpanded(e => !e)}
@@ -2090,69 +2090,150 @@ export default function VocabApp() {
         {/* Tab 0 */}
         {tab === 0 && (
           <div>
-            {/* Search */}
-            <div style={{ position: "relative", marginBottom: 14 }}>
-              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="搜索单词或释义…"
-                style={{ paddingLeft: 36, background: "#f7f7f7", border: "1px solid #ebebeb" }} />
-              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 15, pointerEvents: "none" }}>⌕</span>
-              {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, lineHeight: 1 }}>×</button>}
-            </div>
-            {/* Free limit banner */}
-            {!isPro && words.length >= FREE_LIMIT - 3 && (
-              <div onClick={() => setShowUpgrade(true)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: words.length >= FREE_LIMIT ? "#fff5f5" : "#fafafa", border: "1.5px solid " + (words.length >= FREE_LIMIT ? "#e53e3e" : "#e0e0e0"), borderRadius: 12, padding: "12px 16px", marginBottom: 14, cursor: "pointer" }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#555" }}>
-                    {words.length >= FREE_LIMIT ? "已达免费上限" : `还能免费添加 ${FREE_LIMIT - words.length} 个词`}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>升级完整版，无限添加单词</div>
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#888" }}>升级 →</div>
-              </div>
-            )}
 
-            {/* Review reminder banner */}
+            {/* ── COMBO CAT HERO BANNER ── */}
+            <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "20px 20px 0", marginBottom: 18, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
+              {/* Decorative circles */}
+              <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
+              <div style={{ position:"absolute", top:10, right:30, width:60, height:60, borderRadius:"50%", background:"rgba(255,255,255,0.08)" }}/>
+              <div style={{ display:"flex", alignItems:"flex-end", gap:0 }}>
+                {/* Text left */}
+                <div style={{ flex:1, paddingBottom: 20 }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.75)", letterSpacing:"1px", textTransform:"uppercase", marginBottom:6 }}>我的词库</div>
+                  <div style={{ fontFamily:"DM Serif Display, serif", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:12, textShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
+                    {words.length > 0 ? `${words.length} 个单词` : "开始学习"}
+                  </div>
+                  {/* 3 stat pills */}
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {[
+                      { icon:"📚", val: words.length, label:"总词数" },
+                      { icon:"✅", val: words.filter(w=>w.mastery>=4).length, label:"已掌握" },
+                      { icon:"🔥", val: Object.keys(wrongCounts).filter(w=>words.find(x=>x.word===w)&&wrongCounts[w]>0).length, label:"待攻克" },
+                    ].map(s => (
+                      <div key={s.label} style={{ background:"rgba(255,255,255,0.22)", backdropFilter:"blur(8px)", borderRadius:12, padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                        <span style={{ fontSize:13 }}>{s.icon}</span>
+                        <div>
+                          <div style={{ fontSize:14, fontWeight:800, color:"#fff", lineHeight:1 }}>{s.val}</div>
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", letterSpacing:"0.3px" }}>{s.label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Combo Cat SVG - sitting at bottom */}
+                <div style={{ width:110, flexShrink:0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
+                  <ellipse cx="55" cy="126" rx="28" ry="6" fill="rgba(0,0,0,0.12)"/>
+                  <!-- tail -->
+                  <path d="M78 95 Q98 80 92 60 Q88 45 78 50" stroke="#e07000" stroke-width="10" fill="none" stroke-linecap="round"/>
+                  <path d="M78 95 Q98 80 92 60 Q88 45 78 50" stroke="#FFB040" stroke-width="6" fill="none" stroke-linecap="round"/>
+                  <!-- body -->
+                  <ellipse cx="52" cy="98" rx="30" ry="26" fill="#FF8C00"/>
+                  <ellipse cx="52" cy="102" rx="20" ry="18" fill="#FFB040"/>
+                  <!-- arms -->
+                  <ellipse cx="24" cy="95" rx="10" ry="14" fill="#FF8C00" transform="rotate(-15,24,95)"/>
+                  <ellipse cx="80" cy="88" rx="10" ry="14" fill="#FF8C00" transform="rotate(20,80,88)"/>
+                  <!-- head -->
+                  <circle cx="52" cy="62" r="30" fill="#FFA020"/>
+                  <!-- ears -->
+                  <polygon points="30,42 22,20 42,36" fill="#FFA020"/>
+                  <polygon points="74,42 88,20 68,36" fill="#FFA020"/>
+                  <polygon points="32,40 26,24 40,36" fill="#FFD080"/>
+                  <polygon points="72,40 84,24 70,36" fill="#FFD080"/>
+                  <!-- face -->
+                  <ellipse cx="52" cy="68" rx="18" ry="14" fill="#FFD080"/>
+                  <!-- eyes closed happy -->
+                  <path d="M41 56 Q44 52 47 56" stroke="#4a3000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                  <path d="M57 56 Q60 52 63 56" stroke="#4a3000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                  <!-- nose -->
+                  <ellipse cx="52" cy="63" rx="3" ry="2" fill="#e07000"/>
+                  <!-- mouth smile -->
+                  <path d="M46 68 Q52 74 58 68" stroke="#c05000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- whiskers -->
+                  <line x1="22" y1="60" x2="40" y2="63" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
+                  <line x1="22" y1="65" x2="40" y2="65" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
+                  <line x1="64" y1="63" x2="82" y2="60" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
+                  <line x1="64" y1="65" x2="82" y2="65" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
+                  <!-- lightning bolts -->
+                  <path d="M8 38 L13 28 L10 34 L16 24 L11 34 L14 28Z" fill="#FFD700" opacity="0.9"/>
+                  <path d="M92 30 L97 20 L94 26 L100 16 L95 26 L98 20Z" fill="#FFD700" opacity="0.8"/>
+                  <!-- sparkles -->
+                  <path d="M6 55 L8 50 L10 55 L15 57 L10 59 L8 64 L6 59 L1 57Z" fill="#FFD700" opacity="0.85"/>
+                  <path d="M98 48 L100 44 L102 48 L106 50 L102 52 L100 56 L98 52 L94 50Z" fill="#FFD700" opacity="0.7"/>
+                  <circle cx="18" cy="78" r="2.5" fill="#FFD700" opacity="0.6"/>
+                  <circle cx="96" cy="72" r="2" fill="#FFD700" opacity="0.5"/>
+                </svg>` }} />
+              </div>
+            </div>
+
+            {/* ── REVIEW REMINDER ── */}
             {(() => {
               const due = getDueWords(words);
               if (due.length === 0) return null;
               return (
                 <div onClick={() => { setQuizMode("review"); setTab(2); startQuiz("review"); }}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff8f0", border: "1.5px solid #f0a500", borderRadius: 12, padding: "12px 16px", marginBottom: 14, cursor: "pointer" }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#b07800" }}>{due.length} 个单词需要复习</div>
-                    <div style={{ fontSize: 11, color: "#c8900a", marginTop: 2 }}>根据艾宾浩斯记忆曲线，现在是最佳时机</div>
+                  style={{ display:"flex", alignItems:"center", gap:12, background:"#fff8ee", border:"1.5px solid #FFB347", borderRadius:16, padding:"12px 16px", marginBottom:14, cursor:"pointer", boxShadow:"0 2px 10px rgba(255,128,0,0.12)" }}>
+                  <div style={{ width:36, height:36, borderRadius:12, background:"linear-gradient(135deg,#FF8000,#FFB347)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🧠</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#c05800" }}>{due.length} 个单词待复习</div>
+                    <div style={{ fontSize:11, color:"#e07800", marginTop:1 }}>艾宾浩斯曲线 · 现在复习效果最佳</div>
                   </div>
-                  <div style={{ fontSize: 13, color: "#b07800", fontWeight: 700 }}>去复习 →</div>
+                  <div style={{ fontSize:18, color:"#FF8000" }}>›</div>
                 </div>
               );
             })()}
 
-            {/* Tag filter */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            {/* ── FREE LIMIT BANNER ── */}
+            {!isPro && words.length >= FREE_LIMIT - 3 && (
+              <div onClick={() => setShowUpgrade(true)}
+                style={{ display:"flex", alignItems:"center", gap:12, background: words.length >= FREE_LIMIT ? "#fff0f0" : "#fff8ee", border:"1.5px solid " + (words.length >= FREE_LIMIT ? "#e53e3e" : "#FFB347"), borderRadius:16, padding:"12px 16px", marginBottom:14, cursor:"pointer" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#c05800" }}>
+                    {words.length >= FREE_LIMIT ? "已达免费上限" : `还能免费添加 ${FREE_LIMIT - words.length} 个词`}
+                  </div>
+                  <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>升级完整版，无限添加单词</div>
+                </div>
+                <div style={{ fontSize:12, fontWeight:700, color:"#FF8000", background:"rgba(255,128,0,0.1)", borderRadius:8, padding:"4px 10px" }}>升级 Pro →</div>
+              </div>
+            )}
+
+            {/* ── SEARCH BAR ── */}
+            <div style={{ position:"relative", marginBottom:14 }}>
+              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="搜索单词或释义…"
+                style={{ paddingLeft:40, background:"#fff", border:"1.5px solid #ffe0b2", borderRadius:14, boxShadow:"0 2px 8px rgba(255,128,0,0.08)" }} />
+              <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"#FF8000", fontSize:16, pointerEvents:"none" }}>⌕</span>
+              {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"#aaa", fontSize:18 }}>×</button>}
+            </div>
+
+            {/* ── TAG FILTER ── */}
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
               {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
             </div>
-            {/* Sort + Group toggle */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 16, justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: 6 }}>
-                {[["newest", "最新"], ["oldest", "最早"], ["alpha", "A→Z"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setSortOrder(val)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid " + (sortOrder === val ? "#111" : "#e0e0e0"), background: sortOrder === val ? "#111" : "#fff", color: sortOrder === val ? "#fff" : "#777", cursor: "pointer", fontFamily: "inherit", fontWeight: sortOrder === val ? 600 : 400, transition: "all 0.15s" }}>{label}</button>
+
+            {/* ── SORT + GROUP ── */}
+            <div style={{ display:"flex", gap:6, marginBottom:16, justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ display:"flex", gap:6 }}>
+                {[["newest","最新"],["oldest","最早"],["alpha","A→Z"]].map(([val, label]) => (
+                  <button key={val} onClick={() => setSortOrder(val)} style={{ fontSize:12, padding:"5px 12px", borderRadius:20, border:"1px solid "+(sortOrder===val ? "#FF8000" : "#e0e0e0"), background: sortOrder===val ? "#FF8000" : "#fff", color: sortOrder===val ? "#fff" : "#777", cursor:"pointer", fontFamily:"inherit", fontWeight: sortOrder===val ? 700 : 400, transition:"all 0.15s" }}>{label}</button>
                 ))}
               </div>
-              <button onClick={() => setGroupByTag(g => !g)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid " + (groupByTag ? "#111" : "#e0e0e0"), background: groupByTag ? "#111" : "#fff", color: groupByTag ? "#fff" : "#777", cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+              <button onClick={() => setGroupByTag(g => !g)} style={{ fontSize:12, padding:"5px 12px", borderRadius:20, border:"1px solid "+(groupByTag ? "#FF8000" : "#e0e0e0"), background: groupByTag ? "#FF8000" : "#fff", color: groupByTag ? "#fff" : "#777", cursor:"pointer", fontFamily:"inherit", transition:"all 0.15s" }}>
                 {groupByTag ? "取消分组" : "按标签"}
               </button>
             </div>
+
+            {/* ── EMPTY STATE ── */}
             {filteredWords.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#888" }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#333", marginBottom: 6 }}>还没有单词</div>
-                <div style={{ fontSize: 13, color: "#aaa" }}>点下方「+」添加第一个单词</div>
+              <div style={{ textAlign:"center", padding:"50px 0 30px" }}>
+                <div style={{ width:80, height:80, margin:"0 auto 16px", opacity:0.6 }} dangerouslySetInnerHTML={{ __html:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="32" fill="#FFE0A0"/><path d="M28 36 Q31 32 34 36" stroke="#c05000" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M46 36 Q49 32 52 36" stroke="#c05000" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M33 48 Q40 54 47 48" stroke="#c05000" stroke-width="2" fill="none" stroke-linecap="round"/><polygon points="26,26 20,12 34,22" fill="#FFA020"/><polygon points="54,26 60,12 46,22" fill="#FFA020"/></svg>` }} />
+                <div style={{ fontSize:16, fontWeight:700, color:"#333", marginBottom:6 }}>还没有单词</div>
+                <div style={{ fontSize:13, color:"#aaa" }}>点下方「+」让 Combo猫帮你记单词！</div>
               </div>
             )}
-            {/* Word cards - two-column masonry */}
+
+            {/* ── WORD CARDS ── */}
             {(() => {
               const masteryDot = (m) => {
-                const colors = ["#ddd","#d4a017","#c47a1e","#4a9d6f","#2d8a4e","#1a6e3c"];
+                const colors = ["#ddd","#FFD080","#FFB347","#4a9d6f","#2d8a4e","#1a6e3c"];
                 const labels = ["未学","初识","认识","熟悉","掌握","精通"];
                 return { color: colors[m], label: labels[m] };
               };
@@ -2169,8 +2250,8 @@ export default function VocabApp() {
                       borderRadius: 18,
                       padding: "16px 14px",
                       marginBottom: 10,
-                      boxShadow: isExpanded ? "0 8px 32px rgba(0,0,0,0.12)" : "0 2px 12px rgba(0,0,0,0.07)",
-                      border: isExpanded ? "1.5px solid #111" : "1.5px solid transparent",
+                      boxShadow: isExpanded ? "0 8px 28px rgba(255,128,0,0.18)" : "0 2px 10px rgba(0,0,0,0.06)",
+                      border: isExpanded ? "1.5px solid #FF8000" : "1.5px solid transparent",
                       transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                       cursor: "pointer",
                       position: "relative",
@@ -2178,55 +2259,55 @@ export default function VocabApp() {
                     }}>
 
                     {/* Mastery dot top-right */}
-                    <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 4 }}>
-                      {isWrong && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e53e3e" }} />}
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot.color }} title={dot.label} />
+                    <div style={{ position:"absolute", top:12, right:12, display:"flex", alignItems:"center", gap:4 }}>
+                      {isWrong && <div style={{ width:6, height:6, borderRadius:"50%", background:"#e53e3e" }} />}
+                      <div style={{ width:8, height:8, borderRadius:"50%", background: dot.color, boxShadow: isExpanded ? `0 0 0 2px ${dot.color}44` : "none" }} title={dot.label} />
                     </div>
 
                     {/* Word */}
-                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#111", lineHeight: 1.15, marginBottom: 4, paddingRight: 20 }}>
+                    <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, color:"#111", lineHeight:1.15, marginBottom:4, paddingRight:20 }}>
                       {w.word}
                     </div>
 
                     {/* Phonetic + play */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                      {w.phonetic && <span style={{ fontSize: 11, color: "#aaa", fontStyle: "italic" }}>{w.phonetic}</span>}
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+                      {w.phonetic && <span style={{ fontSize:11, color:"#aaa", fontStyle:"italic" }}>{w.phonetic}</span>}
                       <button onClick={e => { e.stopPropagation(); speak(w.word); }}
-                        style={{ width: 24, height: 24, borderRadius: "50%", background: "#f5f5f5", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, color: "#555" }}>
+                        style={{ width:24, height:24, borderRadius:"50%", background: isExpanded ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:9, color: isExpanded ? "#fff" : "#555", transition:"all 0.2s" }}>
                         ▶
                       </button>
                     </div>
 
                     {/* Meaning */}
-                    <div style={{ fontSize: 12, color: "#555", lineHeight: 1.5, marginBottom: w.example ? 8 : 0 }}>
+                    <div style={{ fontSize:12, color:"#555", lineHeight:1.5, marginBottom: w.example ? 8 : 0 }}>
                       {w.meaning}
                     </div>
 
                     {/* Example */}
                     {w.example && (
-                      <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", lineHeight: 1.5, borderLeft: "2px solid #f0f0f0", paddingLeft: 8, marginBottom: 10 }}>
+                      <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", lineHeight:1.5, borderLeft:"2px solid #FFE0A0", paddingLeft:8, marginBottom:10 }}>
                         {w.example}
                       </div>
                     )}
 
                     {/* Tags */}
                     {(w.tags||[]).length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:6 }}>
                         {(w.tags||[]).map(t => (
-                          <span key={t} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "#f5f5f5", color: "#888", fontWeight: 500 }}>{t}</span>
+                          <span key={t} style={{ fontSize:10, padding:"2px 7px", borderRadius:8, background:"#fff5e0", color:"#c07000", fontWeight:600 }}>{t}</span>
                         ))}
                       </div>
                     )}
 
                     {/* Expanded detail */}
                     {isExpanded && (
-                      <div onClick={e => e.stopPropagation()} style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f0f0f0" }}>
+                      <div onClick={e => e.stopPropagation()} style={{ marginTop:14, paddingTop:14, borderTop:"1px solid #fff0d0" }}>
                         {editingWord?.id === w.id ? (
                           <div>
-                            <input value={editingWord.word} onChange={e => setEditingWord(x => ({ ...x, word: e.target.value }))} placeholder="英文单词" style={{ marginBottom: 6, fontFamily: "DM Serif Display, serif", fontSize: 15 }} />
-                            <input value={editingWord.meaning} onChange={e => setEditingWord(x => ({ ...x, meaning: e.target.value }))} placeholder="中文释义" style={{ marginBottom: 6, fontSize: 13 }} />
-                            <input value={editingWord.example} onChange={e => setEditingWord(x => ({ ...x, example: e.target.value }))} placeholder="例句（可选）" style={{ marginBottom: 10, fontSize: 13 }} />
-                            <div style={{ display: "flex", gap: 8 }}>
+                            <input value={editingWord.word} onChange={e => setEditingWord(x => ({ ...x, word: e.target.value }))} placeholder="英文单词" style={{ marginBottom:6, fontFamily:"DM Serif Display, serif", fontSize:15 }} />
+                            <input value={editingWord.meaning} onChange={e => setEditingWord(x => ({ ...x, meaning: e.target.value }))} placeholder="中文释义" style={{ marginBottom:6, fontSize:13 }} />
+                            <input value={editingWord.example} onChange={e => setEditingWord(x => ({ ...x, example: e.target.value }))} placeholder="例句（可选）" style={{ marginBottom:10, fontSize:13 }} />
+                            <div style={{ display:"flex", gap:8 }}>
                               <button className="btn btn-dark btn-sm" onClick={saveEditWord}>保存</button>
                               <button className="btn btn-outline btn-sm" onClick={() => setEditingWord(null)}>取消</button>
                             </div>
@@ -2235,36 +2316,36 @@ export default function VocabApp() {
                           <div>
                             {/* Review schedule */}
                             {(() => {
-                              if (!w.nextReview) return <div style={{ fontSize: 11, color: "#bbb", marginBottom: 10 }}>尚未测验 · 答题后开始记忆追踪</div>;
+                              if (!w.nextReview) return <div style={{ fontSize:11, color:"#bbb", marginBottom:10 }}>尚未测验 · 答题后开始记忆追踪</div>;
                               const d = new Date(w.nextReview); d.setHours(0,0,0,0);
                               const t = new Date(); t.setHours(0,0,0,0);
                               const diff = Math.round((d - t) / 86400000);
                               const lvl = w.reviewLevel || 0;
                               return (
-                                <div style={{ marginBottom: 12 }}>
-                                  <div style={{ display: "flex", gap: 3, marginBottom: 5 }}>
+                                <div style={{ marginBottom:12 }}>
+                                  <div style={{ display:"flex", gap:3, marginBottom:5 }}>
                                     {REVIEW_INTERVALS.map((_, i) => (
-                                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= lvl ? "#111" : "#f0f0f0" }} />
+                                      <div key={i} style={{ flex:1, height:3, borderRadius:2, background: i <= lvl ? "#FF8000" : "#f0f0f0" }} />
                                     ))}
                                   </div>
-                                  <div style={{ fontSize: 11, color: diff <= 0 ? "#e53e3e" : "#aaa" }}>
+                                  <div style={{ fontSize:11, color: diff <= 0 ? "#e53e3e" : "#aaa" }}>
                                     {diff <= 0 ? "今天需要复习" : `${diff} 天后复习`}
                                   </div>
                                 </div>
                               );
                             })()}
                             {/* Tag management */}
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                            <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:10 }}>
                               {(w.tags||[]).map(t => (
-                                <span key={t} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 8, background: "#f0f0f0", color: "#555", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                <span key={t} style={{ fontSize:11, padding:"3px 8px", borderRadius:8, background:"#fff5e0", color:"#c07000", display:"inline-flex", alignItems:"center", gap:4 }}>
                                   {t}
                                   {confirmDeleteWordTag?.wordId === w.id && confirmDeleteWordTag?.tag === t ? (
                                     <>
-                                      <span onClick={e => { e.stopPropagation(); setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: x.tags.filter(tg => tg !== t) } : x)); setConfirmDeleteWordTag(null); }} style={{ fontSize: 12, color: "#e53e3e", cursor: "pointer", fontWeight: 700 }}>✓</span>
-                                      <span onClick={e => { e.stopPropagation(); setConfirmDeleteWordTag(null); }} style={{ fontSize: 12, color: "#888", cursor: "pointer" }}>✗</span>
+                                      <span onClick={e => { e.stopPropagation(); setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: x.tags.filter(tg => tg !== t) } : x)); setConfirmDeleteWordTag(null); }} style={{ fontSize:12, color:"#e53e3e", cursor:"pointer", fontWeight:700 }}>✓</span>
+                                      <span onClick={e => { e.stopPropagation(); setConfirmDeleteWordTag(null); }} style={{ fontSize:12, color:"#888", cursor:"pointer" }}>✗</span>
                                     </>
                                   ) : (
-                                    <span onClick={e => { e.stopPropagation(); setConfirmDeleteWordTag({ wordId: w.id, tag: t }); }} style={{ cursor: "pointer", opacity: 0.4, fontSize: 12 }}>×</span>
+                                    <span onClick={e => { e.stopPropagation(); setConfirmDeleteWordTag({ wordId: w.id, tag: t }); }} style={{ cursor:"pointer", opacity:0.4, fontSize:12 }}>×</span>
                                   )}
                                 </span>
                               ))}
@@ -2272,17 +2353,17 @@ export default function VocabApp() {
                                 <select defaultValue="" autoFocus onClick={e => e.stopPropagation()}
                                   onChange={e => { const tag = e.target.value; if (tag && !(w.tags||[]).includes(tag)) setWords(ws => ws.map(x => x.id === w.id ? { ...x, tags: [...(x.tags||[]), tag] } : x)); setEditingWordTags(null); }}
                                   onBlur={() => setEditingWordTags(null)}
-                                  style={{ fontSize: 11, padding: "3px 6px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", fontFamily: "inherit" }}>
+                                  style={{ fontSize:11, padding:"3px 6px", borderRadius:8, border:"1px solid #FFD080", background:"#fff", fontFamily:"inherit" }}>
                                   <option value="">+ 标签</option>
                                   {userTags.filter(tg => !(w.tags||[]).includes(tg)).map(tg => <option key={tg} value={tg}>{tg}</option>)}
                                 </select>
                               ) : (
-                                <span onClick={e => { e.stopPropagation(); setEditingWordTags(w.id); }} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 8, border: "1px dashed #ccc", color: "#aaa", cursor: "pointer" }}>+ 标签</span>
+                                <span onClick={e => { e.stopPropagation(); setEditingWordTags(w.id); }} style={{ fontSize:11, padding:"3px 8px", borderRadius:8, border:"1px dashed #FFD080", color:"#FF8000", cursor:"pointer" }}>+ 标签</span>
                               )}
                             </div>
-                            <div style={{ display: "flex", gap: 8 }}>
-                              <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => setEditingWord({ id: w.id, word: w.word, meaning: w.meaning, example: w.example || "" })}>编辑</button>
-                              <button className="btn btn-outline btn-sm" style={{ color: "#e53e3e", borderColor: "#fecaca" }} onClick={() => deleteWord(w.id)}>删除</button>
+                            <div style={{ display:"flex", gap:8 }}>
+                              <button className="btn btn-outline btn-sm" style={{ flex:1, borderColor:"#FFE0A0", color:"#c07000" }} onClick={() => setEditingWord({ id: w.id, word: w.word, meaning: w.meaning, example: w.example || "" })}>编辑</button>
+                              <button className="btn btn-outline btn-sm" style={{ color:"#e53e3e", borderColor:"#fecaca" }} onClick={() => deleteWord(w.id)}>删除</button>
                             </div>
                           </div>
                         )}
@@ -2296,9 +2377,9 @@ export default function VocabApp() {
                 const left = words.filter((_, i) => i % 2 === 0);
                 const right = words.filter((_, i) => i % 2 === 1);
                 return (
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <div style={{ flex: 1 }}>{left.map(w => renderCard(w))}</div>
-                    <div style={{ flex: 1 }}>{right.map(w => renderCard(w))}</div>
+                  <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                    <div style={{ flex:1 }}>{left.map(w => renderCard(w))}</div>
+                    <div style={{ flex:1 }}>{right.map(w => renderCard(w))}</div>
                   </div>
                 );
               };
@@ -2310,11 +2391,14 @@ export default function VocabApp() {
                   tags.forEach(t => { if (!groups[t]) groups[t] = []; if (!groups[t].find(x => x.id === w.id)) groups[t].push(w); });
                 });
                 return Object.entries(groups).map(([tag, tagWords]) => (
-                  <div key={tag} style={{ marginBottom: 24 }}>
+                  <div key={tag} style={{ marginBottom:24 }}>
                     <div onClick={() => setExpandedTagGroup(g => ({ ...g, [tag]: g[tag] === false ? true : false }))}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, cursor: "pointer" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#111" }}>{tag}</span>
-                      <span style={{ fontSize: 11, color: "#aaa" }}>{tagWords.length} 词 {expandedTagGroup[tag] === false ? "▼" : "▲"}</span>
+                      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10, cursor:"pointer" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ width:4, height:16, borderRadius:2, background:"#FF8000" }} />
+                        <span style={{ fontSize:12, fontWeight:800, letterSpacing:"0.5px", color:"#111" }}>{tag}</span>
+                      </div>
+                      <span style={{ fontSize:11, color:"#FF8000", background:"#fff5e0", borderRadius:8, padding:"2px 8px", fontWeight:600 }}>{tagWords.length} 词 {expandedTagGroup[tag] === false ? "▼" : "▲"}</span>
                     </div>
                     {expandedTagGroup[tag] !== false && renderMasonry(tagWords)}
                   </div>
