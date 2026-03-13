@@ -2443,7 +2443,7 @@ export default function VocabApp() {
               {(() => {
                 const masteredCount = words.filter(w => (w.correct || 0) >= 3).length;
                 const pendingCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
-                const accuracy = totalAnswered > 0 ? Math.round(totalCorrect / totalAnswered * 100) : 0;
+                const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
                 const owlSvg = `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
                   <!-- Graduation cap -->
                   <rect x="62" y="32" width="76" height="12" rx="4" fill="#1a1a2e"/>
