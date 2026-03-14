@@ -3,6 +3,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
+import COMBO_CAT from './combo-cat.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -1969,12 +1970,8 @@ export default function VocabApp() {
           ? Math.min(100, Math.round(Math.max(words.length - r.words, 0) / Math.max(nextR.words - r.words, 1) * 100))
           : 100;
         // gradient per rank tier
-        const tierGrad = r.color === "#b87333" ? ["#b87333","#d4956a"]
-          : r.color === "#aaa" ? ["#888","#bbb"]
-          : r.color === "#FFD700" ? ["#e6a800","#ffd700"]
-          : r.color === "#00cfff" ? ["#0099cc","#00e5ff"]
-          : r.color === "#ff4444" ? ["#cc0000","#ff6b6b"]
-          : ["#6c47ff","#a78bfa"];
+        // Brand green: RGB(92,145,135) = #5C9187
+        const tierGrad = ["#5C9187", "#7ab8ae"];
         return (
           <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#faf8f5" }}>
             <div style={{ maxWidth: 520, margin: "0 auto" }}>
@@ -1984,7 +1981,7 @@ export default function VocabApp() {
                   borderRadius: 24,
                   overflow: "hidden",
                   cursor: "pointer",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.13)",
+                  boxShadow: "0 6px 24px rgba(92,145,135,0.35)",
                   background: `linear-gradient(135deg, ${tierGrad[0]}, ${tierGrad[1]})`,
                 }}
               >
@@ -2121,47 +2118,7 @@ export default function VocabApp() {
                   </div>
                 </div>
                 {/* Combo Cat SVG - sitting at bottom */}
-                <div style={{ width:110, flexShrink:0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
-                  <ellipse cx="55" cy="126" rx="28" ry="6" fill="rgba(0,0,0,0.12)"/>
-                  <!-- tail -->
-                  <path d="M78 95 Q98 80 92 60 Q88 45 78 50" stroke="#e07000" stroke-width="10" fill="none" stroke-linecap="round"/>
-                  <path d="M78 95 Q98 80 92 60 Q88 45 78 50" stroke="#FFB040" stroke-width="6" fill="none" stroke-linecap="round"/>
-                  <!-- body -->
-                  <ellipse cx="52" cy="98" rx="30" ry="26" fill="#FF8C00"/>
-                  <ellipse cx="52" cy="102" rx="20" ry="18" fill="#FFB040"/>
-                  <!-- arms -->
-                  <ellipse cx="24" cy="95" rx="10" ry="14" fill="#FF8C00" transform="rotate(-15,24,95)"/>
-                  <ellipse cx="80" cy="88" rx="10" ry="14" fill="#FF8C00" transform="rotate(20,80,88)"/>
-                  <!-- head -->
-                  <circle cx="52" cy="62" r="30" fill="#FFA020"/>
-                  <!-- ears -->
-                  <polygon points="30,42 22,20 42,36" fill="#FFA020"/>
-                  <polygon points="74,42 88,20 68,36" fill="#FFA020"/>
-                  <polygon points="32,40 26,24 40,36" fill="#FFD080"/>
-                  <polygon points="72,40 84,24 70,36" fill="#FFD080"/>
-                  <!-- face -->
-                  <ellipse cx="52" cy="68" rx="18" ry="14" fill="#FFD080"/>
-                  <!-- eyes closed happy -->
-                  <path d="M41 56 Q44 52 47 56" stroke="#4a3000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                  <path d="M57 56 Q60 52 63 56" stroke="#4a3000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                  <!-- nose -->
-                  <ellipse cx="52" cy="63" rx="3" ry="2" fill="#e07000"/>
-                  <!-- mouth smile -->
-                  <path d="M46 68 Q52 74 58 68" stroke="#c05000" stroke-width="2" fill="none" stroke-linecap="round"/>
-                  <!-- whiskers -->
-                  <line x1="22" y1="60" x2="40" y2="63" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
-                  <line x1="22" y1="65" x2="40" y2="65" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
-                  <line x1="64" y1="63" x2="82" y2="60" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
-                  <line x1="64" y1="65" x2="82" y2="65" stroke="#c07000" stroke-width="1.2" stroke-linecap="round"/>
-                  <!-- lightning bolts -->
-                  <path d="M8 38 L13 28 L10 34 L16 24 L11 34 L14 28Z" fill="#FFD700" opacity="0.9"/>
-                  <path d="M92 30 L97 20 L94 26 L100 16 L95 26 L98 20Z" fill="#FFD700" opacity="0.8"/>
-                  <!-- sparkles -->
-                  <path d="M6 55 L8 50 L10 55 L15 57 L10 59 L8 64 L6 59 L1 57Z" fill="#FFD700" opacity="0.85"/>
-                  <path d="M98 48 L100 44 L102 48 L106 50 L102 52 L100 56 L98 52 L94 50Z" fill="#FFD700" opacity="0.7"/>
-                  <circle cx="18" cy="78" r="2.5" fill="#FFD700" opacity="0.6"/>
-                  <circle cx="96" cy="72" r="2" fill="#FFD700" opacity="0.5"/>
-                </svg>` }} />
+                <img src={COMBO_CAT} alt="Combo猫" style={{ width: 120, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
               </div>
             </div>
 
