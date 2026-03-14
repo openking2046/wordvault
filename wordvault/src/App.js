@@ -3226,7 +3226,7 @@ export default function VocabApp() {
                 const tasks = TASKS.filter(t => t.type === taskTab);
                 if (taskTab === "daily") {
                   return (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, width: "100%" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, width: "100%" }}>
                       {tasks.map(task => {
                         const done = isTaskDone(task);
                         const prog = Math.min(task.progress(ctx), task.target);
