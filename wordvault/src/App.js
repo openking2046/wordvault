@@ -3219,12 +3219,17 @@ export default function VocabApp() {
                           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                         </button>
                         <div style={{ fontSize: 12, color: "#aaa" }}>点击喇叭播放，可重复收听</div>
-                        {quizResult && <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "inline-block" }}><div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div><div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>{quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}</div>}
+                        {quizResult && <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "block", position: "relative" }}>
+                          <button className="btn btn-dark" onClick={() => startQuiz()} style={{ position: "absolute", top: 10, right: 12, padding: "4px 12px", fontSize: 12, borderRadius: 20 }}>下一题 →</button>
+                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div>
+                          <div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>
+                          {quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}
+                        </div>}
                       </div>
                       <div key={quizState.question + quizState.options.join()}>
                         {quizState.options.map((opt, i) => { let cls = "opt-btn"; if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; } return <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}><span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
                       </div>
-                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}>{quizResult !== "correct" && <div style={{ fontSize: 14, fontWeight: 500, color: "#e53e3e", marginBottom: 16 }}>正确答案：{quizState.correct}</div>}<button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
+                      {quizResult && quizResult !== "correct" && <div style={{ marginTop: 16, textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 500, color: "#e53e3e" }}>正确答案：{quizState.correct}</div></div>}
                     </div>
                   ) : (
                     <div>
