@@ -1556,19 +1556,19 @@ export default function VocabApp() {
         .opt-btn:hover:not(:disabled) { border-color: #FF8000; background: #fff8ee; }
         .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; }
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1.5px solid #f5c5ce; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #DC7286; border-top: none; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 0 10px; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 10px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
-        .nav-center-btn { width: 58px; height: 58px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; margin-top: -18px; box-shadow: 0 4px 18px rgba(220,114,134,0.45); transition: transform 0.15s; }
+        .nav-center-btn { width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 6px; margin-top: -18px; box-shadow: 0 4px 18px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
-        .nav-center-icon { font-size: 20px; line-height: 1; color: #fff; font-style: normal; }
-        .nav-icon { font-size: 24px; line-height: 1; color: rgba(220,114,134,0.45); font-style: normal; }
+        .nav-center-icon { font-size: 22px; line-height: 1; color: #fff; font-style: normal; }
+        .nav-icon { font-size: 24px; line-height: 1; color: rgba(255,255,255,0.55); font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
-        .nav-item.active .nav-icon { color: #DC7286; }
+        .nav-item.active .nav-icon { color: #fff; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
         
-        .nav-item-center.active .nav-center-btn { background: #DC7286; }
+        .nav-item-center.active .nav-center-btn { background: rgba(255,255,255,0.35); }
         .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#FF8000,#FFB347); color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; box-shadow: 0 4px 16px rgba(255,128,0,0.4); }
         .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
