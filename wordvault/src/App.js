@@ -7,6 +7,7 @@ import COMBO_CAT from './combo-cat.png';
 import CAT_CLAW from './cat-claw.png';
 import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
 import COMBOCAT_1 from './combocat-1.png';
+import COMBOCAT_2 from './Combocat-2.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2586,15 +2587,15 @@ export default function VocabApp() {
                 const dueCount = getDueWords(words).length;
                 const wrongCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const games = [
-                  { id: "normal",    num: 1, mascot: mascots.normal, icon: "📖", name: "释义选词",  desc: "看单词，选正确释义",       sub: "经典模式",   color: "#FF6B6B", btnColor: "rgba(0,0,0,0.12)" },
-                  { id: "listen",    num: 2, mascot: mascots.listen, icon: "🎧", name: "听音辨词",  desc: "听发音，判断正确单词",     sub: "耳力训练",   color: "#45B7B8", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "normal",    num: 1, mascot: mascots.normal, catImg: COMBOCAT_1, icon: "📖", name: "释义选词",  desc: "看单词，选正确释义",       sub: "经典模式",   color: "#FF6B6B", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "listen",    num: 2, mascot: mascots.listen, catImg: COMBOCAT_2, icon: "🎧", name: "听音辨词",  desc: "听发音，判断正确单词",     sub: "耳力训练",   color: "#45B7B8", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "spell",     num: 3, mascot: mascots.spell, icon: "✍️", name: "拼写练习",  desc: "看释义，打出完整单词",     sub: "手感养成",   color: "#FFD166", btnColor: "rgba(0,0,0,0.1)"  },
                   { id: "pair",      num: 4, mascot: mascots.pair, icon: "🔗", name: "Combo配对", desc: "连击配对单词与释义",       sub: "连击模式",   color: "#6BCB77", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "fill",      num: 5, mascot: mascots.fill, icon: "📝", name: "句子填词",  desc: "看例句，选出缺失的单词",   sub: "语境记忆",   color: "#9B72CF", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "wrong",     num: 6, mascot: mascots.wrong, icon: "🎯", name: "错词研究",  desc: "专项攻克错误单词",         sub: wrongCount > 0 ? "🔥 立即挑战" : "暂无错词",  color: wrongCount > 0 ? "#FF8C42" : "#b0b0b0", btnColor: "rgba(0,0,0,0.12)", badge: wrongCount > 0 ? `⚡ ${wrongCount}词待攻克` : null },
-                  { id: "battle",    num: 7, mascot: mascots.battle, icon: "⚡", name: "限时挑战",  desc: "60秒内答对最多题",         sub: "高压竞速",   color: "#FF6B9D", btnColor: "rgba(0,0,0,0.12)" },
-                  { id: "review",    num: 8, mascot: mascots.review, icon: "🧠", name: "遗忘复习",  desc: "艾宾浩斯曲线追踪复习",    sub: dueCount > 0 ? `${dueCount}词待复习` : "记忆巩固", color: dueCount > 0 ? "#F6A623" : "#5BBFDE", btnColor: "rgba(0,0,0,0.1)", badge: dueCount > 0 ? `📅 ${dueCount}词到期` : null },
-                  { id: "challenge", num: 9, mascot: mascots.challenge, icon: "👥", name: "好友挑战",  desc: "生成链接，发给朋友对战",   sub: "社交对战",   color: "#7C6CF5", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "battle",    num: 7, mascot: mascots.battle, catImg: COMBOCAT_1, icon: "⚡", name: "限时挑战",  desc: "60秒内答对最多题",         sub: "高压竞速",   color: "#FF6B9D", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "review",    num: 8, mascot: mascots.review, catImg: COMBOCAT_1, icon: "🧠", name: "遗忘复习",  desc: "艾宾浩斯曲线追踪复习",    sub: dueCount > 0 ? `${dueCount}词待复习` : "记忆巩固", color: dueCount > 0 ? "#F6A623" : "#5BBFDE", btnColor: "rgba(0,0,0,0.1)", badge: dueCount > 0 ? `📅 ${dueCount}词到期` : null },
+                  { id: "challenge", num: 9, mascot: mascots.challenge, catImg: COMBOCAT_1, icon: "👥", name: "好友挑战",  desc: "生成链接，发给朋友对战",   sub: "社交对战",   color: "#7C6CF5", btnColor: "rgba(0,0,0,0.12)" },
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
@@ -2644,7 +2645,7 @@ export default function VocabApp() {
                       {/* Big faded number */}
                       <div style={{ position:"absolute", top:-10, right:8, fontFamily:"DM Serif Display, serif", fontSize:92, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.18)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
                       {/* Mascot illustration */}
-                      <img src={COMBOCAT_1} alt="Combo猫" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
+                      <img src={g.catImg} alt="Combo猫" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
                       {/* Content */}
                       <div style={{ padding:"38px 16px 0", flex:1, position:"relative", zIndex:2 }}>
                         <div style={{ fontSize:26, marginBottom:6, lineHeight:1 }}>{g.icon}</div>
