@@ -1556,16 +1556,16 @@ export default function VocabApp() {
         .opt-btn:hover:not(:disabled) { border-color: #FF8000; background: #fff8ee; }
         .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; }
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1.5px solid #ffe0b2; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 8px); }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1.5px solid #f5c5ce; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
-        .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
-        .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 18px rgba(220,114,134,0.45); transition: transform 0.15s; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 0 10px; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; }
+        .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 10px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
+        .nav-center-btn { width: 58px; height: 58px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; margin-top: -18px; box-shadow: 0 4px 18px rgba(220,114,134,0.45); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 20px; line-height: 1; color: #fff; font-style: normal; }
-        .nav-icon { font-size: 22px; line-height: 1; color: #888; font-style: normal; }
+        .nav-icon { font-size: 24px; line-height: 1; color: rgba(220,114,134,0.45); font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
-        .nav-item.active .nav-icon { color: #DC7286; font-weight: 700; }
+        .nav-item.active .nav-icon { color: #DC7286; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
         
         .nav-item-center.active .nav-center-btn { background: #DC7286; }
@@ -1577,7 +1577,7 @@ export default function VocabApp() {
         .swipe-content.swiped { transform: translateX(-72px); }
         .swipe-delete { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #e53e3e; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 0 0 0 0; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
-        .tab-content { background: #FCFDE8; padding: 16px 16px 100px; flex: 1; overflow-y: auto; }
+        .tab-content { background: #FCFDE8; padding: 16px 16px 120px; flex: 1; overflow-y: auto; }
 
         /* ── Press feedback — Duolingo-style spring ── */
         button, .tag-pill, .word-row, .opt-btn, .nav-item, .game-card, [role="button"] {
