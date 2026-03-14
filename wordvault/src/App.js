@@ -1535,7 +1535,7 @@ export default function VocabApp() {
   }, [splashStarted]);
 
   return (
-    <div style={{ fontFamily: "Inter, -apple-system, sans-serif", minHeight: "100vh", background: "#faf8f5", color: "#111", display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "Inter, -apple-system, sans-serif", minHeight: "100vh", background: "#FCFDE8", color: "#111", display: "flex", flexDirection: "column" }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         input, textarea { background: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px; color: #111; padding: 10px 14px; font-family: inherit; font-size: 14px; outline: none; width: 100%; transition: border 0.15s; }
@@ -1577,7 +1577,7 @@ export default function VocabApp() {
         .swipe-content.swiped { transform: translateX(-72px); }
         .swipe-delete { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #e53e3e; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 0 0 0 0; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #eee; }
-        .tab-content { background: #faf8f5; padding: 16px 16px 100px; flex: 1; overflow-y: auto; }
+        .tab-content { background: #FCFDE8; padding: 16px 16px 100px; flex: 1; overflow-y: auto; }
 
         /* ── Press feedback — Duolingo-style spring ── */
         button, .tag-pill, .word-row, .opt-btn, .nav-item, .game-card, [role="button"] {
@@ -1973,7 +1973,7 @@ export default function VocabApp() {
         // Brand green: RGB(92,145,135) = #5C9187
         const tierGrad = ["#5C9187", "#7ab8ae"];
         return (
-          <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#faf8f5" }}>
+          <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#FCFDE8" }}>
             <div style={{ maxWidth: 520, margin: "0 auto" }}>
               <div
                 onClick={() => setHeaderExpanded(e => !e)}
@@ -2118,7 +2118,7 @@ export default function VocabApp() {
                   </div>
                 </div>
                 {/* Combo Cat SVG - sitting at bottom */}
-                <img src={COMBO_CAT} alt="Combo猫" style={{ width: 120, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
+                <img src={COMBO_CAT} alt="Combo猫" style={{ width: 180, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
               </div>
             </div>
 
