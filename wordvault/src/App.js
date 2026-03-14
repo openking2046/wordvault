@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
 import COMBO_CAT from './combo-cat.png';
 import CAT_CLAW from './cat-claw.png';
+import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2527,93 +2528,31 @@ export default function VocabApp() {
                 const masteredCount = words.filter(w => (w.correct || 0) >= 3).length;
                 const pendingCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
-                const owlSvg = `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Graduation cap -->
-                  <rect x="62" y="32" width="76" height="12" rx="4" fill="#1a1a2e"/>
-                  <polygon points="100,18 140,34 100,42 60,34" fill="#2d2d4e"/>
-                  <line x1="140" y1="34" x2="148" y2="52" stroke="#2d2d4e" stroke-width="3"/>
-                  <circle cx="148" cy="56" r="5" fill="#FFD700"/>
-                  <!-- Body -->
-                  <ellipse cx="100" cy="140" rx="52" ry="58" fill="#3dbfb8"/>
-                  <!-- Belly white patch -->
-                  <ellipse cx="100" cy="148" rx="34" ry="42" fill="#e8f8f8"/>
-                  <!-- Wings -->
-                  <ellipse cx="55" cy="145" rx="20" ry="30" fill="#2fa8a2" transform="rotate(-10,55,145)"/>
-                  <ellipse cx="145" cy="145" rx="20" ry="30" fill="#2fa8a2" transform="rotate(10,145,145)"/>
-                  <!-- Wing feather lines -->
-                  <path d="M42 135 Q50 148 44 162" stroke="#1d8a84" stroke-width="2" fill="none" stroke-linecap="round"/>
-                  <path d="M48 130 Q56 145 50 160" stroke="#1d8a84" stroke-width="2" fill="none" stroke-linecap="round"/>
-                  <path d="M158 135 Q150 148 156 162" stroke="#1d8a84" stroke-width="2" fill="none" stroke-linecap="round"/>
-                  <path d="M152 130 Q144 145 150 160" stroke="#1d8a84" stroke-width="2" fill="none" stroke-linecap="round"/>
-                  <!-- Head -->
-                  <circle cx="100" cy="88" r="44" fill="#3dbfb8"/>
-                  <!-- Ear tufts -->
-                  <polygon points="72,52 64,30 84,46" fill="#3dbfb8"/>
-                  <polygon points="70,52 63,32 79,48" fill="#2fa8a2"/>
-                  <polygon points="128,52 136,30 116,46" fill="#3dbfb8"/>
-                  <polygon points="130,52 137,32 121,48" fill="#2fa8a2"/>
-                  <!-- Big eyes -->
-                  <circle cx="82" cy="88" r="22" fill="white"/>
-                  <circle cx="118" cy="88" r="22" fill="white"/>
-                  <circle cx="82" cy="88" r="16" fill="#1a1a2e"/>
-                  <circle cx="118" cy="88" r="16" fill="#1a1a2e"/>
-                  <!-- Iris shine -->
-                  <circle cx="82" cy="88" r="10" fill="#2d5a8e"/>
-                  <circle cx="118" cy="88" r="10" fill="#2d5a8e"/>
-                  <!-- Pupil -->
-                  <circle cx="82" cy="88" r="6" fill="#050510"/>
-                  <circle cx="118" cy="88" r="6" fill="#050510"/>
-                  <!-- Eye sparkle -->
-                  <circle cx="88" cy="82" r="3.5" fill="white"/>
-                  <circle cx="124" cy="82" r="3.5" fill="white"/>
-                  <circle cx="86" cy="84" r="1.5" fill="white" opacity="0.6"/>
-                  <!-- Beak -->
-                  <polygon points="100,96 91,108 109,108" fill="#FFB347"/>
-                  <line x1="91" y1="102" x2="109" y2="102" stroke="#e8963a" stroke-width="1.5"/>
-                  <!-- Feet -->
-                  <ellipse cx="80" cy="196" rx="16" ry="8" fill="#FFB347"/>
-                  <ellipse cx="120" cy="196" rx="16" ry="8" fill="#FFB347"/>
-                  <!-- Toe lines -->
-                  <line x1="68" y1="196" x2="64" y2="204" stroke="#e8963a" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="76" y1="198" x2="74" y2="206" stroke="#e8963a" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="84" y1="198" x2="84" y2="206" stroke="#e8963a" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="108" y1="196" x2="104" y2="204" stroke="#e8963a" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="116" y1="198" x2="116" y2="206" stroke="#e8963a" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="124" y1="198" x2="126" y2="204" stroke="#e8963a" stroke-width="2" stroke-linecap="round"/>
-                  <!-- Sparkles -->
-                  <path d="M28 80 L30 74 L32 80 L38 82 L32 84 L30 90 L28 84 L22 82Z" fill="rgba(255,215,0,0.8)"/>
-                  <path d="M162 95 L163.5 91 L165 95 L169 96.5 L165 98 L163.5 102 L162 98 L158 96.5Z" fill="rgba(255,215,0,0.6)"/>
-                  <circle cx="20" cy="110" r="3" fill="rgba(255,255,255,0.4)"/>
-                  <circle cx="178" cy="75" r="2.5" fill="rgba(255,255,255,0.35)"/>
-                </svg>`;
                 return (
-                  <div style={{ background: "linear-gradient(160deg, #1a1f3a 0%, #0d2137 60%, #162032 100%)", borderRadius: 24, padding: "22px 20px 0", marginBottom: 20, position: "relative", overflow: "hidden", minHeight: 220 }}>
-                    {/* Starfield dots */}
-                    <div style={{ position:"absolute",top:18,left:100,width:4,height:4,borderRadius:"50%",background:"rgba(255,255,255,0.5)" }}/>
-                    <div style={{ position:"absolute",top:30,right:70,width:3,height:3,borderRadius:"50%",background:"rgba(255,255,255,0.4)" }}/>
-                    <div style={{ position:"absolute",top:50,left:42,width:2.5,height:2.5,borderRadius:"50%",background:"rgba(255,255,255,0.35)" }}/>
-                    <div style={{ position:"absolute",top:14,right:140,width:2,height:2,borderRadius:"50%",background:"rgba(255,255,255,0.3)" }}/>
+                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "22px 20px 0", marginBottom: 20, position: "relative", overflow: "hidden", minHeight: 220, boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
+                    {/* Decorative circles */}
+                    <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
+                    <div style={{ position:"absolute", top:20, right:40, width:70, height:70, borderRadius:"50%", background:"rgba(255,255,255,0.07)" }}/>
                     {/* Text content */}
                     <div style={{ position:"relative", zIndex:2 }}>
-                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.55)", letterSpacing:"0.5px", marginBottom:6 }}>今日练习</div>
-                      <div style={{ fontSize:22, fontWeight:800, color:"#fff", lineHeight:1.25, marginBottom:4 }}>
+                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", letterSpacing:"0.5px", marginBottom:6, textTransform:"uppercase" }}>今日练习</div>
+                      <div style={{ fontSize:22, fontWeight:800, color:"#fff", lineHeight:1.25, marginBottom:16, textShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
                         继续冲！<br/>
-                        <span style={{ fontSize:26 }}>{accuracy}%</span> 正确率 🎯
+                        <span style={{ fontSize:28 }}>{accuracy}%</span> 正确率 🎯
                       </div>
-                      <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", marginBottom:14 }}>已掌握 {masteredCount} 个单词</div>
                       <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.1)", borderRadius:20, padding:"6px 12px", backdropFilter:"blur(8px)" }}>
-                          <span style={{ width:8, height:8, borderRadius:"50%", background:"#ff5c5c", display:"inline-block" }}/>
-                          <span style={{ fontSize:12, color:"#fff", fontWeight:600 }}>×{pendingCount} 待攻克</span>
+                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"6px 14px", backdropFilter:"blur(8px)" }}>
+                          <span style={{ width:8, height:8, borderRadius:"50%", background:"#ff4444", display:"inline-block" }}/>
+                          <span style={{ fontSize:12, color:"#fff", fontWeight:700 }}>×{pendingCount} 待攻克</span>
                         </div>
-                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.1)", borderRadius:20, padding:"6px 12px", backdropFilter:"blur(8px)" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"6px 14px", backdropFilter:"blur(8px)" }}>
                           <span style={{ width:8, height:8, borderRadius:"50%", background:"#4ade80", display:"inline-block" }}/>
-                          <span style={{ fontSize:12, color:"#fff", fontWeight:600 }}>×{masteredCount} 已掌握</span>
+                          <span style={{ fontSize:12, color:"#fff", fontWeight:700 }}>×{masteredCount} 已掌握</span>
                         </div>
                       </div>
                     </div>
-                    {/* Owl mascot */}
-                    <div style={{ position:"absolute", bottom:0, right:-4, width:150, height:160, zIndex:1, pointerEvents:"none" }} dangerouslySetInnerHTML={{ __html: owlSvg }}/>
+                    {/* Combo cat fighting mascot */}
+                    <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ position:"absolute", bottom:0, right:-8, width:160, height:180, objectFit:"contain", zIndex:1, pointerEvents:"none", filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
                   </div>
                 );
               })()}
