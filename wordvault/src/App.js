@@ -2377,7 +2377,7 @@ export default function VocabApp() {
                 <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>今日已收录 <span style={{ color: "#111", fontWeight: 700 }}>{todayWords}</span> 个词</div>
               </div>
               {/* Combo badge */}
-              <div style={{ textAlign: "center", background: todayWords >= 3 ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f5f5f5", borderRadius: 14, padding: "8px 14px", transition: "background 0.3s", boxShadow: todayWords >= 3 ? "0 4px 14px rgba(255,128,0,0.35)" : "none" }}>
+              <div style={{ textAlign: "center", background: todayWords >= 3 ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f0f0f0", borderRadius: 14, width: 64, height: 64, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.3s", boxShadow: todayWords >= 3 ? "0 4px 14px rgba(255,128,0,0.35)" : "none" }}>
                 <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: todayWords >= 3 ? "#fff" : "#111", lineHeight: 1 }}>
                   {todayWords >= 10 ? "🔥" : todayWords >= 5 ? "⚡" : todayWords >= 3 ? "✦" : "＋"}
                   {todayWords}
@@ -2425,11 +2425,7 @@ export default function VocabApp() {
                     style={{ flex: 1, fontSize: 15, fontFamily: "DM Serif Display, serif", background: "#fff", border: "1.5px solid #ffe0b2", borderRadius: 12 }}
                     onKeyDown={e => e.key === "Enter" && !aiLoading && newWord.trim() && handleAIGenerate()} />
                   <button onClick={handleAIGenerate} disabled={aiLoading || !newWord.trim()}
-                    style={{ whiteSpace: "nowrap", background: (!aiLoading && newWord.trim()) ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f0f0f0",
-                      color: (!aiLoading && newWord.trim()) ? "#fff" : "#ccc",
-                      border: "none", borderRadius: 12, padding: "0 16px", fontSize: 13, fontWeight: 700,
-                      cursor: (!aiLoading && newWord.trim()) ? "pointer" : "not-allowed", fontFamily: "inherit",
-                      transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
+                    style={{ background: (!aiLoading && newWord.trim()) ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f0f0f0", color: (!aiLoading && newWord.trim()) ? "#fff" : "#ccc", border: "none", borderRadius: 14, width: 64, height: 50, fontSize: 13, fontWeight: 700, cursor: (!aiLoading && newWord.trim()) ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, gap: 4 }}>
                     {aiLoading ? (
                       <span style={{ display: "inline-block", animation: "cursorBlink 0.6s ease infinite" }}>✦</span>
                     ) : "✦ AI"}
@@ -2487,7 +2483,7 @@ export default function VocabApp() {
                   <input value={customTag} onChange={e => setCustomTag(e.target.value)}
                     placeholder="新标签…" style={{ background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 10 }}
                     onKeyDown={e => e.key === "Enter" && addCustomTag()} />
-                  <button className="btn btn-outline btn-sm" onClick={addCustomTag} style={{ borderRadius: 10 }}>添加</button>
+                  <button onClick={addCustomTag} style={{ background: "linear-gradient(135deg,#FF8000,#FFB347)", color: "#fff", border: "none", borderRadius: 14, width: 64, height: 50, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(255,128,0,0.3)" }}>添加</button>
                 </div>
                 <div style={{ fontSize: 10, color: "#ccc", marginTop: 6 }}>双击标签可修改名称</div>
               </div>
