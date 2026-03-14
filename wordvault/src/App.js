@@ -11,6 +11,10 @@ import COMBOCAT_2 from './Combocat-2.png';
 import COMBOCAT_3 from './combocat-3.png';
 import COMBOCAT_4 from './combotcat-4.png';
 import COMBOCAT_5 from './combotcat-5.png';
+import COMBOCAT_6 from './combotcat-6.png';
+import COMBOCAT_7 from './combotcat-7.png';
+import COMBOCAT_8 from './combotcat-8.png';
+import COMBOCAT_9 from './combotcat-9.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2595,10 +2599,10 @@ export default function VocabApp() {
                   { id: "spell",     num: 3, mascot: mascots.spell,  catImg: COMBOCAT_3, icon: "✍️", name: "拼写练习",  desc: "看释义，打出完整单词",     sub: "手感养成",   color: "#FFD166", btnColor: "rgba(0,0,0,0.1)"  },
                   { id: "pair",      num: 4, mascot: mascots.pair,   catImg: COMBOCAT_4, icon: "🔗", name: "Combo配对", desc: "连击配对单词与释义",       sub: "连击模式",   color: "#6BCB77", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "fill",      num: 5, mascot: mascots.fill,   catImg: COMBOCAT_5, icon: "📝", name: "句子填词",  desc: "看例句，选出缺失的单词",   sub: "语境记忆",   color: "#9B72CF", btnColor: "rgba(0,0,0,0.12)" },
-                  { id: "wrong",     num: 6, mascot: mascots.wrong,  catImg: COMBOCAT_1, icon: "🎯", name: "错词研究",  desc: "专项攻克错误单词",         sub: wrongCount > 0 ? "🔥 立即挑战" : "暂无错词",  color: wrongCount > 0 ? "#FF8C42" : "#b0b0b0", btnColor: "rgba(0,0,0,0.12)", badge: wrongCount > 0 ? `⚡ ${wrongCount}词待攻克` : null },
-                  { id: "battle",    num: 7, mascot: mascots.battle, catImg: COMBOCAT_1, icon: "⚡", name: "限时挑战",  desc: "60秒内答对最多题",         sub: "高压竞速",   color: "#FF6B9D", btnColor: "rgba(0,0,0,0.12)" },
-                  { id: "review",    num: 8, mascot: mascots.review, catImg: COMBOCAT_1, icon: "🧠", name: "遗忘复习",  desc: "艾宾浩斯曲线追踪复习",    sub: dueCount > 0 ? `${dueCount}词待复习` : "记忆巩固", color: dueCount > 0 ? "#F6A623" : "#5BBFDE", btnColor: "rgba(0,0,0,0.1)", badge: dueCount > 0 ? `📅 ${dueCount}词到期` : null },
-                  { id: "challenge", num: 9, mascot: mascots.challenge, catImg: COMBOCAT_1, icon: "👥", name: "好友挑战",  desc: "生成链接，发给朋友对战",   sub: "社交对战",   color: "#7C6CF5", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "wrong",     num: 6, mascot: mascots.wrong,  catImg: COMBOCAT_6, icon: "🎯", name: "错词研究",  desc: "专项攻克错误单词",         sub: wrongCount > 0 ? "🔥 立即挑战" : "暂无错词",  color: wrongCount > 0 ? "#FF8C42" : "#b0b0b0", btnColor: "rgba(0,0,0,0.12)", badge: wrongCount > 0 ? `⚡ ${wrongCount}词待攻克` : null },
+                  { id: "battle",    num: 7, mascot: mascots.battle, catImg: COMBOCAT_7, icon: "⚡", name: "限时挑战",  desc: "60秒内答对最多题",         sub: "高压竞速",   color: "#FF6B9D", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "review",    num: 8, mascot: mascots.review, catImg: COMBOCAT_8, icon: "🧠", name: "遗忘复习",  desc: "艾宾浩斯曲线追踪复习",    sub: dueCount > 0 ? `${dueCount}词待复习` : "记忆巩固", color: dueCount > 0 ? "#F6A623" : "#5BBFDE", btnColor: "rgba(0,0,0,0.1)", badge: dueCount > 0 ? `📅 ${dueCount}词到期` : null },
+                  { id: "challenge", num: 9, mascot: mascots.challenge, catImg: COMBOCAT_9, icon: "👥", name: "好友挑战",  desc: "生成链接，发给朋友对战",   sub: "社交对战",   color: "#7C6CF5", btnColor: "rgba(0,0,0,0.12)" },
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
