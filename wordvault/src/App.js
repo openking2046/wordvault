@@ -1559,8 +1559,8 @@ export default function VocabApp() {
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #DC7286; border-top: none; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px 0 0; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; }
-        .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 10px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 4px 0 0; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; }
+        .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
         .nav-center-btn { width: 64px; height: 64px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -22px; box-shadow: none; border: none; transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 22px; line-height: 1; color: #fff; font-style: normal; }
