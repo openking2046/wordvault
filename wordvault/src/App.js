@@ -8,7 +8,7 @@ import CAT_CLAW from './cat-claw.png';
 import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
 import COMBOCAT_1 from './combocat-1.png';
 import COMBOCAT_2 from './Combocat-2.png';
-import COMBOCAT_3 from './Combocat-3.png';
+import COMBOCAT_3 from './combocat-3.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
