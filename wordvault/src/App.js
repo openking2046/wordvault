@@ -9,6 +9,7 @@ import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
 import COMBOCAT_1 from './combocat-1.png';
 import COMBOCAT_2 from './Combocat-2.png';
 import COMBOCAT_3 from './combocat-3.png';
+import COMBOCAT_4 from './combotcat-4.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2591,7 +2592,7 @@ export default function VocabApp() {
                   { id: "normal",    num: 1, mascot: mascots.normal, catImg: COMBOCAT_1, icon: "📖", name: "释义选词",  desc: "看单词，选正确释义",       sub: "经典模式",   color: "#FF6B6B", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "listen",    num: 2, mascot: mascots.listen, catImg: COMBOCAT_2, icon: "🎧", name: "听音辨词",  desc: "听发音，判断正确单词",     sub: "耳力训练",   color: "#45B7B8", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "spell",     num: 3, mascot: mascots.spell,  catImg: COMBOCAT_3, icon: "✍️", name: "拼写练习",  desc: "看释义，打出完整单词",     sub: "手感养成",   color: "#FFD166", btnColor: "rgba(0,0,0,0.1)"  },
-                  { id: "pair",      num: 4, mascot: mascots.pair,   catImg: COMBOCAT_1, icon: "🔗", name: "Combo配对", desc: "连击配对单词与释义",       sub: "连击模式",   color: "#6BCB77", btnColor: "rgba(0,0,0,0.12)" },
+                  { id: "pair",      num: 4, mascot: mascots.pair,   catImg: COMBOCAT_4, icon: "🔗", name: "Combo配对", desc: "连击配对单词与释义",       sub: "连击模式",   color: "#6BCB77", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "fill",      num: 5, mascot: mascots.fill,   catImg: COMBOCAT_1, icon: "📝", name: "句子填词",  desc: "看例句，选出缺失的单词",   sub: "语境记忆",   color: "#9B72CF", btnColor: "rgba(0,0,0,0.12)" },
                   { id: "wrong",     num: 6, mascot: mascots.wrong,  catImg: COMBOCAT_1, icon: "🎯", name: "错词研究",  desc: "专项攻克错误单词",         sub: wrongCount > 0 ? "🔥 立即挑战" : "暂无错词",  color: wrongCount > 0 ? "#FF8C42" : "#b0b0b0", btnColor: "rgba(0,0,0,0.12)", badge: wrongCount > 0 ? `⚡ ${wrongCount}词待攻克` : null },
                   { id: "battle",    num: 7, mascot: mascots.battle, catImg: COMBOCAT_1, icon: "⚡", name: "限时挑战",  desc: "60秒内答对最多题",         sub: "高压竞速",   color: "#FF6B9D", btnColor: "rgba(0,0,0,0.12)" },
