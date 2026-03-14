@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
 import COMBO_CAT from './combo-cat.png';
-import CAT_CLAW from './cat claw pattern.png';
+import CAT_CLAW from './cat-claw.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -1559,17 +1559,17 @@ export default function VocabApp() {
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #DC7286; border-top: none; display: flex; justify-content: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 0 10px; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px 0 0; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 10px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
-        .nav-center-btn { width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 6px; margin-top: -18px; box-shadow: 0 4px 18px rgba(0,0,0,0.15), inset 0 0 0 2px rgba(255,255,255,0.5); transition: transform 0.15s; }
+        .nav-center-btn { width: 64px; height: 64px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -22px; box-shadow: none; border: none; transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 22px; line-height: 1; color: #fff; font-style: normal; }
-        .nav-icon { font-size: 24px; line-height: 1; color: rgba(255,255,255,0.55); font-style: normal; }
+        .nav-icon { font-size: 30px; line-height: 1; color: rgba(255,255,255,0.65); font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
         .nav-item.active .nav-icon { color: #fff; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
         
-        .nav-item-center.active .nav-center-btn { background: rgba(255,255,255,0.35); }
+        .nav-item-center.active .nav-center-btn { background: #DC7286; }
         .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#FF8000,#FFB347); color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; box-shadow: 0 4px 16px rgba(255,128,0,0.4); }
         .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
@@ -4051,7 +4051,7 @@ export default function VocabApp() {
           if (i === 2) return (
             <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); }}>
               <div className="nav-center-btn">
-                <img src={CAT_CLAW} alt="猫爪" style={{ width: 32, height: 32, objectFit: "contain" }} />
+                <img src={CAT_CLAW} alt="猫爪" style={{ width: 42, height: 42, objectFit: "contain" }} />
               </div>
             </button>
           );
