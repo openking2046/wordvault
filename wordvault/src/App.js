@@ -3226,7 +3226,7 @@ export default function VocabApp() {
                 const tasks = TASKS.filter(t => t.type === taskTab);
                 if (taskTab === "daily") {
                   return (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, width: "100%" }}>
                       {tasks.map(task => {
                         const done = isTaskDone(task);
                         const prog = Math.min(task.progress(ctx), task.target);
@@ -3237,12 +3237,12 @@ export default function VocabApp() {
                             onClick={() => claimable && claimTask(task)}
                             style={{
                               borderRadius: 16, padding: "12px 8px 10px",
-                              background: done ? "linear-gradient(135deg,#FF8000,#FFB347)" : claimable ? "#fff8ee" : "#fff",
+                              background: done ? "linear-gradient(135deg,#6BCB77,#8FD16A)" : claimable ? "#fff8ee" : "#fff",
                               border: "1.5px solid " + (done ? "transparent" : claimable ? "#FF8000" : "#ebebeb"),
                               opacity: 1, transition: "all 0.2s",
                               display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                               cursor: claimable ? "pointer" : "default",
-                              boxShadow: done ? "0 4px 14px rgba(255,128,0,0.3)" : claimable ? "0 4px 12px rgba(255,128,0,0.15)" : "0 2px 8px rgba(0,0,0,0.05)",
+                              boxShadow: done ? "0 4px 14px rgba(107,203,119,0.45)" : claimable ? "0 4px 12px rgba(255,128,0,0.15)" : "0 2px 8px rgba(0,0,0,0.05)",
                               aspectRatio: "1",
                             }}>
                             {/* Icon */}
