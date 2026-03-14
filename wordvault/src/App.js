@@ -2548,7 +2548,7 @@ export default function VocabApp() {
                       </div>
                       <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
                         <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"8px 16px", backdropFilter:"blur(8px)" }}>
-                          <span style={{ fontSize:13, color:"rgba(255,255,255,0.85)" }}>累计答对</span>
+                          <span style={{ fontSize:13, color:"rgba(255,255,255,0.85)" }}>Combo答对</span>
                           <span style={{ fontFamily:"DM Serif Display, serif", fontSize:22, color:"#fff", fontWeight:900, lineHeight:1 }}>
                             {totalComboSum > 0 ? totalComboSum : "—"}
                           </span>
@@ -2563,9 +2563,10 @@ export default function VocabApp() {
               })()}
 
               {/* ── SECTION HEADER ── */}
-              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16, marginTop:4 }}>
-                <div style={{ fontSize:18, fontWeight:800, color:"#111", letterSpacing:"-0.3px" }}>选择练习模式</div>
-                <div style={{ flex:1, height:1.5, background:"linear-gradient(to right, #e0e0e0, transparent)", borderRadius:2 }}/>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:16, marginTop:4 }}>
+                <div style={{ flex:1, height:1.5, background:"linear-gradient(to right, transparent, #e0e0e0)", borderRadius:2 }}/>
+                <div style={{ fontSize:18, fontWeight:800, color:"#111", letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>选择Combo练习模式</div>
+                <div style={{ flex:1, height:1.5, background:"linear-gradient(to left, transparent, #e0e0e0)", borderRadius:2 }}/>
               </div>
 
               {/* ── MODE CARDS ── */}
@@ -2649,12 +2650,7 @@ export default function VocabApp() {
                         <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:4, letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"65%" }}>{g.name}</div>
                         <div style={{ fontSize:11, color:"rgba(255,255,255,0.78)", lineHeight:1.4, maxWidth:"65%" }}>{g.desc}</div>
                       </div>
-                      {/* Pill button */}
-                      <div style={{ padding:"10px 14px 16px", position:"relative", zIndex:2 }}>
-                        <div style={{ background:"rgba(255,255,255,0.92)", borderRadius:50, padding:"8px 0", textAlign:"center" }}>
-                          <span style={{ fontSize:12, fontWeight:700, color: g.color === "#FFD166" ? "#333" : "#333" }}>{g.sub}</span>
-                        </div>
-                      </div>
+                      <div style={{ padding:"0 0 16px" }} />
                     </div>
                   );
                 };
