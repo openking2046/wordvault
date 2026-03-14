@@ -3112,7 +3112,7 @@ export default function VocabApp() {
                             color = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
                           } else if (!isDone && typed) { bg = "#fff8ee"; borderColor = "#FF8000"; color = "#111"; }
                           return (
-                            <div key={i} style={{ width: 36, height: 44, borderRadius: 9, background: bg, border: "2px solid " + borderColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color, fontFamily: "DM Serif Display, serif", transition: "all 0.15s" }}>
+                            <div key={i} style={{ width: 28, height: 34, borderRadius: 7, background: bg, border: "2px solid " + borderColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color, fontFamily: "DM Serif Display, serif", transition: "all 0.15s" }}>
                               {isHinted ? letter : (typed || "")}
                             </div>
                           );
@@ -3143,9 +3143,19 @@ export default function VocabApp() {
                                 onChange={e => {
                                   const val = e.target.value.replace(/[^a-zA-Z\-']/g, "");
                                   setSpellingInput(val);
-                                  // Auto-submit when full length reached
+                                  // Auto-submit when full length reached — pass val directly to avoid stale state
                                   if (val.length >= quizState.correct.length) {
-                                    setTimeout(() => submitSpelling(), 280);
+                                    setTimeout(() => {
+                                      const isCorrect = val.trim().toLowerCase() === quizState.correct.toLowerCase();
+                                      haptic(isCorrect ? "success" : "error");
+                                      setQuizResult(isCorrect ? "correct" : "wrong");
+                                      setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
+                                      updateGlobalCombo(isCorrect);
+                                      if (isCorrect) {
+                                        try { const d = JSON.parse(localStorage.getItem("wv_today_correct")||"{}"); const todayKey2 = new Date().toISOString().slice(0,10); localStorage.setItem("wv_today_correct", JSON.stringify({ date: todayKey2, count: (d.date===todayKey2?d.count:0)+1 })); } catch {}
+                                        setTimeout(() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }, 1200);
+                                      }
+                                    }, 280);
                                   }
                                 }}
                                 placeholder=""
@@ -3163,12 +3173,11 @@ export default function VocabApp() {
                         );
                       })()}
 
-                      {/* ✅ Correct — green flash, auto-advances in 1.2s */}
+                      {/* ✅ Correct — show 下一题 next to meaning */}
                       {quizResult === "correct" && (
-                        <div style={{ background: "#f0faf4", border: "2px solid #2d8a4e", borderRadius: 14, padding: "20px", textAlign: "center", animation: "unlockBadge 0.3s ease both" }}>
-                          <div style={{ fontSize: 32, marginBottom: 4 }}>✓</div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: "#2d8a4e" }}>拼写正确！</div>
-                          <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>自动进入下一题…</div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0faf4", border: "2px solid #2d8a4e", borderRadius: 14, padding: "12px 16px", animation: "unlockBadge 0.3s ease both" }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#2d8a4e" }}>✓ 拼写正确！</div>
+                          <button className="btn btn-dark" onClick={() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }} style={{ padding: "4px 14px", fontSize: 12, borderRadius: 20 }}>下一题 →</button>
                         </div>
                       )}
 
