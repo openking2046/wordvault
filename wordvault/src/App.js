@@ -3187,17 +3187,17 @@ export default function VocabApp() {
               const level = Math.floor(xp / 100) + 1;
               const progress = xp % 100;
               return (
-                <div style={{ background: "#111", borderRadius: 16, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "#222", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ background: "linear-gradient(135deg, #FF8000, #FFB347)", borderRadius: 16, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 6px 20px rgba(255,128,0,0.35)" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff" }}>Lv{level}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                       <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{xp} XP</div>
-                      <div style={{ fontSize: 11, color: "#555" }}>下一级 {100 - progress} XP</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>下一级 {100 - progress} XP</div>
                     </div>
-                    <div style={{ height: 5, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: progress + "%", background: "#FFD700", borderRadius: 3, transition: "width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }} />
+                    <div style={{ height: 5, background: "rgba(255,255,255,0.3)", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: progress + "%", background: "#fff", borderRadius: 3, transition: "width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }} />
                     </div>
                   </div>
                 </div>
@@ -3208,7 +3208,7 @@ export default function VocabApp() {
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               {[["daily","每日任务"],["achievement","成就"]].map(([key, label]) => (
                 <button key={key} onClick={() => setTaskTab(key)}
-                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1.5px solid " + (taskTab === key ? "#111" : "#e8e8e8"), background: taskTab === key ? "#111" : "#fff", color: taskTab === key ? "#fff" : "#888", fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}>
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1.5px solid " + (taskTab === key ? "#FF8000" : "#e8e8e8"), background: taskTab === key ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#fff", color: taskTab === key ? "#fff" : "#888", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", boxShadow: taskTab === key ? "0 4px 12px rgba(255,128,0,0.3)" : "none" }}>
                   {label}
                   {key === "daily" && (() => {
                     const ctx = getTaskCtx();
@@ -3219,45 +3219,89 @@ export default function VocabApp() {
               ))}
             </div>
 
-            {/* Task List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+            {/* Task List — 4-per-row grid for daily, list for achievement */}
+            <div style={{ marginBottom: 28 }}>
               {(() => {
                 const ctx = getTaskCtx();
                 const tasks = TASKS.filter(t => t.type === taskTab);
-                return tasks.map(task => {
-                  const done = isTaskDone(task);
-                  const prog = Math.min(task.progress(ctx), task.target);
-                  const pct = Math.round(prog / task.target * 100);
-                  const claimable = !done && prog >= task.target;
+                if (taskTab === "daily") {
                   return (
-                    <div key={task.id} style={{ border: "1.5px solid " + (done ? "#e8f5e9" : claimable ? "#111" : "#ebebeb"), borderRadius: 14, padding: "14px 16px", background: done ? "#f9fdf9" : "#fff", opacity: done ? 0.7 : 1, transition: "all 0.2s" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <div style={{ fontSize: 28, flexShrink: 0, width: 40, textAlign: "center" }}>{task.icon}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: done ? "#2d8a4e" : "#111" }}>{task.title}</div>
-                            {done && <span style={{ fontSize: 11, color: "#2d8a4e" }}>✓ 已完成</span>}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                      {tasks.map(task => {
+                        const done = isTaskDone(task);
+                        const prog = Math.min(task.progress(ctx), task.target);
+                        const pct = Math.round(prog / task.target * 100);
+                        const claimable = !done && prog >= task.target;
+                        return (
+                          <div key={task.id}
+                            onClick={() => claimable && claimTask(task)}
+                            style={{
+                              borderRadius: 16, padding: "12px 8px 10px",
+                              background: done ? "linear-gradient(135deg,#FF8000,#FFB347)" : claimable ? "#fff8ee" : "#fff",
+                              border: "1.5px solid " + (done ? "transparent" : claimable ? "#FF8000" : "#ebebeb"),
+                              opacity: 1, transition: "all 0.2s",
+                              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                              cursor: claimable ? "pointer" : "default",
+                              boxShadow: done ? "0 4px 14px rgba(255,128,0,0.3)" : claimable ? "0 4px 12px rgba(255,128,0,0.15)" : "0 2px 8px rgba(0,0,0,0.05)",
+                              aspectRatio: "1",
+                            }}>
+                            {/* Icon */}
+                            <div style={{ fontSize: 26, lineHeight: 1 }}>{task.icon}</div>
+                            {/* Title */}
+                            <div style={{ fontSize: 10, fontWeight: 700, color: done ? "#fff" : "#111", textAlign: "center", lineHeight: 1.2 }}>{task.title}</div>
+                            {/* Progress ring / bar */}
+                            <div style={{ width: "100%", height: 3, background: done ? "rgba(255,255,255,0.3)" : "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
+                              <div style={{ height: "100%", width: pct + "%", background: done ? "#fff" : "#FF8000", borderRadius: 2, transition: "width 0.5s ease" }} />
+                            </div>
+                            {/* XP or done */}
+                            {done
+                              ? <div style={{ fontSize: 9, fontWeight: 800, color: "#fff" }}>✓ 完成</div>
+                              : <div style={{ fontSize: 9, fontWeight: 700, color: "#FF8000", background: "rgba(255,128,0,0.1)", borderRadius: 6, padding: "2px 6px" }}>+{task.xp} XP</div>
+                            }
                           </div>
-                          <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>{task.desc}</div>
-                          {/* Progress bar */}
-                          <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
-                            <div style={{ height: "100%", width: pct + "%", background: done ? "#2d8a4e" : claimable ? "#111" : "#ddd", borderRadius: 2, transition: "width 0.5s ease" }} />
-                          </div>
-                          <div style={{ fontSize: 11, color: "#aaa" }}>{prog} / {task.target}</div>
-                        </div>
-                        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#FFD700", background: "#111", borderRadius: 8, padding: "3px 8px" }}>+{task.xp} XP</div>
-                          {claimable && (
-                            <button onClick={() => claimTask(task)}
-                              style={{ background: "#111", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-                              领取
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
                   );
-                });
+                }
+                // Achievement tab: keep list layout
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {tasks.map(task => {
+                      const done = isTaskDone(task);
+                      const prog = Math.min(task.progress(ctx), task.target);
+                      const pct = Math.round(prog / task.target * 100);
+                      const claimable = !done && prog >= task.target;
+                      return (
+                        <div key={task.id} style={{ border: "1.5px solid " + (done ? "#ffe0b2" : claimable ? "#FF8000" : "#ebebeb"), borderRadius: 14, padding: "14px 16px", background: done ? "#fff8ee" : "#fff", opacity: done ? 0.85 : 1, transition: "all 0.2s" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ fontSize: 28, flexShrink: 0, width: 40, textAlign: "center" }}>{task.icon}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: done ? "#FF8000" : "#111" }}>{task.title}</div>
+                                {done && <span style={{ fontSize: 11, color: "#FF8000" }}>✓ 已完成</span>}
+                              </div>
+                              <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>{task.desc}</div>
+                              <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
+                                <div style={{ height: "100%", width: pct + "%", background: done ? "#FF8000" : claimable ? "#FF8000" : "#ddd", borderRadius: 2, transition: "width 0.5s ease" }} />
+                              </div>
+                              <div style={{ fontSize: 11, color: "#aaa" }}>{prog} / {task.target}</div>
+                            </div>
+                            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#FF8000,#FFB347)", borderRadius: 8, padding: "3px 8px" }}>+{task.xp} XP</div>
+                              {claimable && (
+                                <button onClick={() => claimTask(task)}
+                                  style={{ background: "linear-gradient(135deg,#FF8000,#FFB347)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                                  领取
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
               })()}
             </div>
             <div className="sec-title">今日目标</div>
