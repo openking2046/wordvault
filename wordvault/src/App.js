@@ -259,6 +259,7 @@ export default function VocabApp() {
   const [score, setScore] = useState(() => { try { const s = localStorage.getItem("wv_score"); return s ? JSON.parse(s) : { correct: 0, total: 0 }; } catch { return { correct: 0, total: 0 }; } });
   const [globalCombo, setGlobalCombo] = useState(0);
   const [globalMaxCombo, setGlobalMaxCombo] = useState(() => { try { return parseInt(localStorage.getItem("wv_max_combo") || "0"); } catch { return 0; } });
+  const [totalComboSum, setTotalComboSum] = useState(() => { try { return parseInt(localStorage.getItem("wv_total_combo_sum") || "0"); } catch { return 0; } });
 
   // Profile
   const [profile, setProfile] = useState(() => { try { const s = localStorage.getItem("wv_profile"); return s ? JSON.parse(s) : null; } catch { return null; } });
@@ -684,6 +685,11 @@ export default function VocabApp() {
           try { localStorage.setItem("wv_max_combo", String(newMax)); } catch {}
           return newMax;
         });
+        return next;
+      });
+      setTotalComboSum(t => {
+        const next = t + 1;
+        try { localStorage.setItem("wv_total_combo_sum", String(next)); } catch {}
         return next;
       });
     } else {
@@ -2540,14 +2546,13 @@ export default function VocabApp() {
                         继续冲！<br/>
                         <span style={{ fontSize:28 }}>{accuracy}%</span> 正确率 🎯
                       </div>
-                      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"6px 14px", backdropFilter:"blur(8px)" }}>
-                          <span style={{ width:8, height:8, borderRadius:"50%", background:"#ff4444", display:"inline-block" }}/>
-                          <span style={{ fontSize:12, color:"#fff", fontWeight:700 }}>×{pendingCount} 待攻克</span>
-                        </div>
-                        <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"6px 14px", backdropFilter:"blur(8px)" }}>
-                          <span style={{ width:8, height:8, borderRadius:"50%", background:"#4ade80", display:"inline-block" }}/>
-                          <span style={{ fontSize:12, color:"#fff", fontWeight:700 }}>×{masteredCount} 已掌握</span>
+                      <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"8px 16px", backdropFilter:"blur(8px)" }}>
+                          <span style={{ fontSize:13, color:"rgba(255,255,255,0.85)" }}>累计答对</span>
+                          <span style={{ fontFamily:"DM Serif Display, serif", fontSize:22, color:"#fff", fontWeight:900, lineHeight:1 }}>
+                            {totalComboSum > 0 ? totalComboSum : "—"}
+                          </span>
+                          <span style={{ fontSize:16 }}>⚡</span>
                         </div>
                       </div>
                     </div>
