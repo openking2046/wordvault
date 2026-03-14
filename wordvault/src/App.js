@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
 import COMBO_CAT from './combo-cat.png';
+import CAT_CLAW from './cat claw pattern.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -4050,7 +4051,7 @@ export default function VocabApp() {
           if (i === 2) return (
             <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); }}>
               <div className="nav-center-btn">
-                <em className="nav-center-icon">◎</em>
+                <img src={CAT_CLAW} alt="猫爪" style={{ width: 32, height: 32, objectFit: "contain" }} />
               </div>
             </button>
           );
