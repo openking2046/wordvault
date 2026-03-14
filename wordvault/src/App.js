@@ -1598,7 +1598,7 @@ export default function VocabApp() {
         .word-row:last-child { border-bottom: none; }
         .opt-btn { width: 100%; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 10px; padding: 14px 16px; text-align: left; font-family: inherit; font-size: 14px; color: #111; cursor: pointer; transition: all 0.12s; margin-bottom: 8px; }
         .opt-btn:hover:not(:disabled) { border-color: #FF8000; background: #fff8ee; }
-        .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; }
+        .opt-btn.correct { background: #f0faf4; border-color: #2d8a4e; color: #2d8a4e; position: relative; padding-right: 40px; } .opt-btn.correct::after { content: "✓"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; font-weight: 700; color: #2d8a4e; }
         .opt-btn.wrong { background: #fff5f5; border-color: #e53e3e; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #DC7286; border-top: none; display: flex; justify-content: center; z-index: 100; height: calc(68px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: center; height: 68px; }
@@ -3224,7 +3224,7 @@ export default function VocabApp() {
                       <div key={quizState.question + quizState.options.join()}>
                         {quizState.options.map((opt, i) => { let cls = "opt-btn"; if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; } return <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}><span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
                       </div>
-                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>{quizResult === "correct" ? "正确 ✓" : "正确答案：" + quizState.correct}</div><button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
+                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}>{quizResult !== "correct" && <div style={{ fontSize: 14, fontWeight: 500, color: "#e53e3e", marginBottom: 16 }}>正确答案：{quizState.correct}</div>}<button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
                     </div>
                   ) : (
                     <div>
@@ -3239,7 +3239,7 @@ export default function VocabApp() {
                       <div key={quizState.question + quizState.options.join()}>
                         {quizState.options.map((opt, i) => { let cls = "opt-btn"; if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; } return <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}><span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
                       </div>
-                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 500, color: quizResult === "correct" ? "#2d8a4e" : "#e53e3e", marginBottom: 16 }}>{quizResult === "correct" ? "正确 ✓" : "答案是：" + quizState.correct}</div><button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
+                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}>{quizResult !== "correct" && <div style={{ fontSize: 14, fontWeight: 500, color: "#e53e3e", marginBottom: 16 }}>答案是：{quizState.correct}</div>}<button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
                     </div>
                   )}
                 </div>
