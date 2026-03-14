@@ -2373,16 +2373,16 @@ export default function VocabApp() {
             {/* Combo header bar */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <div>
-                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", letterSpacing: "-0.5px" }}>收录新词</div>
+                <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", letterSpacing: "-0.5px", fontWeight: 800 }}>收录新词</div>
                 <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>今日已收录 <span style={{ color: "#111", fontWeight: 700 }}>{todayWords}</span> 个词</div>
               </div>
               {/* Combo badge */}
-              <div style={{ textAlign: "center", background: todayWords >= 3 ? "#111" : "#f5f5f5", borderRadius: 14, padding: "8px 14px", transition: "background 0.3s" }}>
+              <div style={{ textAlign: "center", background: todayWords >= 3 ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f5f5f5", borderRadius: 14, padding: "8px 14px", transition: "background 0.3s", boxShadow: todayWords >= 3 ? "0 4px 14px rgba(255,128,0,0.35)" : "none" }}>
                 <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: todayWords >= 3 ? "#fff" : "#111", lineHeight: 1 }}>
                   {todayWords >= 10 ? "🔥" : todayWords >= 5 ? "⚡" : todayWords >= 3 ? "✦" : "＋"}
                   {todayWords}
                 </div>
-                <div style={{ fontSize: 9, color: todayWords >= 3 ? "#888" : "#bbb", letterSpacing: "1.5px", marginTop: 2 }}>
+                <div style={{ fontSize: 9, color: todayWords >= 3 ? "rgba(255,255,255,0.85)" : "#bbb", letterSpacing: "1.5px", marginTop: 2 }}>
                   {todayWords >= 10 ? "ON FIRE" : todayWords >= 5 ? "COMBO" : todayWords >= 3 ? "STREAK" : "TODAY"}
                 </div>
               </div>
@@ -2390,26 +2390,26 @@ export default function VocabApp() {
 
             {/* Live word card preview */}
             {(newWord || newMeaning) && (
-              <div style={{ background: "#111", borderRadius: 18, padding: "18px 20px", marginBottom: 20, animation: "unlockSub 0.3s ease both" }}>
+              <div style={{ background: "linear-gradient(135deg,#FF8000,#FFB347)", borderRadius: 18, padding: "18px 20px", marginBottom: 20, animation: "unlockSub 0.3s ease both" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: newWord ? "#fff" : "#333", letterSpacing: "-0.3px" }}>
+                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#fff", letterSpacing: "-0.3px" }}>
                     {newWord || "单词"}
                   </div>
-                  <div style={{ fontSize: 10, color: "#333", letterSpacing: "2px", background: "#1a1a1a", borderRadius: 6, padding: "3px 8px" }}>PREVIEW</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", letterSpacing: "2px", background: "rgba(0,0,0,0.15)", borderRadius: 6, padding: "3px 8px" }}>PREVIEW</div>
                 </div>
                 {newMeaning ? (
-                  <div style={{ fontSize: 14, color: "#aaa", marginBottom: newExample ? 10 : 0 }}>{newMeaning}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", marginBottom: newExample ? 10 : 0 }}>{newMeaning}</div>
                 ) : (
-                  <div style={{ fontSize: 13, color: "#2a2a2a", fontStyle: "italic" }}>释义将出现在这里…</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontStyle: "italic" }}>释义将出现在这里…</div>
                 )}
                 {newExample && (
-                  <div style={{ fontSize: 12, color: "#555", fontStyle: "italic", borderLeft: "2px solid #2a2a2a", paddingLeft: 10, marginTop: 8, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontStyle: "italic", borderLeft: "2px solid rgba(255,255,255,0.4)", paddingLeft: 10, marginTop: 8, lineHeight: 1.5 }}>
                     {newExample}
                   </div>
                 )}
                 {newTags.length > 0 && (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
-                    {newTags.map(t => <span key={t} style={{ fontSize: 10, color: "#555", background: "#1a1a1a", borderRadius: 6, padding: "3px 8px", border: "1px solid #2a2a2a" }}>{t}</span>)}
+                    {newTags.map(t => <span key={t} style={{ fontSize: 10, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: 6, padding: "3px 8px" }}>{t}</span>)}
                   </div>
                 )}
               </div>
@@ -2422,10 +2422,10 @@ export default function VocabApp() {
                 <div style={{ display: "flex", gap: 8 }}>
                   <input value={newWord} onChange={e => setNewWord(e.target.value)}
                     placeholder="e.g. Tenacious"
-                    style={{ flex: 1, fontSize: 17, fontWeight: 500, background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 12 }}
+                    style={{ flex: 1, fontSize: 15, fontFamily: "DM Serif Display, serif", background: "#fff", border: "1.5px solid #ffe0b2", borderRadius: 12 }}
                     onKeyDown={e => e.key === "Enter" && !aiLoading && newWord.trim() && handleAIGenerate()} />
                   <button onClick={handleAIGenerate} disabled={aiLoading || !newWord.trim()}
-                    style={{ whiteSpace: "nowrap", background: (!aiLoading && newWord.trim()) ? "#111" : "#f0f0f0",
+                    style={{ whiteSpace: "nowrap", background: (!aiLoading && newWord.trim()) ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f0f0f0",
                       color: (!aiLoading && newWord.trim()) ? "#fff" : "#ccc",
                       border: "none", borderRadius: 12, padding: "0 16px", fontSize: 13, fontWeight: 700,
                       cursor: (!aiLoading && newWord.trim()) ? "pointer" : "not-allowed", fontFamily: "inherit",
@@ -2443,7 +2443,7 @@ export default function VocabApp() {
                 <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>中文释义</div>
                 <input value={newMeaning} onChange={e => setNewMeaning(e.target.value)}
                   placeholder="e.g. 坚韧的，顽强的"
-                  style={{ background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 12 }} />
+                  style={{ background: "#fff", border: "1.5px solid #ffe0b2", borderRadius: 12, fontSize: 14, color: "#555" }} />
               </div>
 
               {/* Example — collapsible hint */}
@@ -2453,7 +2453,7 @@ export default function VocabApp() {
                 </div>
                 <textarea value={newExample} onChange={e => setNewExample(e.target.value)}
                   placeholder="e.g. She was tenacious in pursuing her goals." rows={2}
-                  style={{ resize: "none", background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 12, lineHeight: 1.5 }} />
+                  style={{ resize: "none", background: "#fff", border: "1.5px solid #ffe0b2", borderRadius: 12, lineHeight: 1.5, fontSize: 13, fontStyle: "italic", color: "#888" }} />
               </div>
 
               {/* Tags — compact */}
@@ -2496,7 +2496,7 @@ export default function VocabApp() {
               <button onClick={handleAddWord}
                 disabled={!newWord.trim() || !newMeaning.trim()}
                 style={{ width: "100%", marginTop: 4, padding: "17px 0", borderRadius: 16, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16, cursor: (!newWord.trim() || !newMeaning.trim()) ? "not-allowed" : "pointer",
-                  background: (!newWord.trim() || !newMeaning.trim()) ? "#f0f0f0" : "#111",
+                  background: (!newWord.trim() || !newMeaning.trim()) ? "#f0f0f0" : "linear-gradient(135deg,#FF8000,#FFB347)",
                   color: (!newWord.trim() || !newMeaning.trim()) ? "#ccc" : "#fff",
                   transition: "all 0.2s", letterSpacing: "0.3px" }}>
                 {(!newWord.trim() || !newMeaning.trim()) ? "填写单词和释义后解锁" : `🔓 收录「${newWord.trim()}」`}
@@ -2506,7 +2506,7 @@ export default function VocabApp() {
               {!isPro && (
                 <div style={{ textAlign: "center" }}>
                   <div style={{ height: 3, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
-                    <div style={{ height: "100%", background: words.length >= FREE_LIMIT ? "#e53e3e" : "#111", borderRadius: 2, width: Math.min(100, words.length / FREE_LIMIT * 100) + "%", transition: "width 0.4s" }} />
+                    <div style={{ height: "100%", background: words.length >= FREE_LIMIT ? "#e53e3e" : "#FF8000", borderRadius: 2, width: Math.min(100, words.length / FREE_LIMIT * 100) + "%", transition: "width 0.4s" }} />
                   </div>
                   <div onClick={() => words.length >= FREE_LIMIT && setShowUpgrade(true)}
                     style={{ fontSize: 11, color: words.length >= FREE_LIMIT ? "#e53e3e" : "#bbb", cursor: words.length >= FREE_LIMIT ? "pointer" : "default" }}>
