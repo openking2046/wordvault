@@ -1560,15 +1560,15 @@ export default function VocabApp() {
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: flex-end; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0 6px; cursor: pointer; gap: 3px; border: none; background: none; font-family: inherit; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; }
-        .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #FF8000; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 18px rgba(255,128,0,0.45); transition: transform 0.15s; }
+        .nav-center-btn { width: 52px; height: 52px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; margin-top: -14px; box-shadow: 0 4px 18px rgba(220,114,134,0.45); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 20px; line-height: 1; color: #fff; font-style: normal; }
         .nav-icon { font-size: 22px; line-height: 1; color: #888; font-style: normal; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
-        .nav-item.active .nav-icon, .nav-item.active .nav-label { color: #FF8000; font-weight: 700; }
+        .nav-item.active .nav-icon { color: #DC7286; font-weight: 700; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
-        .nav-item-center.active .nav-label { color: #FF8000; font-weight: 700; }
-        .nav-item-center.active .nav-center-btn { background: #FF8000; }
+        
+        .nav-item-center.active .nav-center-btn { background: #DC7286; }
         .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#FF8000,#FFB347); color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; box-shadow: 0 4px 16px rgba(255,128,0,0.4); }
         .sec-title { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #666; margin-bottom: 14px; }
         .mastery-bar { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 5px; }
@@ -4052,13 +4052,11 @@ export default function VocabApp() {
               <div className="nav-center-btn">
                 <em className="nav-center-icon">◎</em>
               </div>
-              <span className="nav-label">Combo</span>
             </button>
           );
           return (
             <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => { haptic("light"); setTab(i); }}>
               <em className="nav-icon">{item.icon}</em>
-              <span className="nav-label">{item.label}</span>
             </button>
           );
         })}
