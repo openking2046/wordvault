@@ -269,6 +269,20 @@ export default function VocabApp() {
   const [globalCombo, setGlobalCombo] = useState(0);
   const [globalMaxCombo, setGlobalMaxCombo] = useState(() => { try { return parseInt(localStorage.getItem("wv_max_combo") || "0"); } catch { return 0; } });
   const [totalComboSum, setTotalComboSum] = useState(() => { try { return parseInt(localStorage.getItem("wv_total_combo_sum") || "0"); } catch { return 0; } });
+  // ── 猫咪养成 ──
+  const [catName, setCatName] = useState(() => { try { return localStorage.getItem("wv_cat_name") || "Combo"; } catch { return "Combo"; } });
+  const [catLevel, setCatLevel] = useState(() => { try { return parseInt(localStorage.getItem("wv_cat_level") || "1"); } catch { return 1; } });
+  const [catHunger, setCatHunger] = useState(() => { try { return parseInt(localStorage.getItem("wv_cat_hunger") || "80"); } catch { return 80; } });
+  const [catMood, setCatMood] = useState(() => { try { return parseInt(localStorage.getItem("wv_cat_mood") || "80"); } catch { return 80; } });
+  const [catFeedsToday, setCatFeedsToday] = useState(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem("wv_cat_feeds") || "{}");
+      const today = new Date().toISOString().slice(0,10);
+      return d.date === today ? d.count : 0;
+    } catch { return 0; }
+  });
+  const [editingCatName, setEditingCatName] = useState(false);
+  const [tempCatName, setTempCatName] = useState("");
 
   // Profile
   const [profile, setProfile] = useState(() => { try { const s = localStorage.getItem("wv_profile"); return s ? JSON.parse(s) : null; } catch { return null; } });
@@ -699,6 +713,19 @@ export default function VocabApp() {
       setTotalComboSum(t => {
         const next = t + 1;
         try { localStorage.setItem("wv_total_combo_sum", String(next)); } catch {}
+        return next;
+      });
+      // Feed cat on correct answer
+      setCatHunger(h => { const v = Math.min(100, h + 2); try { localStorage.setItem("wv_cat_hunger", String(v)); } catch {} return v; });
+      setCatMood(m => { const v = Math.min(100, m + 1); try { localStorage.setItem("wv_cat_mood", String(v)); } catch {} return v; });
+      setCatFeedsToday(f => {
+        const today = new Date().toISOString().slice(0,10);
+        const next = f + 1;
+        try { localStorage.setItem("wv_cat_feeds", JSON.stringify({ date: today, count: next })); } catch {}
+        // Level up cat every 50 correct answers
+        const newTotal = (parseInt(localStorage.getItem("wv_total_combo_sum") || "0")) + 1;
+        const newLevel = Math.floor(newTotal / 50) + 1;
+        setCatLevel(l => { if (newLevel > l) { try { localStorage.setItem("wv_cat_level", String(newLevel)); } catch {} return newLevel; } return l; });
         return next;
       });
     } else {
@@ -2097,6 +2124,108 @@ export default function VocabApp() {
           </div>
         );
       })()}
+      {/* ── CAT PET CARD (below sticky header, scrolls with content) ── */}
+      {tab !== 4 && (
+        <div style={{ background: "#FCFDE8", padding: "0 16px 0", position: "relative", zIndex: 40 }}>
+          <div style={{ maxWidth: 520, margin: "0 auto", paddingBottom: 14 }}>
+            <div style={{
+              background: "linear-gradient(135deg, #fff8ee 0%, #fff3d6 100%)",
+              borderRadius: 22,
+              padding: "18px 20px 16px",
+              boxShadow: "0 4px 16px rgba(255,128,0,0.1)",
+              border: "1.5px solid rgba(255,180,60,0.2)",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              position: "relative",
+              overflow: "hidden",
+            }}>
+              {/* Background deco */}
+              <div style={{ position:"absolute", top:-20, right:-20, width:100, height:100, borderRadius:"50%", background:"rgba(255,180,60,0.07)" }}/>
+
+              {/* Cat image */}
+              <div style={{ flexShrink:0, position:"relative" }}>
+                <img src={COMBO_CAT} alt="我的Combo猫"
+                  style={{
+                    width: catHunger > 60 ? 80 : catHunger > 30 ? 72 : 64,
+                    height: catHunger > 60 ? 80 : catHunger > 30 ? 72 : 64,
+                    objectFit:"contain",
+                    filter: catHunger < 30
+                      ? "grayscale(60%) brightness(0.8)"
+                      : catHunger < 60
+                      ? "grayscale(20%)"
+                      : "drop-shadow(0 4px 8px rgba(255,128,0,0.25))",
+                    transition: "all 0.5s ease",
+                  }}
+                />
+                {/* Mood emoji bubble */}
+                <div style={{ position:"absolute", top:-6, right:-6, fontSize:16, lineHeight:1 }}>
+                  {catMood >= 80 ? "😸" : catMood >= 50 ? "🙂" : catMood >= 25 ? "😿" : "💤"}
+                </div>
+              </div>
+
+              {/* Info */}
+              <div style={{ flex:1, minWidth:0 }}>
+                {/* Name + level */}
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  {editingCatName ? (
+                    <input autoFocus value={tempCatName}
+                      onChange={e => setTempCatName(e.target.value)}
+                      onBlur={() => { const n = tempCatName.trim() || catName; setCatName(n); try { localStorage.setItem("wv_cat_name", n); } catch {} setEditingCatName(false); }}
+                      onKeyDown={e => { if (e.key === "Enter") { const n = tempCatName.trim() || catName; setCatName(n); try { localStorage.setItem("wv_cat_name", n); } catch {} setEditingCatName(false); } }}
+                      style={{ fontSize:15, fontWeight:800, color:"#111", background:"transparent", border:"none", borderBottom:"2px solid #FF8000", outline:"none", width:100, padding:"0 2px", fontFamily:"inherit" }}
+                    />
+                  ) : (
+                    <div style={{ fontSize:15, fontWeight:800, color:"#111", cursor:"pointer" }}
+                      onClick={() => { setTempCatName(catName); setEditingCatName(true); }}>
+                      {catName}
+                    </div>
+                  )}
+                  <div style={{ fontSize:10, fontWeight:700, color:"#fff", background:"linear-gradient(135deg,#FF8000,#FFB347)", borderRadius:8, padding:"2px 8px", flexShrink:0 }}>
+                    Lv.{catLevel}
+                  </div>
+                  <div style={{ fontSize:10, color:"#FF8000", marginLeft:"auto", flexShrink:0 }}>
+                    今日喂食 {catFeedsToday} 次 🍖
+                  </div>
+                </div>
+
+                {/* Hunger bar */}
+                <div style={{ marginBottom:7 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                    <span style={{ fontSize:10, color:"#c07000", fontWeight:600 }}>🍖 饱食度</span>
+                    <span style={{ fontSize:10, color:"#aaa" }}>{catHunger}%</span>
+                  </div>
+                  <div style={{ height:5, background:"#ffe0a0", borderRadius:3, overflow:"hidden" }}>
+                    <div style={{ height:"100%", borderRadius:3, transition:"width 0.5s ease",
+                      width: catHunger + "%",
+                      background: catHunger > 60 ? "linear-gradient(90deg,#FF8000,#FFD060)"
+                        : catHunger > 30 ? "linear-gradient(90deg,#e07000,#FF8000)"
+                        : "linear-gradient(90deg,#e03000,#e07000)"
+                    }}/>
+                  </div>
+                </div>
+
+                {/* Mood bar */}
+                <div>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                    <span style={{ fontSize:10, color:"#c07000", fontWeight:600 }}>💛 心情值</span>
+                    <span style={{ fontSize:10, color:"#aaa" }}>{catMood}%</span>
+                  </div>
+                  <div style={{ height:5, background:"#ffe0a0", borderRadius:3, overflow:"hidden" }}>
+                    <div style={{ height:"100%", borderRadius:3, transition:"width 0.5s ease",
+                      width: catMood + "%",
+                      background: catMood > 60 ? "linear-gradient(90deg,#FFD700,#FFB347)"
+                        : catMood > 30 ? "linear-gradient(90deg,#e0a000,#FFD700)"
+                        : "linear-gradient(90deg,#888,#aaa)"
+                    }}/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="tab-content">
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
@@ -3085,10 +3214,9 @@ export default function VocabApp() {
                     </div>
                   ) : quizState.isListen ? (
                     <div>
-                      <div style={{ marginBottom: 28, textAlign: "center" }}>
-                        <div style={{ fontSize: 11, color: "#777", marginBottom: 20, letterSpacing: "0.5px", textTransform: "uppercase" }}>听音辨词 — 选出你听到的单词</div>
-                        <button onClick={() => speak(quizState.question)} style={{ width: 96, height: 96, borderRadius: "50%", background: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", transition: "transform 0.1s" }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.93)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      <div style={{ marginBottom: 16, textAlign: "center" }}>
+                        <button onClick={() => speak(quizState.question)} style={{ width: 72, height: 72, borderRadius: "50%", background: "linear-gradient(135deg,#FF8000,#FFB347)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", transition: "transform 0.1s", boxShadow: "0 6px 20px rgba(255,128,0,0.4)" }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.93)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                         </button>
                         <div style={{ fontSize: 12, color: "#aaa" }}>点击喇叭播放，可重复收听</div>
                         {quizResult && <div style={{ marginTop: 16, padding: "12px 20px", background: "#f7f7f7", borderRadius: 12, display: "inline-block" }}><div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#111" }}>{quizState.question}</div><div style={{ fontSize: 13, color: "#777", marginTop: 4 }}>{quizState.meaning}</div>{quizState.example && <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic", marginTop: 4 }}>{quizState.example}</div>}</div>}
