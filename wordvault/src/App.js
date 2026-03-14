@@ -3088,7 +3088,7 @@ export default function VocabApp() {
                   {quizState.isSpell ? (
                     <div>
                       <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>看释义，拼出英文单词</div>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111", marginBottom: 8, lineHeight: 1.3 }}>{quizState.question}</div>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", marginBottom: 8, lineHeight: 1.3 }}>{quizState.question}</div>
 
                       {quizState.example && (
                         <div style={{ fontSize: 13, color: "#aaa", fontStyle: "italic", marginBottom: 16, lineHeight: 1.6, background: "#f9f9f9", borderRadius: 10, padding: "10px 14px", borderLeft: "3px solid #e0e0e0" }}>
@@ -3110,7 +3110,7 @@ export default function VocabApp() {
                             bg = isCorrectLetter ? "#f0faf4" : "#fff5f5";
                             borderColor = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
                             color = isCorrectLetter ? "#2d8a4e" : "#e53e3e";
-                          } else if (!isDone && typed) { bg = "#fff"; borderColor = "#111"; color = "#111"; }
+                          } else if (!isDone && typed) { bg = "#fff8ee"; borderColor = "#FF8000"; color = "#111"; }
                           return (
                             <div key={i} style={{ width: 36, height: 44, borderRadius: 9, background: bg, border: "2px solid " + borderColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color, fontFamily: "DM Serif Display, serif", transition: "all 0.15s" }}>
                               {isHinted ? letter : (typed || "")}
@@ -3128,13 +3128,15 @@ export default function VocabApp() {
                         return (
                           <div>
                             {/* ✅ Confirm button ABOVE input — always visible above keyboard */}
-                            <button onClick={() => { if (spellingInput.trim()) submitSpelling(); }}
-                              style={{ width: "100%", padding: "15px 0", borderRadius: 14, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16, marginBottom: 10,
-                                background: isComplete ? "#111" : "#f0f0f0",
-                                color: isComplete ? "#fff" : "#bbb",
-                                transition: "all 0.2s", cursor: isComplete ? "pointer" : "default" }}>
-                              {isComplete ? "✓  确认答案" : "还差 " + (quizState.correct.length - spellingInput.length) + " 个字母"}
-                            </button>
+                            {isComplete && (
+                              <button onClick={() => { if (spellingInput.trim()) submitSpelling(); }}
+                                style={{ width: "100%", padding: "15px 0", borderRadius: 14, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16, marginBottom: 10,
+                                  background: "linear-gradient(135deg,#FF8000,#FFB347)",
+                                  color: "#fff",
+                                  transition: "all 0.2s", cursor: "pointer", boxShadow: "0 4px 14px rgba(255,128,0,0.35)" }}>
+                                ✓  确认答案
+                              </button>
+                            )}
                             <div style={{ display: "flex", gap: 8 }}>
                               <input
                                 value={spellingInput}
@@ -3146,11 +3148,11 @@ export default function VocabApp() {
                                     setTimeout(() => submitSpelling(), 280);
                                   }
                                 }}
-                                placeholder={"输入 " + quizState.correct.length + " 个字母…"}
+                                placeholder=""
                                 maxLength={quizState.correct.length + 1}
                                 autoCapitalize="none" autoCorrect="off" spellCheck={false}
                                 onKeyDown={e => { if (e.key === "Enter" && spellingInput.trim()) submitSpelling(); }}
-                                style={{ flex: 1, fontSize: 18, fontWeight: 600, letterSpacing: "3px", textAlign: "center", borderRadius: 12, border: "2px solid #e0e0e0", padding: "12px 10px", fontFamily: "DM Serif Display, serif", background: "#fff", boxSizing: "border-box" }}
+                                style={{ flex: 1, fontSize: 18, fontWeight: 600, letterSpacing: "3px", textAlign: "center", borderRadius: 12, border: "2px solid #e0e0e0", padding: "12px 10px", fontFamily: "DM Serif Display, serif", background: "#fff", boxSizing: "border-box", outline: "none" }} onFocus={e => e.target.style.borderColor="#FF8000"} onBlur={e => e.target.style.borderColor="#e0e0e0"}
                               />
                               <button onClick={() => setHintRevealed(h => Math.min(h + 1, quizState.correct.length))}
                                 style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid #e0e0e0", background: "#fff", color: "#888", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
@@ -3235,16 +3237,17 @@ export default function VocabApp() {
                     <div>
                       <div style={{ marginBottom: 28 }}>
                         <div style={{ fontSize: 11, color: "#777", marginBottom: 10, letterSpacing: "0.5px", textTransform: "uppercase" }}>选择正确的中文释义</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, position: "relative" }}>
                           <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 36, color: "#111", lineHeight: 1.1 }}>{quizState.question}</div>
                           <button onClick={() => speak(quizState.question)} style={{ background: "#f2f2f2", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, color: "#444", padding: "4px 10px", fontWeight: 500 }}>▶</button>
+                          {quizResult && <button className="btn btn-dark" onClick={() => startQuiz()} style={{ position: "absolute", top: 0, right: 0, padding: "4px 12px", fontSize: 12, borderRadius: 20 }}>下一题 →</button>}
                         </div>
                         {quizState.example && <div style={{ fontSize: 13, color: "#777", fontStyle: "italic", lineHeight: 1.5 }}>{quizState.example}</div>}
                       </div>
                       <div key={quizState.question + quizState.options.join()}>
                         {quizState.options.map((opt, i) => { let cls = "opt-btn"; if (quizResult) { if (opt === quizState.correct) cls += " correct"; else if (quizResult === "wrong") cls += " wrong"; } return <button key={i} className={cls} disabled={!!quizResult} onClick={e => { e.currentTarget.blur(); handleMCQ(opt); }}><span style={{ color: "#777", marginRight: 10, fontSize: 12, fontWeight: 500 }}>{String.fromCharCode(65+i)}</span>{opt}</button>; })}
                       </div>
-                      {quizResult && <div style={{ marginTop: 20, textAlign: "center" }}>{quizResult !== "correct" && <div style={{ fontSize: 14, fontWeight: 500, color: "#e53e3e", marginBottom: 16 }}>答案是：{quizState.correct}</div>}<button className="btn btn-dark" onClick={() => startQuiz()}>下一题</button></div>}
+                      {quizResult && quizResult !== "correct" && <div style={{ marginTop: 16, textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 500, color: "#e53e3e" }}>答案是：{quizState.correct}</div></div>}
                     </div>
                   )}
                 </div>
