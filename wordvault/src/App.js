@@ -6,6 +6,7 @@ import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
 import COMBO_CAT from './combo-cat.png';
 import CAT_CLAW from './cat-claw.png';
 import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
+import COMBOCAT_1 from './combocat-1.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2643,7 +2644,7 @@ export default function VocabApp() {
                       {/* Big faded number */}
                       <div style={{ position:"absolute", top:-10, right:8, fontFamily:"DM Serif Display, serif", fontSize:92, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.18)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
                       {/* Mascot illustration */}
-                      {g.mascot && <div style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} dangerouslySetInnerHTML={{ __html: g.mascot }} />}
+                      <img src={COMBOCAT_1} alt="Combo猫" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
                       {/* Content */}
                       <div style={{ padding:"38px 16px 0", flex:1, position:"relative", zIndex:2 }}>
                         <div style={{ fontSize:26, marginBottom:6, lineHeight:1 }}>{g.icon}</div>
