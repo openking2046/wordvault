@@ -3300,8 +3300,6 @@ export default function VocabApp() {
                           </div>
                         </div>
                       )}
-                          <button
-                            onClick={() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }}
                         </div>
                       )}
                     </div>
