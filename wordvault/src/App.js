@@ -3300,8 +3300,6 @@ export default function VocabApp() {
                           </div>
                         </div>
                       )}
-                        </div>
-                      )}
                     </div>
                   ) : quizState.isListen ? (
                     <div>
