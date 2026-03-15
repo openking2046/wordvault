@@ -334,6 +334,8 @@ export default function VocabApp() {
     } catch { return 0; }
   });
   const [editingCatName, setEditingCatName] = useState(false);
+  const [catBreed, setCatBreed] = useState(() => { try { return localStorage.getItem("wv_cat_breed") || "橙猫"; } catch { return "橙猫"; } });
+  const [showBreedPicker, setShowBreedPicker] = useState(false);
   const [tempCatName, setTempCatName] = useState("");
   // Cat equipment system
   const [catEquipment, setCatEquipment] = useState(() => {
@@ -3685,17 +3687,46 @@ export default function VocabApp() {
                 <div style={{ background: "linear-gradient(135deg,#45B7B8,#5dd6d7,#7de8e8)", borderRadius: 24, overflow: "hidden", boxShadow: "0 8px 28px rgba(69,183,184,0.4)" }}>
                   {/* Top row */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 8px" }}>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.5px", textTransform: "uppercase" }}>我的 Combo猫</div>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, fontWeight:900, color:"#fff" }}>{catName}</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:2 }}>
+                        {editingCatName ? (
+                          <input autoFocus value={tempCatName}
+                            onChange={e => setTempCatName(e.target.value)}
+                            onBlur={() => { const n = tempCatName.trim() || catName; setCatName(n); try { localStorage.setItem("wv_cat_name", n); } catch {} setEditingCatName(false); }}
+                            onKeyDown={e => { if (e.key === "Enter") { const n = tempCatName.trim() || catName; setCatName(n); try { localStorage.setItem("wv_cat_name", n); } catch {} setEditingCatName(false); } }}
+                            style={{ fontFamily:"DM Serif Display, serif", fontSize:20, fontWeight:900, color:"#fff", background:"rgba(255,255,255,0.2)", border:"none", borderBottom:"2px solid rgba(255,255,255,0.8)", outline:"none", width:100, padding:"0 4px", borderRadius:"4px 4px 0 0" }}
+                          />
+                        ) : (
+                          <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, fontWeight:900, color:"#fff", cursor:"pointer", borderBottom:"1.5px dashed rgba(255,255,255,0.5)" }}
+                            onClick={() => { setTempCatName(catName); setEditingCatName(true); }}>
+                            {catName}
+                          </div>
+                        )}
                         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:10, padding:"2px 10px", fontSize:12, fontWeight:800, color:"#fff" }}>Lv.{getCatLv(xp)}</div>
                         <div style={{ fontSize:18 }}>{stage.emoji}</div>
                       </div>
-                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.8)", marginTop:2 }}>{stage.name} · 今日喂食 {catFeedsToday} 次 🍖</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:4 }}>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.8)" }}>{stage.name} · {catBreed}</div>
+                        <button onClick={() => setShowBreedPicker(v => !v)}
+                          style={{ fontSize:9, color:"rgba(255,255,255,0.7)", background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:8, padding:"1px 6px", cursor:"pointer", fontFamily:"inherit" }}>
+                          换品种
+                        </button>
+                      </div>
+                      {showBreedPicker && (
+                        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:8, padding:"8px 10px", background:"rgba(0,0,0,0.2)", borderRadius:12 }}>
+                          {["橙猫","蓝猫","布偶","暹罗","无毛","波斯","机器猫"].map(breed => (
+                            <button key={breed} onClick={() => { setCatBreed(breed); try { localStorage.setItem("wv_cat_breed", breed); } catch {} setShowBreedPicker(false); }}
+                              style={{ fontSize:11, fontWeight: catBreed===breed ? 800 : 400, color:"#fff", background: catBreed===breed ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.12)", border: catBreed===breed ? "1.5px solid rgba(255,255,255,0.7)" : "1px solid rgba(255,255,255,0.2)", borderRadius:10, padding:"4px 10px", cursor:"pointer", fontFamily:"inherit" }}>
+                              {breed}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.8)", marginTop:4 }}>今日喂食 {catFeedsToday} 次 🍖</div>
                     </div>
                     <button onClick={() => setShowCatRoom(true)}
-                      style={{ background: "rgba(255,255,255,0.25)", border: "1.5px solid rgba(255,255,255,0.6)", borderRadius: 14, padding: "8px 14px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)" }}>
+                      style={{ background: "rgba(255,255,255,0.25)", border: "1.5px solid rgba(255,255,255,0.6)", borderRadius: 14, padding: "8px 14px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)", flexShrink:0, marginLeft:10 }}>
                       进入猫屋 🏠
                     </button>
                   </div>
@@ -4143,7 +4174,7 @@ export default function VocabApp() {
                   <div style={{ fontSize: 12, color: "#999", marginTop: 3 }}>每次点击播放轻微音效</div>
                 </div>
                 <div onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("wv_sound", next ? "1" : "0"); }}
-                  style={{ width: 50, height: 28, borderRadius: 14, background: soundEnabled ? "#111" : "#ddd", cursor: "pointer", position: "relative", transition: "background 0.25s", flexShrink: 0 }}>
+                  style={{ width: 50, height: 28, borderRadius: 14, background: soundEnabled ? "#FF8000" : "#ddd", cursor: "pointer", position: "relative", transition: "background 0.25s", flexShrink: 0 }}>
                   <div style={{ position: "absolute", top: 3, left: soundEnabled ? 25 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", transition: "left 0.25s" }} />
                 </div>
               </div>
@@ -4158,7 +4189,7 @@ export default function VocabApp() {
                 <div onClick={notifStatus === "granted"
                     ? () => { setNotifStatus("off"); localStorage.setItem("wv_notif_off","1"); }
                     : requestNotification}
-                  style={{ width: 50, height: 28, borderRadius: 14, background: notifStatus === "granted" ? "#111" : "#ddd", cursor: "pointer", position: "relative", transition: "background 0.25s", flexShrink: 0 }}>
+                  style={{ width: 50, height: 28, borderRadius: 14, background: notifStatus === "granted" ? "#FF8000" : "#ddd", cursor: "pointer", position: "relative", transition: "background 0.25s", flexShrink: 0 }}>
                   <div style={{ position: "absolute", top: 3, left: notifStatus === "granted" ? 25 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", transition: "left 0.25s" }} />
                 </div>
               </div>
