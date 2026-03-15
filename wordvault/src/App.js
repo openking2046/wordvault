@@ -2115,118 +2115,107 @@ export default function VocabApp() {
       {/* Header Card */}
       {tab !== 4 && (() => {
         const r = getRank(words.length, streakData.count);
-        const nextR = getNextRank(words.length, streakData.count);
-        const mastered = words.filter(w => w.mastery >= 4).length;
-        const progressPct = nextR
-          ? Math.min(100, Math.round(Math.max(words.length - r.words, 0) / Math.max(nextR.words - r.words, 1) * 100))
-          : 100;
-        // gradient per rank tier
-        // Brand green: RGB(92,145,135) = #5C9187
-        const tierGrad = ["#5C9187", "#7ab8ae"];
+        const catStage = getCatStage(xp);
+        const catLv = getCatLv(xp);
+        const catOverallHealth = Math.round((catHunger + catThirst + catMood + catHealth) / 4);
+        const GREEN = "#45B7B8";
+        const GREEN2 = "#5dd6d7";
         return (
           <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#FCFDE8" }}>
             <div style={{ maxWidth: 520, margin: "0 auto" }}>
-              <div
-                onClick={() => setHeaderExpanded(e => !e)}
-                style={{
-                  borderRadius: 24,
-                  overflow: "hidden",
-                  cursor: "pointer",
-                  boxShadow: "0 6px 24px rgba(92,145,135,0.35)",
-                  background: `linear-gradient(135deg, ${tierGrad[0]}, ${tierGrad[1]})`,
-                }}
-              >
-                {/* ── COLLAPSED ROW ── */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px" }}>
-                  {/* Avatar with ring */}
-                  {profile && (
-                    <div style={{ flexShrink: 0, position: "relative" }}>
-                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 0 2.5px rgba(255,255,255,0.6)" }}>
-                        <SpriteAvatar id={profile.avatar} size={42} />
-                      </div>
-                      {/* Streak fire badge */}
-                      {streakData.count >= 2 && (
-                        <div style={{ position: "absolute", bottom: -3, right: -3, background: "#ff6b00", borderRadius: 10, padding: "1px 5px", fontSize: 9, fontWeight: 800, color: "#fff", border: "1.5px solid #fff", lineHeight: 1.6 }}>
-                          🔥{streakData.count}
+              <div style={{ display: "flex", gap: 10 }}>
+
+                {/* ── LEFT: USER CARD ── */}
+                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "16px 14px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", overflow: "hidden", position: "relative" }}
+                  onClick={() => setHeaderExpanded(e => !e)}>
+                  {/* Decorative circle */}
+                  <div style={{ position:"absolute", top:-20, right:-20, width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
+                  {/* Avatar */}
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                    {profile && (
+                      <div style={{ position:"relative", flexShrink:0 }}>
+                        <div style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 0 2px rgba(255,255,255,0.7)" }}>
+                          <SpriteAvatar id={profile.avatar} size={38} />
                         </div>
-                      )}
-                    </div>
-                  )}
-                  {/* Name & quick stats */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 2, textShadow: "0 1px 4px rgba(0,0,0,0.2)" }}>
-                      {profile?.name || "学员"}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>
-                      {words.length} 词 · {correctRate}% 正确率 · {streakData.count} 天连击
+                        {streakData.count >= 2 && (
+                          <div style={{ position:"absolute", bottom:-2, right:-2, background:"#ff6b00", borderRadius:8, padding:"1px 4px", fontSize:8, fontWeight:800, color:"#fff", border:"1.5px solid #fff" }}>🔥{streakData.count}</div>
+                        )}
+                      </div>
+                    )}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:14, fontWeight:800, color:"#fff", lineHeight:1.2, marginBottom:1 }}>{profile?.name || "学员"}</div>
+                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.75)" }}>{profile?.occupation || "学习者"}</div>
                     </div>
                   </div>
                   {/* Rank badge */}
-                  <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ background: "rgba(255,255,255,0.22)", backdropFilter: "blur(8px)", borderRadius: 12, padding: "5px 11px", border: "1px solid rgba(255,255,255,0.4)" }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: "0.3px" }}>{r.name}</div>
-                    </div>
-                    <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, transition: "transform 0.3s", transform: headerExpanded ? "rotate(180deg)" : "rotate(0)" }}>▾</div>
+                  <div style={{ background:"rgba(255,255,255,0.22)", borderRadius:10, padding:"5px 10px", display:"inline-flex", alignItems:"center", gap:5, border:"1px solid rgba(255,255,255,0.4)", marginBottom:8 }}>
+                    <div style={{ width:7, height:7, borderRadius:"50%", background:"#fff" }}/>
+                    <div style={{ fontSize:11, fontWeight:800, color:"#fff" }}>{r.name}</div>
                   </div>
+                  {/* Progress bar */}
+                  <div style={{ height:4, background:"rgba(0,0,0,0.18)", borderRadius:2, overflow:"hidden" }}>
+                    <div style={{ height:"100%", background:"rgba(255,255,255,0.85)", borderRadius:2, width: (() => { const nextR = getNextRank(words.length, streakData.count); return nextR ? Math.min(100, Math.round(Math.max(words.length - r.words,0)/Math.max(nextR.words-r.words,1)*100))+"%" : "100%"; })(), transition:"width 0.6s" }} />
+                  </div>
+                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.6)", marginTop:3 }}>
+                    {(() => { const nextR = getNextRank(words.length, streakData.count); return nextR ? `距 ${nextR.name} 还差 ${Math.max(0,nextR.words-words.length)} 词` : "🏆 已达最高段位"; })()}
+                  </div>
+                  {/* Expand arrow */}
+                  <div style={{ position:"absolute", bottom:10, right:12, color:"rgba(255,255,255,0.6)", fontSize:11, transition:"transform 0.3s", transform: headerExpanded?"rotate(180deg)":"rotate(0)" }}>▾</div>
                 </div>
 
-                {/* ── RANK PROGRESS BAR (always visible) ── */}
-                <div style={{ padding: "0 16px 14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>段位进度</div>
-                    {nextR
-                      ? <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>距 {nextR.name} 还差 {Math.max(0, nextR.words - words.length)} 词</div>
-                      : <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>🏆 已达最高段位</div>
-                    }
-                  </div>
-                  <div style={{ height: 5, background: "rgba(0,0,0,0.2)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", borderRadius: 3, background: "rgba(255,255,255,0.85)", width: progressPct + "%", transition: "width 0.6s ease" }} />
-                  </div>
-                </div>
-
-                {/* ── EXPANDED PANEL ── */}
-                {headerExpanded && (
-                  <div onClick={e => e.stopPropagation()}
-                    style={{ background: "rgba(0,0,0,0.18)", padding: "16px", animation: "unlockSub 0.25s ease both" }}>
-
-                    {/* Stats grid */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                      {[
-                        { val: words.length, unit: "词", label: "词库" },
-                        { val: mastered, unit: "个", label: "已掌握" },
-                        { val: correctRate, unit: "%", label: "正确率" },
-                        { val: globalMaxCombo, unit: "×", label: "最高Combo" },
-                      ].map(({ val, unit, label }) => (
-                        <div key={label} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 14, padding: "10px 6px", textAlign: "center", backdropFilter: "blur(4px)" }}>
-                          <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#fff", fontWeight: 700, lineHeight: 1 }}>
-                            {val}<span style={{ fontSize: 10, opacity: 0.7, marginLeft: 1 }}>{unit}</span>
-                          </div>
-                          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.65)", marginTop: 3, letterSpacing: "0.3px" }}>{label}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Streak dots */}
-                    <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 14, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ fontSize: 18 }}>🔥</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", marginBottom: 4 }}>连续学习 {streakData.count} 天</div>
-                        <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-                          {Array.from({ length: Math.min(streakData.count, 14) }).map((_, i) => (
-                            <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,255,255,0.9)" }} />
-                          ))}
-                          {streakData.count > 14 && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", alignSelf: "center" }}>+{streakData.count - 14}</div>}
-                        </div>
+                {/* ── RIGHT: PET CARD ── */}
+                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "16px 14px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", overflow: "hidden", position: "relative" }}
+                  onClick={() => setShowCatRoom(true)}>
+                  <div style={{ position:"absolute", top:-20, left:-20, width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
+                  {/* Pet name + level */}
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                    <img src={COMBO_CAT} alt="猫" style={{ width:44, height:44, objectFit:"contain", filter: catHunger<30?"brightness(0.7) saturate(0.4)":"none" }} />
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:800, color:"#fff", lineHeight:1.2 }}>{catName}</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
+                        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:8, padding:"1px 7px", fontSize:10, fontWeight:800, color:"#fff" }}>Lv.{catLv}</div>
+                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.75)" }}>{catStage.name}</div>
                       </div>
                     </div>
-
-                    {/* Join date */}
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", textAlign: "center" }}>
-                      加入于 {profile?.joinDate || "—"}
+                  </div>
+                  {/* Today feeds */}
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)", marginBottom:8 }}>今日投喂 {catFeedsToday} 次 🍖</div>
+                  {/* Health bar */}
+                  <div>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <span style={{ fontSize:10, color:"rgba(255,255,255,0.8)" }}>❤️ 综合健康</span>
+                      <span style={{ fontSize:10, color:"#fff", fontWeight:700 }}>{catOverallHealth}%</span>
+                    </div>
+                    <div style={{ height:4, background:"rgba(0,0,0,0.18)", borderRadius:2, overflow:"hidden" }}>
+                      <div style={{ height:"100%", background: catOverallHealth>60?"rgba(255,255,255,0.85)":catOverallHealth>30?"#FFD700":"#ff6b6b", borderRadius:2, width:catOverallHealth+"%", transition:"width 0.5s" }} />
                     </div>
                   </div>
-                )}
+                </div>
+
               </div>
+
+              {/* ── EXPANDED PANEL (below both cards) ── */}
+              {headerExpanded && (
+                <div onClick={e => e.stopPropagation()}
+                  style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN2})`, borderRadius:"0 0 20px 20px", padding:"14px 16px", marginTop:-8, boxShadow:`0 8px 20px ${GREEN}44`, animation:"unlockSub 0.25s ease both" }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+                    {[
+                      { val:words.length, unit:"词", label:"词库" },
+                      { val:words.filter(w=>w.mastery>=4).length, unit:"个", label:"已掌握" },
+                      { val:correctRate, unit:"%", label:"正确率" },
+                      { val:globalMaxCombo, unit:"×", label:"最高Combo" },
+                    ].map(({ val, unit, label }) => (
+                      <div key={label} style={{ background:"rgba(255,255,255,0.15)", borderRadius:12, padding:"10px 6px", textAlign:"center" }}>
+                        <div style={{ fontFamily:"DM Serif Display, serif", fontSize:18, color:"#fff", fontWeight:700, lineHeight:1 }}>
+                          {val}<span style={{ fontSize:9, opacity:0.7, marginLeft:1 }}>{unit}</span>
+                        </div>
+                        <div style={{ fontSize:9, color:"rgba(255,255,255,0.65)", marginTop:3 }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", textAlign:"center", marginTop:10 }}>加入于 {profile?.joinDate || "—"}</div>
+                </div>
+              )}
             </div>
           </div>
         );
