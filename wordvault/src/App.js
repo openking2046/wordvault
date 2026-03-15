@@ -440,6 +440,7 @@ export default function VocabApp() {
   const [newAchievement, setNewAchievement] = useState(null); // shows popup
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0, wrongWords: [] });
   const [showSummary, setShowSummary] = useState(false);
+  const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [filterTag, setFilterTag] = useState("全部");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | alpha
@@ -883,13 +884,18 @@ export default function VocabApp() {
       d[todayKey] = (d[todayKey] || 0) + 1;
       localStorage.setItem("wv_daily_quiz", JSON.stringify(d));
     } catch {}
+    setConsecutiveCorrect(c => {
+      const next = correct ? c + 1 : 0;
+      if (next === 20) {
+        setTimeout(() => { playCelebrationSound(); setShowSummary(true); }, 600);
+        return 0;
+      }
+      return next;
+    });
     setSessionStats(s => {
       const newTotal = s.total + 1;
       const newCorrect = s.correct + (correct ? 1 : 0);
       const newWrong = correct ? s.wrongWords : [...new Set([...s.wrongWords, quizState.question])];
-      if (newTotal % 10 === 0) {
-        setTimeout(() => setShowSummary(true), 600);
-      }
       return { correct: newCorrect, total: newTotal, wrongWords: newWrong };
     });
   }
@@ -918,11 +924,18 @@ export default function VocabApp() {
       d[todayKey] = (d[todayKey] || 0) + 1;
       localStorage.setItem("wv_daily_quiz", JSON.stringify(d));
     } catch {}
+    setConsecutiveCorrect(c => {
+      const next = correct ? c + 1 : 0;
+      if (next === 20) {
+        setTimeout(() => { playCelebrationSound(); setShowSummary(true); }, 600);
+        return 0;
+      }
+      return next;
+    });
     setSessionStats(s => {
       const newTotal = s.total + 1;
       const newCorrect = s.correct + (correct ? 1 : 0);
       const newWrong = correct ? s.wrongWords : [...new Set([...s.wrongWords, quizState.correct])];
-      if (newTotal % 10 === 0) setTimeout(() => setShowSummary(true), 600);
       return { correct: newCorrect, total: newTotal, wrongWords: newWrong };
     });
   }
@@ -938,6 +951,7 @@ export default function VocabApp() {
   function resetSession() {
     setSessionStats({ correct: 0, total: 0, wrongWords: [] });
     setShowSummary(false);
+    setConsecutiveCorrect(0);
     startQuiz(quizMode);
   }
 
@@ -1081,7 +1095,47 @@ export default function VocabApp() {
     } catch {}
   }
 
-  function playPairSound(type) {
+  function playCelebrationSound() {
+    try {
+      if (!quizSoundRef.current) quizSoundRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = quizSoundRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const t = ctx.currentTime;
+      // 🎊 Big celebration fanfare — ascending arpeggio + bells + noise burst
+      const melody = [523,659,784,1047,1319,1568,2093,1568,1319,1047];
+      melody.forEach((freq, i) => {
+        const osc = ctx.createOscillator(); const g = ctx.createGain();
+        osc.type = i > 6 ? "sine" : "triangle";
+        osc.frequency.setValueAtTime(freq, t + i * 0.08);
+        g.gain.setValueAtTime(0.0001, t + i * 0.08);
+        g.gain.exponentialRampToValueAtTime(0.22, t + i * 0.08 + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.08 + 0.3);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t + i * 0.08); osc.stop(t + i * 0.08 + 0.35);
+      });
+      // Bell chord at peak
+      [1047,1319,1568].forEach((freq, i) => {
+        const osc = ctx.createOscillator(); const g = ctx.createGain();
+        osc.type = "sine"; osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t + 0.82);
+        g.gain.exponentialRampToValueAtTime(0.18, t + 0.88);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t + 0.82); osc.stop(t + 1.65);
+      });
+      // Noise shimmer confetti burst
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.08));
+      const src = ctx.createBufferSource(); const ng = ctx.createGain();
+      const nf = ctx.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = 5000;
+      src.buffer = buf; src.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+      ng.gain.setValueAtTime(0.18, t + 0.7); ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      src.start(t + 0.7);
+    } catch {}
+  }
+
+    function playPairSound(type) {
     try {
       if (!pairSoundRef.current) pairSoundRef.current = new (window.AudioContext || window.webkitAudioContext)();
       const ctx = pairSoundRef.current;
@@ -4395,7 +4449,7 @@ export default function VocabApp() {
             <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", marginBottom: 4 }}>
               {sessionStats.correct >= 8 ? "太棒了！" : sessionStats.correct >= 6 ? "不错！继续加油" : "再练练这些词 "}
             </div>
-            <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>第 {Math.floor(sessionStats.total / 10)} 轮 · {sessionStats.total} 题小结</div>
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>🎉 连续答对 20 题！共 {sessionStats.total} 题</div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
               {[
