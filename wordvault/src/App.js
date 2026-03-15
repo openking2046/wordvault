@@ -2113,7 +2113,7 @@ export default function VocabApp() {
       )}
 
       {/* Header Card */}
-      {tab !== 4 && (() => {
+      {(tab === 2 || tab === 3) && (() => {
         const r = getRank(words.length, streakData.count);
         const catStage = getCatStage(xp);
         const catLv = getCatLv(xp);
