@@ -3578,6 +3578,47 @@ export default function VocabApp() {
         {tab === 4 && (
           <div style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 20 }}>
 
+            {/* Profile Card */}
+            {profile && (
+              <div>
+                <div style={{ background: "linear-gradient(135deg,#45B7B8,#5dd6d7)", borderRadius: 20, padding: 24, color: "#fff", position: "relative", boxShadow: "0 8px 24px rgba(69,183,184,0.4)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+                    <SpriteAvatar id={profile.avatar} size={64} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", marginBottom: 3 }}>{profile.name}</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>加入于 {profile.joinDate}</div>
+                    </div>
+                    <button onClick={() => { setSetupAvatar(profile.avatar); setSetupName(profile.name); setSetupBirthYear(profile.birthYear||""); setSetupBirthMonth(profile.birthMonth||""); setSetupOccupation(profile.occupation||""); setShowAvatarPicker(false); setEditingProfile(true); }}
+                      style={{ background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, color: "#fff", fontSize: 12, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit" }}>编辑</button>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    {[
+                      ["词库", words.length + " 词"],
+                      ["连续", streakData.count + " 天"],
+                      ["正确率", (score.total ? Math.round(score.correct/score.total*100) : 0) + "%"],
+                    ].map(([label, val]) => (
+                      <div key={label} style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#fff", marginBottom: 2 }}>{val}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Rank badge — tap to open rank sheet */}
+                  {(() => {
+                    const r = getRank(words.length, streakData.count);
+                    return (
+                      <div onClick={() => setShowRankSheet(true)} style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.18)", borderRadius: 12, cursor: "pointer" }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
+                        <div style={{ fontSize: 13, color: r.color, fontWeight: 600 }}>{r.name}</div>
+                        <div style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{r.tier}</div>
+                        <div style={{ fontSize: 12, color: "#555" }}>›</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
             {/* ── CAT ROOM ENTRY CARD ── */}
             {(() => {
               const stage = getCatStage(xp);
@@ -3645,46 +3686,6 @@ export default function VocabApp() {
               );
             })()}
 
-            {/* Profile Card */}
-            {profile && (
-              <div>
-                <div style={{ background: "#111", borderRadius: 20, padding: 24, color: "#fff", position: "relative" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-                    <SpriteAvatar id={profile.avatar} size={64} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff", marginBottom: 3 }}>{profile.name}</div>
-                      <div style={{ fontSize: 12, color: "#555" }}>加入于 {profile.joinDate}</div>
-                    </div>
-                    <button onClick={() => { setSetupAvatar(profile.avatar); setSetupName(profile.name); setSetupBirthYear(profile.birthYear||""); setSetupBirthMonth(profile.birthMonth||""); setSetupOccupation(profile.occupation||""); setShowAvatarPicker(false); setEditingProfile(true); }}
-                      style={{ background: "#1e1e1e", border: "1px solid #333", borderRadius: 8, color: "#888", fontSize: 12, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit" }}>编辑</button>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                    {[
-                      ["词库", words.length + " 词"],
-                      ["连续", streakData.count + " 天"],
-                      ["正确率", (score.total ? Math.round(score.correct/score.total*100) : 0) + "%"],
-                    ].map(([label, val]) => (
-                      <div key={label} style={{ background: "#1a1a1a", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 20, color: "#fff", marginBottom: 2 }}>{val}</div>
-                        <div style={{ fontSize: 11, color: "#555" }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Rank badge — tap to open rank sheet */}
-                  {(() => {
-                    const r = getRank(words.length, streakData.count);
-                    return (
-                      <div onClick={() => setShowRankSheet(true)} style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#1a1a1a", borderRadius: 12, cursor: "pointer" }}>
-                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
-                        <div style={{ fontSize: 13, color: r.color, fontWeight: 600 }}>{r.name}</div>
-                        <div style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{r.tier}</div>
-                        <div style={{ fontSize: 12, color: "#555" }}>›</div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
 
             {/* Edit Profile Modal */}
             {editingProfile && (
