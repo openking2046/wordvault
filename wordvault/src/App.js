@@ -210,6 +210,58 @@ function generateListenMCQ(words, target) {
   return { question: target.word, correct: target.meaning, options: options.map(o => o.meaning), meaning: target.meaning, example: target.example, correctWord: target.word, isListen: true };
 }
 
+// ── EQUIPMENT CATALOG ──────────────────────────────────────────────
+const EQUIPMENT = [
+  // HATS
+  { id: "cap_basic",   type: "hat",       name: "学习帽",   emoji: "🧢", xpRequired: 0,    xpCost: 0,   desc: "默认装备，免费获得",     rarity: "common"   },
+  { id: "cap_star",    type: "hat",       name: "星星帽",   emoji: "⭐", xpRequired: 200,  xpCost: 150, desc: "答对200题后解锁",         rarity: "uncommon" },
+  { id: "crown",       type: "hat",       name: "金色皇冠", emoji: "👑", xpRequired: 500,  xpCost: 400, desc: "词汇大师的象征",          rarity: "rare"     },
+  { id: "wizard_hat",  type: "hat",       name: "魔法帽",   emoji: "🎩", xpRequired: 1000, xpCost: 800, desc: "传说级学习者专属",        rarity: "epic"     },
+  // OUTFITS
+  { id: "none",        type: "outfit",    name: "无装备",   emoji: "✖️", xpRequired: 0,    xpCost: 0,   desc: "裸猫",                    rarity: "common"   },
+  { id: "hoodie",      type: "outfit",    name: "卫衣",     emoji: "👕", xpRequired: 100,  xpCost: 80,  desc: "舒适休闲风",              rarity: "common"   },
+  { id: "school_uni",  type: "outfit",    name: "校服",     emoji: "🎒", xpRequired: 300,  xpCost: 200, desc: "认真学习的模样",          rarity: "uncommon" },
+  { id: "wizard_robe", type: "outfit",    name: "魔法袍",   emoji: "🌟", xpRequired: 800,  xpCost: 600, desc: "满是星光的魔法师长袍",    rarity: "rare"     },
+  { id: "armor",       type: "outfit",    name: "战甲",     emoji: "⚔️", xpRequired: 1500, xpCost: 1200,desc: "词汇战士的荣耀",          rarity: "epic"     },
+  // ACCESSORIES
+  { id: "book",        type: "accessory", name: "单词书",   emoji: "📚", xpRequired: 50,   xpCost: 40,  desc: "随身带着单词书",          rarity: "common"   },
+  { id: "wand",        type: "accessory", name: "魔法棒",   emoji: "✨", xpRequired: 400,  xpCost: 300, desc: "点亮记忆的魔法棒",        rarity: "uncommon" },
+  { id: "medal",       type: "accessory", name: "冠军奖牌", emoji: "🏅", xpRequired: 700,  xpCost: 500, desc: "连续30天打卡获得",        rarity: "rare"     },
+  { id: "wings",       type: "accessory", name: "天使翅膀", emoji: "🦋", xpRequired: 2000, xpCost: 1500,desc: "达到传说段位解锁",        rarity: "legendary"},
+  // FOOD & WATER (consumables)
+  { id: "kibble",      type: "food",      name: "普通猫粮", emoji: "🍚", xpRequired: 0,    xpCost: 20,  desc: "恢复饥饿度+30",          rarity: "common",  hungerRestore: 30 },
+  { id: "sashimi",     type: "food",      name: "三文鱼",   emoji: "🐟", xpRequired: 200,  xpCost: 60,  desc: "恢复饥饿度+70",          rarity: "uncommon",hungerRestore: 70 },
+  { id: "water",       type: "drink",     name: "清水",     emoji: "💧", xpRequired: 0,    xpCost: 10,  desc: "恢复口渴度+40",          rarity: "common",  thirstRestore: 40 },
+  { id: "milk",        type: "drink",     name: "猫咪牛奶", emoji: "🥛", xpRequired: 100,  xpCost: 30,  desc: "恢复口渴度+80",          rarity: "uncommon",thirstRestore: 80 },
+];
+
+const RARITY_COLORS = {
+  common:    { color: "#888",    bg: "#f5f5f5",   label: "普通" },
+  uncommon:  { color: "#2d8a4e", bg: "#f0faf4",   label: "优秀" },
+  rare:      { color: "#2d6bcf", bg: "#eff6ff",   label: "稀有" },
+  epic:      { color: "#7c3aed", bg: "#f5f3ff",   label: "史诗" },
+  legendary: { color: "#FF8000", bg: "#fff8ee",   label: "传说" },
+};
+
+// Cat growth stages based on total XP
+const CAT_STAGES = [
+  { lv:1, minXp:0,    stage:"lv1", name:"初生雏猫", emoji:"🐣", desc:"刚睁开眼睛的小猫咪，对世界充满好奇",   color:"#aaa"    },
+  { lv:2, minXp:200,  stage:"lv2", name:"蹒跚幼猫", emoji:"🐱", desc:"迈出第一步，开始探索词汇的世界",       color:"#4ade80" },
+  { lv:3, minXp:500,  stage:"lv3", name:"好奇顽童", emoji:"😸", desc:"对所有单词都充满热情，精力旺盛",       color:"#45B7B8" },
+  { lv:4, minXp:1000, stage:"lv4", name:"敏捷少年", emoji:"😺", desc:"身手矫健，学习速度超越同龄人",         color:"#4facfe" },
+  { lv:5, minXp:2000, stage:"lv5", name:"优雅青年", emoji:"🦁", desc:"举手投足间散发着学识的光芒",           color:"#a78bfa" },
+  { lv:6, minXp:3500, stage:"lv6", name:"威严领主", emoji:"👑", desc:"词汇量令人叹服，统御一方",             color:"#f59e0b" },
+  { lv:7, minXp:5500, stage:"lv7", name:"幻兽觉醒", emoji:"🔥", desc:"突破次元壁，掌握语言的神秘力量",       color:"#f97316" },
+  { lv:8, minXp:8000, stage:"lv8", name:"宇宙主宰", emoji:"🌟", desc:"词汇宇宙的最终掌控者，无所不知",       color:"#FF8000" },
+];
+
+function getCatStage(totalXp) {
+  let stage = CAT_STAGES[0];
+  for (const s of CAT_STAGES) { if (totalXp >= s.minXp) stage = s; }
+  return stage;
+}
+function getCatLv(totalXp) { return getCatStage(totalXp).lv; }
+
 // Rank system - 23 ranks, based on words + streak days
 const RANKS = [
   // 倔强青铜 (3)  0~100词, 0~60天
@@ -283,6 +335,19 @@ export default function VocabApp() {
   });
   const [editingCatName, setEditingCatName] = useState(false);
   const [tempCatName, setTempCatName] = useState("");
+  // Cat equipment system
+  const [catEquipment, setCatEquipment] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("wv_cat_equipment") || "{}"); } catch { return {}; }
+  }); // { hat: "crown", outfit: "hoodie", accessory: "wand" }
+  const [catUnlocked, setCatUnlocked] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("wv_cat_unlocked") || "[]"); } catch { return []; }
+  }); // array of unlocked item ids
+  const [catThirst, setCatThirst] = useState(() => {
+    try { return parseInt(localStorage.getItem("wv_cat_thirst") || "80"); } catch { return 80; }
+  });
+  const [catHealth, setCatHealth] = useState(() => { try { return parseInt(localStorage.getItem("wv_cat_health") || "80"); } catch { return 80; } });
+  const [showCatRoom, setShowCatRoom] = useState(false);
+  const [catRoomTab, setCatRoomTab] = useState("status"); // "status" | "wardrobe" | "shop"
 
   // Profile
   const [profile, setProfile] = useState(() => { try { const s = localStorage.getItem("wv_profile"); return s ? JSON.parse(s) : null; } catch { return null; } });
@@ -585,7 +650,48 @@ export default function VocabApp() {
   }
 
   // Award XP and mark task done, show reward popup
-  function claimTask(task) {
+  // ── CAT EQUIPMENT FUNCTIONS ─────────────────────────────────────
+  function equipItem(item) {
+    if (item.type === "hat" || item.type === "outfit" || item.type === "accessory") {
+      setCatEquipment(prev => {
+        const next = { ...prev, [item.type]: prev[item.type] === item.id ? null : item.id };
+        try { localStorage.setItem("wv_cat_equipment", JSON.stringify(next)); } catch {}
+        return next;
+      });
+    }
+  }
+
+  function buyItem(item) {
+    if (xp < item.xpCost) return;
+    setXp(x => { const n = x - item.xpCost; try { localStorage.setItem("wv_xp", String(n)); } catch {} return n; });
+    setCatUnlocked(prev => {
+      const next = [...prev, item.id];
+      try { localStorage.setItem("wv_cat_unlocked", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  function feedCatItem(item) {
+    if (xp < item.xpCost) return;
+    setXp(x => { const n = x - item.xpCost; try { localStorage.setItem("wv_xp", String(n)); } catch {} return n; });
+    if (item.hungerRestore) {
+      setCatHunger(h => { const v = Math.min(100, h + item.hungerRestore); try { localStorage.setItem("wv_cat_hunger", String(v)); } catch {} return v; });
+      setCatHealth(h => { const v = Math.min(100, h + Math.round(item.hungerRestore * 0.3)); try { localStorage.setItem("wv_cat_health", String(v)); } catch {} return v; });
+    }
+    if (item.thirstRestore) {
+      setCatThirst(t => { const v = Math.min(100, t + item.thirstRestore); try { localStorage.setItem("wv_cat_thirst", String(v)); } catch {} return v; });
+      setCatHealth(h => { const v = Math.min(100, h + Math.round(item.thirstRestore * 0.2)); try { localStorage.setItem("wv_cat_health", String(v)); } catch {} return v; });
+    }
+  }
+
+  function isUnlocked(item) {
+    if (item.xpCost === 0 && item.xpRequired === 0) return true;
+    return catUnlocked.includes(item.id);
+  }
+
+  function canUnlock(item) { return xp >= item.xpRequired; }
+
+    function claimTask(task) {
     const todayKey = new Date().toISOString().slice(0,10);
     const key = task.type === "daily" ? `${task.id}_${todayKey}` : task.id;
     if (completedTasks[key]) return;
@@ -717,7 +823,8 @@ export default function VocabApp() {
       });
       // Feed cat on correct answer
       setCatHunger(h => { const v = Math.min(100, h + 2); try { localStorage.setItem("wv_cat_hunger", String(v)); } catch {} return v; });
-      setCatMood(m => { const v = Math.min(100, m + 1); try { localStorage.setItem("wv_cat_mood", String(v)); } catch {} return v; });
+      setCatMood(m => { const v = Math.min(100, m + 2); try { localStorage.setItem("wv_cat_mood", String(v)); } catch {} return v; });
+      setCatHealth(h => { const v = Math.min(100, h + 1); try { localStorage.setItem("wv_cat_health", String(v)); } catch {} return v; });
       setCatFeedsToday(f => {
         const today = new Date().toISOString().slice(0,10);
         const next = f + 1;
@@ -3181,45 +3288,20 @@ export default function VocabApp() {
                         </div>
                       )}
 
-                      {/* ❌ Wrong — show answer, user must retype to unlock next */}
+                      {/* ❌ Wrong — show answer only, then next button */}
                       {quizResult === "wrong" && (
                         <div>
-                          <div style={{ background: "#fff5f5", border: "2px solid #e53e3e", borderRadius: 14, padding: "16px 18px", marginBottom: 14 }}>
-                            <div style={{ fontSize: 12, color: "#e53e3e", fontWeight: 600, marginBottom: 10 }}>✗ 拼写有误，正确答案：</div>
-                            <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "3px", fontWeight: 700, textAlign: "center", marginBottom: 10 }}>{quizState.correct}</div>
-                            <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
-                              {quizState.correct.split("").map((letter, i) => {
-                                const typed = (spellingInput[i] || "").toLowerCase();
-                                const ok = typed === letter.toLowerCase();
-                                return <div key={i} style={{ width: 28, height: 32, borderRadius: 7, background: ok ? "#f0faf4" : "#fff0f0", border: "1.5px solid " + (ok ? "#2d8a4e" : "#e53e3e"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: ok ? "#2d8a4e" : "#e53e3e", fontFamily: "DM Serif Display, serif" }}>{letter}</div>;
-                              })}
+                          <div style={{ background: "#fff5f5", border: "2px solid #e53e3e", borderRadius: 14, padding: "16px 18px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div>
+                              <div style={{ fontSize: 12, color: "#e53e3e", fontWeight: 600, marginBottom: 6 }}>✗ 拼写有误，正确答案：</div>
+                              <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 26, color: "#111", letterSpacing: "2px", fontWeight: 700 }}>{quizState.correct}</div>
                             </div>
+                            <button className="btn btn-dark" onClick={() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }} style={{ padding: "6px 16px", fontSize: 13, borderRadius: 20, flexShrink: 0 }}>下一题 →</button>
                           </div>
-                          <div style={{ fontSize: 11, color: "#888", marginBottom: 10, textAlign: "center" }}>
-                            {spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "✓ 纠正完成，可以继续" : "请输入正确答案以继续 👇"}
-                          </div>
-                          <input
-                            value={spellingInput}
-                            onChange={e => setSpellingInput(e.target.value.replace(/[^a-zA-Z\-']/g, ""))}
-                            placeholder={"重新拼写: " + quizState.correct}
-                            maxLength={quizState.correct.length + 2}
-                            autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                            style={{ width: "100%", fontSize: 18, fontWeight: 600, letterSpacing: "3px", textAlign: "center", borderRadius: 12,
-                              border: "2px solid " + (spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#2d8a4e" : "#e0e0e0"),
-                              padding: "12px 10px", marginBottom: 10, fontFamily: "DM Serif Display, serif",
-                              background: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#f0faf4" : "#fff",
-                              color: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#2d8a4e" : "#111",
-                              boxSizing: "border-box" }}
-                          />
+                        </div>
+                      )}
                           <button
                             onClick={() => { setSpellingInput(""); setHintRevealed(0); setQuizResult(null); startQuiz(); }}
-                            disabled={spellingInput.trim().toLowerCase() !== quizState.correct.toLowerCase()}
-                            style={{ width: "100%", padding: "15px 0", borderRadius: 14, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 16,
-                              background: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#111" : "#f0f0f0",
-                              color: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "#fff" : "#ccc",
-                              cursor: spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
-                            {spellingInput.trim().toLowerCase() === quizState.correct.toLowerCase() ? "下一题 →" : "输入正确拼写后继续"}
-                          </button>
                         </div>
                       )}
                     </div>
@@ -3611,7 +3693,74 @@ export default function VocabApp() {
 
         {/* Tab 4 */}
         {tab === 4 && (
-          <div style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 28 }}>
+          <div style={{ maxWidth: 480, display: "flex", flexDirection: "column", gap: 20 }}>
+
+            {/* ── CAT ROOM ENTRY CARD ── */}
+            {(() => {
+              const stage = getCatStage(xp);
+              const hat = catEquipment.hat ? EQUIPMENT.find(e => e.id === catEquipment.hat) : null;
+              const outfit = catEquipment.outfit ? EQUIPMENT.find(e => e.id === catEquipment.outfit) : null;
+              const accessory = catEquipment.accessory ? EQUIPMENT.find(e => e.id === catEquipment.accessory) : null;
+              const hungerColor = catHunger > 60 ? "#FF8000" : catHunger > 30 ? "#FFB347" : "#e53e3e";
+              const thirstColor = catThirst > 60 ? "#4facfe" : catThirst > 30 ? "#a0d4ff" : "#e53e3e";
+              return (
+                <div style={{ background: "linear-gradient(135deg,#45B7B8,#5dd6d7,#7de8e8)", borderRadius: 24, overflow: "hidden", boxShadow: "0 8px 28px rgba(69,183,184,0.4)" }}>
+                  {/* Top row */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 8px" }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.5px", textTransform: "uppercase" }}>我的 Combo猫</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, fontWeight:900, color:"#fff" }}>{catName}</div>
+                        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:10, padding:"2px 10px", fontSize:12, fontWeight:800, color:"#fff" }}>Lv.{getCatLv(xp)}</div>
+                        <div style={{ fontSize:18 }}>{stage.emoji}</div>
+                      </div>
+                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.8)", marginTop:2 }}>{stage.name} · 今日喂食 {catFeedsToday} 次 🍖</div>
+                    </div>
+                    <button onClick={() => setShowCatRoom(true)}
+                      style={{ background: "rgba(255,255,255,0.25)", border: "1.5px solid rgba(255,255,255,0.6)", borderRadius: 14, padding: "8px 14px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)" }}>
+                      进入猫屋 🏠
+                    </button>
+                  </div>
+                  {/* Cat display + status */}
+                  <div style={{ display: "flex", alignItems: "flex-end", padding: "0 18px 16px" }}>
+                    {/* Cat image with equipment badges */}
+                    <div style={{ position: "relative", width: 110, flexShrink: 0 }}>
+                      <img src={COMBO_CAT} alt="Combo猫" style={{ width: 110, height: 110, objectFit: "contain", filter: catHunger < 30 ? "brightness(0.75) saturate(0.5)" : "none", transition: "filter 0.5s" }} />
+                      {/* Equipment badges */}
+                      {hat && <div style={{ position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)", fontSize: 20 }}>{hat.emoji}</div>}
+                      {accessory && <div style={{ position: "absolute", bottom: 8, right: -4, fontSize: 18 }}>{accessory.emoji}</div>}
+                    </div>
+                    {/* Status bars */}
+                    <div style={{ flex: 1, marginLeft: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                      {/* Outfit badge */}
+                      {outfit && (
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.2)", borderRadius: 10, padding: "3px 8px", width: "fit-content" }}>
+                          <span style={{ fontSize: 14 }}>{outfit.emoji}</span>
+                          <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>{outfit.name}</span>
+                        </div>
+                      )}
+                      {/* 4 stat bars */}
+                      {[
+                        { label:"🍖 饱食度", val:catHunger, barColor: catHunger>60?"#fff":catHunger>30?"#FFD700":"#ff6b6b" },
+                        { label:"💧 口渴度", val:catThirst, barColor: catThirst>60?"#b3f0ff":catThirst>30?"#FFD700":"#ff6b6b" },
+                        { label:"😊 心情值", val:catMood,   barColor: catMood>60?"#a8f0c0":catMood>30?"#FFD700":"#ff6b6b"  },
+                        { label:"❤️ 健康值", val:catHealth, barColor: catHealth>60?"#ffc0c0":catHealth>30?"#FFD700":"#ff6b6b"},
+                      ].map(s => (
+                        <div key={s.label}>
+                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                            <span style={{ fontSize:11, color:"rgba(255,255,255,0.85)" }}>{s.label}</span>
+                            <span style={{ fontSize:11, color:"#fff", fontWeight:700 }}>{s.val}%</span>
+                          </div>
+                          <div style={{ height:5, background:"rgba(0,0,0,0.2)", borderRadius:3, overflow:"hidden", marginBottom:6 }}>
+                            <div style={{ height:"100%", width:s.val+"%", background:s.barColor, borderRadius:3, transition:"width 0.5s" }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Profile Card */}
             {profile && (
@@ -3738,7 +3887,225 @@ export default function VocabApp() {
               </div>
             )}
 
-            {/* Rank Sheet Modal */}
+            {/* ── CAT ROOM MODAL ── */}
+            {showCatRoom && (() => {
+              const stage = getCatStage(xp);
+              const equipTypes = ["hat","outfit","accessory"];
+              const typeLabels = { hat: "帽子", outfit: "衣服", accessory: "配件" };
+              return (
+                <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:800, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+                  onClick={() => setShowCatRoom(false)}>
+                  <div style={{ background:"#fff", borderRadius:"24px 24px 0 0", width:"100%", maxWidth:520, maxHeight:"92vh", display:"flex", flexDirection:"column", overflow:"hidden" }}
+                    onClick={e => e.stopPropagation()}>
+
+                    {/* Header */}
+                    <div style={{ background:"linear-gradient(135deg,#45B7B8,#5dd6d7)", padding:"18px 20px 14px", position:"relative" }}>
+                      <button onClick={() => setShowCatRoom(false)} style={{ position:"absolute", top:14, right:16, background:"rgba(255,255,255,0.25)", border:"none", borderRadius:"50%", width:32, height:32, color:"#fff", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>Combo猫屋</div>
+                      <div style={{ fontSize:20, fontWeight:800, color:"#fff" }}>{catName} · {stage.name} {stage.emoji}</div>
+                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>当前 XP: {xp} · 可用于购买装备</div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div style={{ display:"flex", borderBottom:"1.5px solid #f0f0f0", background:"#fff" }}>
+                      {[["status","状态"],["wardrobe","衣橱"],["shop","商店"]].map(([key,label]) => (
+                        <button key={key} onClick={() => setCatRoomTab(key)}
+                          style={{ flex:1, padding:"11px 0", border:"none", background:"none", fontSize:13, fontWeight: catRoomTab===key ? 700 : 400, color: catRoomTab===key ? "#FF8000" : "#aaa", borderBottom: catRoomTab===key ? "2.5px solid #FF8000" : "2.5px solid transparent", cursor:"pointer", fontFamily:"inherit", transition:"all 0.15s" }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ flex:1, overflowY:"auto", padding:"18px 16px 32px" }}>
+
+                      {/* ── STATUS TAB ── */}
+                      {catRoomTab === "status" && (
+                        <div>
+                          {/* Cat display */}
+                          <div style={{ textAlign:"center", marginBottom:20 }}>
+                            <div style={{ position:"relative", display:"inline-block" }}>
+                              <img src={COMBO_CAT} alt="Combo猫" style={{ width:140, height:140, objectFit:"contain",
+                                filter: catHunger < 30 ? "brightness(0.7) saturate(0.4)" : catHunger < 60 ? "brightness(0.9)" : "none",
+                                transition:"filter 0.5s"
+                              }} />
+                              {catEquipment.hat && (() => { const h = EQUIPMENT.find(e=>e.id===catEquipment.hat); return h ? <div style={{ position:"absolute", top:-10, left:"50%", transform:"translateX(-50%)", fontSize:28 }}>{h.emoji}</div> : null; })()}
+                              {catEquipment.accessory && (() => { const a = EQUIPMENT.find(e=>e.id===catEquipment.accessory); return a ? <div style={{ position:"absolute", bottom:0, right:-10, fontSize:24 }}>{a.emoji}</div> : null; })()}
+                              {catEquipment.outfit && (() => { const o = EQUIPMENT.find(e=>e.id===catEquipment.outfit); return o ? <div style={{ position:"absolute", bottom:0, left:-10, fontSize:22 }}>{o.emoji}</div> : null; })()}
+                            </div>
+                            <div style={{ fontSize:15, fontWeight:700, color:"#111", marginTop:8 }}>{catName}</div>
+                            <div style={{ fontSize:12, color:"#aaa" }}>{stage.desc}</div>
+                          </div>
+
+                          {/* Status bars */}
+                          {[
+                            { label:"🍚 饥饿度", val:catHunger, color: catHunger>60?"#FF8000":catHunger>30?"#FFB347":"#e53e3e", action:"喂食", tab:"shop", filter:"food" },
+                            { label:"💧 口渴度", val:catThirst, color: catThirst>60?"#4facfe":catThirst>30?"#a0d4ff":"#e53e3e", action:"喝水", tab:"shop", filter:"drink" },
+                            { label:"😊 心情值", val:catMood, color: catMood>60?"#4ade80":catMood>30?"#FFB347":"#e53e3e", action:"去答题", tab:null },
+                          ].map(s => (
+                            <div key={s.label} style={{ marginBottom:14 }}>
+                              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+                                <span style={{ fontSize:13, fontWeight:600, color:"#333" }}>{s.label}</span>
+                                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                                  <span style={{ fontSize:13, fontWeight:700, color: s.val<30?"#e53e3e":"#333" }}>{s.val}%</span>
+                                  <button onClick={() => s.tab ? setCatRoomTab(s.tab) : setShowCatRoom(false)}
+                                    style={{ fontSize:10, fontWeight:700, color:s.color, background: s.color+"18", border:`1px solid ${s.color}44`, borderRadius:10, padding:"2px 8px", cursor:"pointer", fontFamily:"inherit" }}>
+                                    {s.action}
+                                  </button>
+                                </div>
+                              </div>
+                              <div style={{ height:8, background:"#f0f0f0", borderRadius:4, overflow:"hidden" }}>
+                                <div style={{ height:"100%", width:s.val+"%", background:s.color, borderRadius:4, transition:"width 0.5s ease" }} />
+                              </div>
+                              {s.val < 30 && <div style={{ fontSize:10, color:"#e53e3e", marginTop:3 }}>⚠️ {s.label.split(" ")[1]}严重不足，快去{s.action}！</div>}
+                            </div>
+                          ))}
+
+                          {/* Growth stage progress */}
+                          <div style={{ background:"#fff8ee", borderRadius:16, padding:"14px 16px", marginTop:8, border:"1.5px solid #FFE0A0" }}>
+                            <div style={{ fontSize:12, color:"#c07000", fontWeight:700, marginBottom:8 }}>🌱 成长阶段</div>
+                            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                              {CAT_STAGES.map((s,i) => {
+                                const active = xp >= s.minXp;
+                                const current = getCatStage(xp).stage === s.stage;
+                                return (
+                                  <div key={s.stage} style={{ textAlign:"center", opacity: active?1:0.4 }}>
+                                    <div style={{ fontSize:18, marginBottom:2 }}>{s.emoji}</div>
+                                    <div style={{ fontSize:9, color: current?"#FF8000":"#888", fontWeight: current?700:400 }}>{s.name}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {(() => {
+                              const curStageIdx = CAT_STAGES.findIndex(s => getCatStage(xp).stage === s.stage);
+                              const nextStage = CAT_STAGES[curStageIdx+1];
+                              if (!nextStage) return <div style={{ fontSize:11, color:"#FF8000", textAlign:"center", fontWeight:700 }}>🏆 已达到最高阶段！</div>;
+                              const pct = Math.round((xp - CAT_STAGES[curStageIdx].minXp) / (nextStage.minXp - CAT_STAGES[curStageIdx].minXp) * 100);
+                              return (
+                                <>
+                                  <div style={{ height:6, background:"#FFE0A0", borderRadius:3, overflow:"hidden", marginBottom:4 }}>
+                                    <div style={{ height:"100%", width:pct+"%", background:"linear-gradient(90deg,#FF8000,#FFD060)", borderRadius:3, transition:"width 0.6s" }} />
+                                  </div>
+                                  <div style={{ fontSize:10, color:"#c07000" }}>距 {nextStage.name} 还差 {nextStage.minXp-xp} XP</div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── WARDROBE TAB ── */}
+                      {catRoomTab === "wardrobe" && (
+                        <div>
+                          <div style={{ fontSize:12, color:"#aaa", marginBottom:14 }}>点击已解锁装备可穿戴/脱下</div>
+                          {equipTypes.map(type => {
+                            const items = EQUIPMENT.filter(e => e.type === type && isUnlocked(e));
+                            if (items.length === 0) return (
+                              <div key={type} style={{ marginBottom:20 }}>
+                                <div style={{ fontSize:13, fontWeight:700, color:"#111", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                                  <div style={{ width:3, height:14, borderRadius:2, background:"#FF8000" }} />{typeLabels[type]}
+                                </div>
+                                <div style={{ fontSize:12, color:"#ccc", textAlign:"center", padding:"16px 0" }}>暂无解锁，去商店购买</div>
+                              </div>
+                            );
+                            return (
+                              <div key={type} style={{ marginBottom:20 }}>
+                                <div style={{ fontSize:13, fontWeight:700, color:"#111", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                                  <div style={{ width:3, height:14, borderRadius:2, background:"#FF8000" }} />{typeLabels[type]}
+                                </div>
+                                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                                  {items.map(item => {
+                                    const equipped = catEquipment[type] === item.id;
+                                    const r = RARITY_COLORS[item.rarity];
+                                    return (
+                                      <div key={item.id} onClick={() => equipItem(item)}
+                                        style={{ width:72, borderRadius:14, padding:"10px 6px", textAlign:"center", cursor:"pointer",
+                                          background: equipped ? r.bg : "#f8f8f8",
+                                          border: equipped ? `2px solid ${r.color}` : "2px solid #ebebeb",
+                                          boxShadow: equipped ? `0 4px 12px ${r.color}33` : "none",
+                                          transition:"all 0.2s" }}>
+                                        <div style={{ fontSize:28, marginBottom:4 }}>{item.emoji}</div>
+                                        <div style={{ fontSize:10, fontWeight:700, color: equipped?r.color:"#555" }}>{item.name}</div>
+                                        {equipped && <div style={{ fontSize:9, color:r.color, marginTop:2 }}>✓ 穿戴中</div>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* ── SHOP TAB ── */}
+                      {catRoomTab === "shop" && (
+                        <div>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff8ee", borderRadius:12, padding:"10px 14px", marginBottom:16, border:"1px solid #FFE0A0" }}>
+                            <span style={{ fontSize:16 }}>⚡</span>
+                            <div>
+                              <div style={{ fontSize:12, color:"#c07000", fontWeight:700 }}>当前 XP 余额</div>
+                              <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, color:"#FF8000", fontWeight:900 }}>{xp} XP</div>
+                            </div>
+                            <div style={{ fontSize:11, color:"#aaa", marginLeft:"auto", textAlign:"right" }}>答题获得XP<br/>用于购买装备</div>
+                          </div>
+
+                          {["hat","outfit","accessory","food","drink"].map(type => {
+                            const typeNames = { hat:"帽子", outfit:"衣服", accessory:"配件", food:"食物", drink:"饮品" };
+                            const items = EQUIPMENT.filter(e => e.type === type);
+                            return (
+                              <div key={type} style={{ marginBottom:22 }}>
+                                <div style={{ fontSize:13, fontWeight:700, color:"#111", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}>
+                                  <div style={{ width:3, height:14, borderRadius:2, background:"#FF8000" }} />{typeNames[type]}
+                                </div>
+                                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                                  {items.map(item => {
+                                    const unlocked = isUnlocked(item);
+                                    const affordable = xp >= item.xpCost;
+                                    const meetsLevel = xp >= item.xpRequired;
+                                    const r = RARITY_COLORS[item.rarity];
+                                    const isConsumable = item.type === "food" || item.type === "drink";
+                                    return (
+                                      <div key={item.id} style={{ display:"flex", alignItems:"center", gap:12, background: unlocked&&!isConsumable ? r.bg : "#fff", borderRadius:14, padding:"12px 14px", border:`1.5px solid ${unlocked&&!isConsumable ? r.color+"44" : "#ebebeb"}`, opacity: meetsLevel?1:0.5 }}>
+                                        <div style={{ fontSize:32, flexShrink:0 }}>{item.emoji}</div>
+                                        <div style={{ flex:1, minWidth:0 }}>
+                                          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+                                            <div style={{ fontSize:14, fontWeight:700, color:"#111" }}>{item.name}</div>
+                                            <div style={{ fontSize:9, fontWeight:700, color:r.color, background:r.bg, borderRadius:6, padding:"1px 6px" }}>{r.label}</div>
+                                          </div>
+                                          <div style={{ fontSize:11, color:"#888" }}>{item.desc}</div>
+                                          {!meetsLevel && <div style={{ fontSize:10, color:"#e53e3e", marginTop:2 }}>需要 {item.xpRequired} XP 才能解锁</div>}
+                                        </div>
+                                        <div style={{ flexShrink:0, textAlign:"center" }}>
+                                          {isConsumable ? (
+                                            <button onClick={() => feedCatItem(item)} disabled={!affordable}
+                                              style={{ background: affordable?"linear-gradient(135deg,#FF8000,#FFB347)":"#f0f0f0", color: affordable?"#fff":"#ccc", border:"none", borderRadius:10, padding:"6px 12px", fontSize:11, fontWeight:700, cursor: affordable?"pointer":"not-allowed", fontFamily:"inherit" }}>
+                                              {item.xpCost} XP
+                                            </button>
+                                          ) : unlocked ? (
+                                            <div style={{ fontSize:11, color:r.color, fontWeight:700 }}>已拥有</div>
+                                          ) : (
+                                            <button onClick={() => meetsLevel && affordable && buyItem(item)} disabled={!meetsLevel || !affordable}
+                                              style={{ background: meetsLevel&&affordable?"linear-gradient(135deg,#FF8000,#FFB347)":"#f0f0f0", color: meetsLevel&&affordable?"#fff":"#ccc", border:"none", borderRadius:10, padding:"6px 12px", fontSize:11, fontWeight:700, cursor: meetsLevel&&affordable?"pointer":"not-allowed", fontFamily:"inherit" }}>
+                                              {item.xpCost} XP
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+                        {/* Rank Sheet Modal */}
             {showRankSheet && (() => {
               const curRank = getRank(words.length, streakData.count);
               const nextRank = getNextRank(words.length, streakData.count);
