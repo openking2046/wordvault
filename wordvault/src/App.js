@@ -4338,7 +4338,7 @@ export default function VocabApp() {
                       {/* All tiers */}
                       <div style={{ fontSize: 11, color: "#aaa", marginBottom: 10, fontWeight: 600, letterSpacing: "1px" }}>所有段位</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
-                        {["倔强青铜","秩序白银","荣耀黄金","尊贵铂金","永恒钻石","至尊星耀","最强王者"].map(tierName => {
+                        {["青铜铲屎官","白银撸猫师","黄金猫语者","铂金猫医师","钻石繁育专家","星耀训猫大师","猫之守护神"].map(tierName => {
                           const tierRanks = RANKS.filter(r => r.tier === tierName);
                           const tierColor = tierRanks[0].color;
                           const tierBg = tierRanks[0].bg;
@@ -4374,7 +4374,6 @@ export default function VocabApp() {
               );
             })()}
 
-            <div>
             <div>
               <div className="sec-title">点击音效</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
