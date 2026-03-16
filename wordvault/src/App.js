@@ -4530,6 +4530,7 @@ export default function VocabApp() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Create Challenge Modal */}
