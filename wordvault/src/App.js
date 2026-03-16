@@ -4388,6 +4388,7 @@ export default function VocabApp() {
               </div>
             </div>
 
+            <div>
               <div className="sec-title">每日提醒</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div>
