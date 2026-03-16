@@ -4142,7 +4142,6 @@ export default function VocabApp() {
               );
             })()}
 
-                        {/* Rank Sheet Modal */}
             {/* ── BACKPACK MODAL ── */}
             {showBackpack && (() => {
               const typeIcon = { earn_xp:"⚡", spend_xp:"🛒", earn_fish:"🐟", spend_fish:"🛒" };
@@ -4285,7 +4284,7 @@ export default function VocabApp() {
               );
             })()}
 
-                        {showRankSheet && (() => {
+            {showRankSheet && (() => {
               const curRank = getRank(words.length, streakData.count);
               const nextRank = getNextRank(words.length, streakData.count);
               const curIdx = RANKS.findIndex(r => r.id === curRank.id);
