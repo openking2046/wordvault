@@ -2310,107 +2310,98 @@ export default function VocabApp() {
         const catOverallHealth = Math.round((catHunger + catThirst + catMood + catHealth) / 4);
         const GREEN = "#45B7B8";
         const GREEN2 = "#5dd6d7";
+        const nextR = getNextRank(words.length, streakData.count);
+        const progressPct = nextR ? Math.min(100, Math.round(Math.max(words.length - r.words, 0) / Math.max(nextR.words - r.words, 1) * 100)) : 100;
         return (
           <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "48px 16px 14px", background: "#FCFDE8" }}>
             <div style={{ maxWidth: 520, margin: "0 auto" }}>
               <div style={{ display: "flex", gap: 10 }}>
 
-                {/* ── LEFT: USER CARD ── */}
-                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "16px 14px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", overflow: "hidden", position: "relative" }}
+                {/* LEFT: User card */}
+                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "14px 14px 12px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", position: "relative", overflow: "hidden" }}
                   onClick={() => setHeaderExpanded(e => !e)}>
-                  {/* Decorative circle */}
-                  <div style={{ position:"absolute", top:-20, right:-20, width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
-                  {/* Avatar */}
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                  <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     {profile && (
-                      <div style={{ position:"relative", flexShrink:0 }}>
-                        <div style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,255,255,0.25)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 0 2px rgba(255,255,255,0.7)" }}>
+                      <div style={{ position: "relative", flexShrink: 0 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 0 2px rgba(255,255,255,0.7)" }}>
                           <SpriteAvatar id={profile.avatar} size={38} />
                         </div>
                         {streakData.count >= 2 && (
-                          <div style={{ position:"absolute", bottom:-2, right:-2, background:"#ff6b00", borderRadius:8, padding:"1px 4px", fontSize:8, fontWeight:800, color:"#fff", border:"1.5px solid #fff" }}>🔥{streakData.count}</div>
+                          <div style={{ position: "absolute", bottom: -2, right: -2, background: "#ff6b00", borderRadius: 8, padding: "1px 4px", fontSize: 8, fontWeight: 800, color: "#fff", border: "1.5px solid #fff" }}>🔥{streakData.count}</div>
                         )}
                       </div>
                     )}
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:14, fontWeight:800, color:"#fff", lineHeight:1.2, marginBottom:1 }}>{profile?.name || "学员"}</div>
-                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.75)" }}>{profile?.occupation || "学习者"}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 1 }}>{profile?.name || "学员"}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>{profile?.occupation || "学习者"}</div>
                     </div>
                   </div>
-                  {/* Rank badge */}
-                  <div style={{ background:"rgba(255,255,255,0.22)", borderRadius:10, padding:"5px 10px", display:"inline-flex", alignItems:"center", gap:5, border:"1px solid rgba(255,255,255,0.4)", marginBottom:8 }}>
-                    <div style={{ width:7, height:7, borderRadius:"50%", background:"#fff" }}/>
-                    <div style={{ fontSize:11, fontWeight:800, color:"#fff" }}>{r.name}</div>
+                  <div style={{ background: "rgba(255,255,255,0.22)", borderRadius: 10, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 5, border: "1px solid rgba(255,255,255,0.4)", marginBottom: 8 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>{r.name}</div>
                   </div>
-                  {/* Progress bar */}
-                  <div style={{ height:4, background:"rgba(0,0,0,0.18)", borderRadius:2, overflow:"hidden" }}>
-                    <div style={{ height:"100%", background:"rgba(255,255,255,0.85)", borderRadius:2, width: (() => { const nextR = getNextRank(words.length, streakData.count); return nextR ? Math.min(100, Math.round(Math.max(words.length - r.words,0)/Math.max(nextR.words-r.words,1)*100))+"%" : "100%"; })(), transition:"width 0.6s" }} />
+                  <div style={{ height: 4, background: "rgba(0,0,0,0.18)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: "rgba(255,255,255,0.85)", borderRadius: 2, width: progressPct + "%", transition: "width 0.6s" }} />
                   </div>
-                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.6)", marginTop:3 }}>
-                    {(() => { const nextR = getNextRank(words.length, streakData.count); return nextR ? `距 ${nextR.name} 还差 ${Math.max(0,nextR.words-words.length)} 词` : "🏆 已达最高段位"; })()}
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>
+                    {nextR ? `距 ${nextR.name} 还差 ${Math.max(0, nextR.words - words.length)} 词` : "🏆 已达最高段位"}
                   </div>
-                  {/* Expand arrow */}
-                  <div style={{ position:"absolute", bottom:10, right:12, color:"rgba(255,255,255,0.6)", fontSize:11, transition:"transform 0.3s", transform: headerExpanded?"rotate(180deg)":"rotate(0)" }}>▾</div>
+                  <div style={{ position: "absolute", bottom: 10, right: 12, color: "rgba(255,255,255,0.6)", fontSize: 11, transition: "transform 0.3s", transform: headerExpanded ? "rotate(180deg)" : "rotate(0)" }}>▾</div>
                 </div>
 
-                {/* ── RIGHT: PET CARD ── */}
-                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "16px 14px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", overflow: "hidden", position: "relative" }}
+                {/* RIGHT: Pet card */}
+                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "14px 14px 12px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", position: "relative", overflow: "hidden" }}
                   onClick={() => setShowCatRoom(true)}>
-                  <div style={{ position:"absolute", top:-20, left:-20, width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
-                  {/* Pet name + level */}
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                    <img src={COMBO_CAT} alt="猫" style={{ width:44, height:44, objectFit:"contain", filter: catHunger<30?"brightness(0.7) saturate(0.4)":"none" }} />
+                  <div style={{ position: "absolute", top: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <img src={COMBO_CAT} alt="猫" style={{ width: 44, height: 44, objectFit: "contain", filter: catHunger < 30 ? "brightness(0.7) saturate(0.4)" : "none" }} />
                     <div>
-                      <div style={{ fontSize:14, fontWeight:800, color:"#fff", lineHeight:1.2 }}>{catName}</div>
-                      <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
-                        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:8, padding:"1px 7px", fontSize:10, fontWeight:800, color:"#fff" }}>Lv.{catLv}</div>
-                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.75)" }}>{catStage.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{catName}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                        <div style={{ background: "rgba(255,255,255,0.25)", borderRadius: 8, padding: "1px 7px", fontSize: 10, fontWeight: 800, color: "#fff" }}>Lv.{catLv}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>{catStage.name}</div>
                       </div>
                     </div>
                   </div>
-                  {/* Today feeds */}
-                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)", marginBottom:8 }}>今日投喂 {catFeedsToday} 次 🍖</div>
-                  {/* Health bar */}
-                  <div>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                      <span style={{ fontSize:10, color:"rgba(255,255,255,0.8)" }}>❤️ 综合健康</span>
-                      <span style={{ fontSize:10, color:"#fff", fontWeight:700 }}>{catOverallHealth}%</span>
-                    </div>
-                    <div style={{ height:4, background:"rgba(0,0,0,0.18)", borderRadius:2, overflow:"hidden" }}>
-                      <div style={{ height:"100%", background: catOverallHealth>60?"rgba(255,255,255,0.85)":catOverallHealth>30?"#FFD700":"#ff6b6b", borderRadius:2, width:catOverallHealth+"%", transition:"width 0.5s" }} />
-                    </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>今日投喂 {catFeedsToday} 次 🍖</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.8)" }}>❤️ 综合健康</span>
+                    <span style={{ fontSize: 10, color: "#fff", fontWeight: 700 }}>{catOverallHealth}%</span>
+                  </div>
+                  <div style={{ height: 4, background: "rgba(0,0,0,0.18)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: catOverallHealth > 60 ? "rgba(255,255,255,0.85)" : catOverallHealth > 30 ? "#FFD700" : "#ff6b6b", borderRadius: 2, width: catOverallHealth + "%", transition: "width 0.5s" }} />
                   </div>
                 </div>
 
               </div>
 
-              {/* ── EXPANDED PANEL (below both cards) ── */}
+              {/* Expanded panel */}
               {headerExpanded && (
                 <div onClick={e => e.stopPropagation()}
-                  style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN2})`, borderRadius:"0 0 20px 20px", padding:"14px 16px", marginTop:-8, boxShadow:`0 8px 20px ${GREEN}44`, animation:"unlockSub 0.25s ease both" }}>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+                  style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN2})`, borderRadius: "0 0 20px 20px", padding: "14px 16px", marginTop: -8, boxShadow: `0 8px 20px ${GREEN}44`, animation: "unlockSub 0.25s ease both" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
                     {[
-                      { val:words.length, unit:"词", label:"词库" },
-                      { val:words.filter(w=>w.mastery>=4).length, unit:"个", label:"已掌握" },
-                      { val:correctRate, unit:"%", label:"正确率" },
-                      { val:globalMaxCombo, unit:"×", label:"最高Combo" },
+                      { val: words.length, unit: "词", label: "词库" },
+                      { val: words.filter(w => w.mastery >= 4).length, unit: "个", label: "已掌握" },
+                      { val: correctRate, unit: "%", label: "正确率" },
+                      { val: globalMaxCombo, unit: "×", label: "最高Combo" },
                     ].map(({ val, unit, label }) => (
-                      <div key={label} style={{ background:"rgba(255,255,255,0.15)", borderRadius:12, padding:"10px 6px", textAlign:"center" }}>
-                        <div style={{ fontFamily:"DM Serif Display, serif", fontSize:18, color:"#fff", fontWeight:700, lineHeight:1 }}>
-                          {val}<span style={{ fontSize:9, opacity:0.7, marginLeft:1 }}>{unit}</span>
+                      <div key={label} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff", fontWeight: 700, lineHeight: 1 }}>
+                          {val}<span style={{ fontSize: 9, opacity: 0.7, marginLeft: 1 }}>{unit}</span>
                         </div>
-                        <div style={{ fontSize:9, color:"rgba(255,255,255,0.65)", marginTop:3 }}>{label}</div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.65)", marginTop: 3 }}>{label}</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", textAlign:"center", marginTop:10 }}>加入于 {profile?.joinDate || "—"}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 10 }}>加入于 {profile?.joinDate || "—"}</div>
                 </div>
               )}
             </div>
           </div>
         </div>
-      </div>
-      );
+        );
       })()}
       {/* Content */}
       <div className="tab-content">
