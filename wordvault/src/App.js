@@ -2400,7 +2400,6 @@ export default function VocabApp() {
               )}
             </div>
           </div>
-        </div>
         );
       })()}
       {/* Content */}
