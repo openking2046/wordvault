@@ -367,6 +367,12 @@ export default function VocabApp() {
 
   // XP & Tasks
   const [xp, setXp] = useState(() => parseInt(localStorage.getItem("wv_xp") || "0"));
+  const [fishCoins, setFishCoins] = useState(() => { try { return parseInt(localStorage.getItem("wv_fish_coins") || "0"); } catch { return 0; } });
+  const [showBackpack, setShowBackpack] = useState(false);
+  const [backpackTab, setBackpackTab] = useState("overview"); // "overview" | "log"
+  const [transactionLog, setTransactionLog] = useState(() => { try { return JSON.parse(localStorage.getItem("wv_transactions") || "[]"); } catch { return []; } });
+  // Track fish coins awarded per streak day
+  const [lastFishCoinDate, setLastFishCoinDate] = useState(() => { try { return localStorage.getItem("wv_last_fish_date") || ""; } catch { return ""; } });
   const [completedTasks, setCompletedTasks] = useState(() => { try { return JSON.parse(localStorage.getItem("wv_tasks_done") || "{}"); } catch { return {}; } });
   const [taskTab, setTaskTab] = useState("daily");
   const [showTaskReward, setShowTaskReward] = useState(null); // {title, xp, icon}
@@ -521,12 +527,28 @@ export default function VocabApp() {
         next = { count: prev.count + 1, lastDate: today, showBroken: false };
         localStorage.setItem("wv_streak", JSON.stringify(next));
         setShowStreakModal(true);
+        // 🐟 Award fish coins for consecutive login
+        const fishReward = next.count >= 30 ? 10 : next.count >= 14 ? 7 : next.count >= 7 ? 5 : next.count >= 3 ? 3 : 2;
+        setFishCoins(f => { const n = f + fishReward; try { localStorage.setItem("wv_fish_coins", String(n)); } catch {} return n; });
+        setTransactionLog(log => {
+          const entry = { id: Date.now(), type: "earn_fish", amount: fishReward, desc: `连续登录第 ${next.count} 天奖励`, date: today };
+          const n = [entry, ...log].slice(0, 100);
+          try { localStorage.setItem("wv_transactions", JSON.stringify(n)); } catch {}
+          return n;
+        });
         return next;
       } else if (!prev.lastDate) {
         // First time ever
         next = { count: 1, lastDate: today, showBroken: false };
         localStorage.setItem("wv_streak", JSON.stringify(next));
         setShowStreakModal(true);
+        setFishCoins(f => { const n = f + 1; try { localStorage.setItem("wv_fish_coins", String(n)); } catch {} return n; });
+        setTransactionLog(log => {
+          const entry = { id: Date.now(), type: "earn_fish", amount: 1, desc: "首次登录奖励 🐟", date: today };
+          const n = [entry, ...log].slice(0, 100);
+          try { localStorage.setItem("wv_transactions", JSON.stringify(n)); } catch {}
+          return n;
+        });
         return next;
       } else {
         // Streak broken
@@ -664,9 +686,20 @@ export default function VocabApp() {
     }
   }
 
-  function buyItem(item) {
-    if (xp < item.xpCost) return;
-    setXp(x => { const n = x - item.xpCost; try { localStorage.setItem("wv_xp", String(n)); } catch {} return n; });
+  function buyItem(item, useFish = false) {
+    const cost = item.xpCost;
+    if (useFish) {
+      const fishCost = Math.ceil(cost / 10); // 10 XP = 1 fish coin
+      if (fishCoins < fishCost) return;
+      setFishCoins(f => { const n = f - fishCost; try { localStorage.setItem("wv_fish_coins", String(n)); } catch {} return n; });
+      const today = new Date().toISOString().slice(0,10);
+      setTransactionLog(log => { const e = { id:Date.now(), type:"spend_fish", amount:-fishCost, desc:`购买 ${item.name}`, date:today }; const n=[e,...log].slice(0,100); try{localStorage.setItem("wv_transactions",JSON.stringify(n))}catch{} return n; });
+    } else {
+      if (xp < cost) return;
+      setXp(x => { const n = x - cost; try { localStorage.setItem("wv_xp", String(n)); } catch {} return n; });
+      const today = new Date().toISOString().slice(0,10);
+      setTransactionLog(log => { const e = { id:Date.now(), type:"spend_xp", amount:-cost, desc:`购买 ${item.name}`, date:today }; const n=[e,...log].slice(0,100); try{localStorage.setItem("wv_transactions",JSON.stringify(n))}catch{} return n; });
+    }
     setCatUnlocked(prev => {
       const next = [...prev, item.id];
       try { localStorage.setItem("wv_cat_unlocked", JSON.stringify(next)); } catch {}
@@ -674,9 +707,19 @@ export default function VocabApp() {
     });
   }
 
-  function feedCatItem(item) {
-    if (xp < item.xpCost) return;
-    setXp(x => { const n = x - item.xpCost; try { localStorage.setItem("wv_xp", String(n)); } catch {} return n; });
+  function feedCatItem(item, useFish = false) {
+    const cost = item.xpCost;
+    const today = new Date().toISOString().slice(0,10);
+    if (useFish) {
+      const fishCost = Math.ceil(cost / 10);
+      if (fishCoins < fishCost) return;
+      setFishCoins(f => { const n = f - fishCost; try { localStorage.setItem("wv_fish_coins", String(n)); } catch {} return n; });
+      setTransactionLog(log => { const e = { id:Date.now(), type:"spend_fish", amount:-fishCost, desc:`投喂 ${item.name} 给 ${catName}`, date:today }; const n=[e,...log].slice(0,100); try{localStorage.setItem("wv_transactions",JSON.stringify(n))}catch{} return n; });
+    } else {
+      if (xp < cost) return;
+      setXp(x => { const n = x - cost; try { localStorage.setItem("wv_xp", String(n)); } catch {} return n; });
+      setTransactionLog(log => { const e = { id:Date.now(), type:"spend_xp", amount:-cost, desc:`投喂 ${item.name} 给 ${catName}`, date:today }; const n=[e,...log].slice(0,100); try{localStorage.setItem("wv_transactions",JSON.stringify(n))}catch{} return n; });
+    }
     if (item.hungerRestore) {
       setCatHunger(h => { const v = Math.min(100, h + item.hungerRestore); try { localStorage.setItem("wv_cat_hunger", String(v)); } catch {} return v; });
       setCatHealth(h => { const v = Math.min(100, h + Math.round(item.hungerRestore * 0.3)); try { localStorage.setItem("wv_cat_health", String(v)); } catch {} return v; });
@@ -694,7 +737,17 @@ export default function VocabApp() {
 
   function canUnlock(item) { return xp >= item.xpRequired; }
 
-    function claimTask(task) {
+    function addXpLog(amount, desc) {
+    const today = new Date().toISOString().slice(0,10);
+    setTransactionLog(log => {
+      const e = { id:Date.now(), type:"earn_xp", amount:+amount, desc, date:today };
+      const n = [e, ...log].slice(0, 100);
+      try { localStorage.setItem("wv_transactions", JSON.stringify(n)); } catch {}
+      return n;
+    });
+  }
+
+  function claimTask(task) {
     const todayKey = new Date().toISOString().slice(0,10);
     const key = task.type === "daily" ? `${task.id}_${todayKey}` : task.id;
     if (completedTasks[key]) return;
@@ -3688,7 +3741,22 @@ export default function VocabApp() {
                   {/* Top row */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 8px" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.5px", textTransform: "uppercase" }}>我的 Combo猫</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.5px", textTransform: "uppercase", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                        <span>我的 Combo猫</span>
+                        {/* Currency quick display */}
+                        <div style={{ display:"flex", gap:6 }}>
+                          <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:700, color:"#fff", display:"flex", alignItems:"center", gap:3 }}>
+                            ⚡ {xp}
+                          </div>
+                          <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:700, color:"#fff", display:"flex", alignItems:"center", gap:3, cursor:"pointer" }}
+                            onClick={() => setShowBackpack(true)}>
+                            🐟 {fishCoins}
+                          </div>
+                          <div onClick={() => setShowBackpack(true)} style={{ background:"rgba(255,255,255,0.25)", borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:700, color:"#fff", cursor:"pointer", border:"1px solid rgba(255,255,255,0.4)" }}>
+                            🎒
+                          </div>
+                        </div>
+                      </div>
                       <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:2 }}>
                         {editingCatName ? (
                           <input autoFocus value={tempCatName}
@@ -4075,7 +4143,149 @@ export default function VocabApp() {
             })()}
 
                         {/* Rank Sheet Modal */}
-            {showRankSheet && (() => {
+            {/* ── BACKPACK MODAL ── */}
+            {showBackpack && (() => {
+              const typeIcon = { earn_xp:"⚡", spend_xp:"🛒", earn_fish:"🐟", spend_fish:"🛒" };
+              const typeColor = { earn_xp:"#FF8000", spend_xp:"#e53e3e", earn_fish:"#45B7B8", spend_fish:"#e53e3e" };
+              const equippedItems = Object.entries(catEquipment).filter(([,v])=>v).map(([k,v]) => EQUIPMENT.find(e=>e.id===v)).filter(Boolean);
+              const ownedItems = EQUIPMENT.filter(e => isUnlocked(e) && e.xpCost > 0);
+              const catOverallHealth = Math.round((catHunger + catThirst + catMood + catHealth) / 4);
+              return (
+                <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.65)", zIndex:900, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+                  onClick={() => setShowBackpack(false)}>
+                  <div style={{ background:"#fff", borderRadius:"24px 24px 0 0", width:"100%", maxWidth:520, maxHeight:"92vh", display:"flex", flexDirection:"column", overflow:"hidden" }}
+                    onClick={e => e.stopPropagation()}>
+
+                    {/* Header */}
+                    <div style={{ background:"linear-gradient(135deg,#FF8000,#FFB347)", padding:"18px 20px 16px", position:"relative" }}>
+                      <button onClick={() => setShowBackpack(false)} style={{ position:"absolute", top:14, right:16, background:"rgba(255,255,255,0.25)", border:"none", borderRadius:"50%", width:32, height:32, color:"#fff", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>🎒 锦囊背包</div>
+                      <div style={{ fontSize:18, fontWeight:800, color:"#fff", marginBottom:12 }}>{profile?.name || "学员"} 的背包</div>
+                      {/* Currency pills */}
+                      <div style={{ display:"flex", gap:10 }}>
+                        <div style={{ background:"rgba(255,255,255,0.22)", borderRadius:14, padding:"8px 14px", display:"flex", alignItems:"center", gap:8, flex:1, backdropFilter:"blur(8px)" }}>
+                          <span style={{ fontSize:20 }}>⚡</span>
+                          <div>
+                            <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, color:"#fff", fontWeight:900, lineHeight:1 }}>{xp}</div>
+                            <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", letterSpacing:"0.5px" }}>XP 答题获得</div>
+                          </div>
+                        </div>
+                        <div style={{ background:"rgba(255,255,255,0.22)", borderRadius:14, padding:"8px 14px", display:"flex", alignItems:"center", gap:8, flex:1, backdropFilter:"blur(8px)" }}>
+                          <span style={{ fontSize:20 }}>🐟</span>
+                          <div>
+                            <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, color:"#fff", fontWeight:900, lineHeight:1 }}>{fishCoins}</div>
+                            <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", letterSpacing:"0.5px" }}>小鱼干 连续登录获得</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div style={{ display:"flex", borderBottom:"1.5px solid #f0f0f0" }}>
+                      {[["overview","总览"],["log","收支记录"]].map(([key,label]) => (
+                        <button key={key} onClick={() => setBackpackTab(key)}
+                          style={{ flex:1, padding:"11px 0", border:"none", background:"none", fontSize:13, fontWeight: backpackTab===key?700:400, color: backpackTab===key?"#FF8000":"#aaa", borderBottom: backpackTab===key?"2.5px solid #FF8000":"2.5px solid transparent", cursor:"pointer", fontFamily:"inherit" }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 32px" }}>
+
+                      {/* ── OVERVIEW TAB ── */}
+                      {backpackTab === "overview" && (
+                        <div>
+                          {/* Cat health summary */}
+                          <div style={{ background:"linear-gradient(135deg,#45B7B8,#5dd6d7)", borderRadius:16, padding:"14px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12 }}>
+                            <img src={COMBO_CAT} alt="猫" style={{ width:56, height:56, objectFit:"contain" }} />
+                            <div style={{ flex:1 }}>
+                              <div style={{ fontSize:13, fontWeight:800, color:"#fff", marginBottom:4 }}>{catName} · Lv.{getCatLv(xp)} {getCatStage(xp).emoji}</div>
+                              <div style={{ height:6, background:"rgba(0,0,0,0.15)", borderRadius:3, overflow:"hidden", marginBottom:3 }}>
+                                <div style={{ height:"100%", width:catOverallHealth+"%", background:"rgba(255,255,255,0.85)", borderRadius:3, transition:"width 0.5s" }} />
+                              </div>
+                              <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)" }}>综合健康 {catOverallHealth}%</div>
+                            </div>
+                          </div>
+
+                          {/* Earning tips */}
+                          <div style={{ background:"#fff8ee", borderRadius:14, padding:"12px 14px", marginBottom:16, border:"1px solid #FFE0A0" }}>
+                            <div style={{ fontSize:12, fontWeight:700, color:"#c07000", marginBottom:8 }}>💡 如何获得货币</div>
+                            {[
+                              { icon:"⚡", label:"答对一题", reward:"+任务XP", color:"#FF8000" },
+                              { icon:"🐟", label:"每日登录", reward:"+1~10小鱼干", color:"#45B7B8" },
+                              { icon:"🐟", label:"连续7天", reward:"+5小鱼干/天", color:"#45B7B8" },
+                              { icon:"🐟", label:"连续30天", reward:"+10小鱼干/天", color:"#45B7B8" },
+                              { icon:"⚡", label:"完成每日任务", reward:"+15~50 XP", color:"#FF8000" },
+                            ].map(t => (
+                              <div key={t.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom:"1px solid #fff0d0" }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                  <span style={{ fontSize:14 }}>{t.icon}</span>
+                                  <span style={{ fontSize:12, color:"#555" }}>{t.label}</span>
+                                </div>
+                                <span style={{ fontSize:12, fontWeight:700, color:t.color }}>{t.reward}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Owned items */}
+                          <div style={{ fontSize:13, fontWeight:700, color:"#111", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}>
+                            <div style={{ width:3, height:14, borderRadius:2, background:"#FF8000" }} />
+                            已拥有装备 ({ownedItems.length} 件)
+                          </div>
+                          {ownedItems.length === 0 ? (
+                            <div style={{ textAlign:"center", color:"#ccc", fontSize:13, padding:"16px 0" }}>还没有装备，去猫商城购买吧</div>
+                          ) : (
+                            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                              {ownedItems.map(item => {
+                                const equipped = Object.values(catEquipment).includes(item.id);
+                                const r = RARITY_COLORS[item.rarity];
+                                return (
+                                  <div key={item.id} style={{ width:64, borderRadius:12, padding:"8px 6px", textAlign:"center", background: equipped?r.bg:"#f8f8f8", border:`1.5px solid ${equipped?r.color:"#eee"}` }}>
+                                    <div style={{ fontSize:24 }}>{item.emoji}</div>
+                                    <div style={{ fontSize:9, color: equipped?r.color:"#555", fontWeight: equipped?700:400 }}>{item.name}</div>
+                                    {equipped && <div style={{ fontSize:8, color:r.color }}>穿戴中</div>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── LOG TAB ── */}
+                      {backpackTab === "log" && (
+                        <div>
+                          {transactionLog.length === 0 ? (
+                            <div style={{ textAlign:"center", color:"#ccc", fontSize:13, padding:"40px 0" }}>暂无收支记录</div>
+                          ) : (
+                            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                              {transactionLog.map(entry => (
+                                <div key={entry.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", background:"#fff", borderRadius:12, border:"1px solid #f0f0f0", boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+                                  <div style={{ width:36, height:36, borderRadius:12, background: entry.amount>0?"#f0faf4":"#fff5f5", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>
+                                    {typeIcon[entry.type] || "💰"}
+                                  </div>
+                                  <div style={{ flex:1, minWidth:0 }}>
+                                    <div style={{ fontSize:13, fontWeight:600, color:"#111", marginBottom:1 }}>{entry.desc}</div>
+                                    <div style={{ fontSize:10, color:"#aaa" }}>{entry.date}</div>
+                                  </div>
+                                  <div style={{ fontFamily:"DM Serif Display, serif", fontSize:16, fontWeight:800, color: entry.amount>0?typeColor[entry.type]:"#e53e3e", flexShrink:0 }}>
+                                    {entry.amount > 0 ? "+" : ""}{entry.amount}
+                                    <span style={{ fontSize:11, marginLeft:2 }}>{entry.type.includes("fish")?"🐟":"⚡"}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+                        {showRankSheet && (() => {
               const curRank = getRank(words.length, streakData.count);
               const nextRank = getNextRank(words.length, streakData.count);
               const curIdx = RANKS.findIndex(r => r.id === curRank.id);
