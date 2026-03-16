@@ -136,12 +136,93 @@ const TASKS = [
     progress: ctx => ctx.masteredWords,
   },
 ];
+const NAV_SVGS = {
+  wordlib: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow -->
+  <rect x="4" y="7" width="32" height="30" rx="9" fill="#c05000"/>
+  <!-- Main face -->
+  <rect x="4" y="4" width="32" height="30" rx="9" fill="#FF8000"/>
+  <!-- Top highlight -->
+  <rect x="8" y="6" width="24" height="9" rx="5" fill="rgba(255,255,255,0.28)"/>
+  <!-- Book left page -->
+  <rect x="10" y="13" width="9" height="12" rx="2" fill="rgba(255,255,255,0.9)"/>
+  <rect x="11" y="15" width="6" height="1.5" rx="1" fill="rgba(255,128,0,0.5)"/>
+  <rect x="11" y="18" width="5" height="1.5" rx="1" fill="rgba(255,128,0,0.35)"/>
+  <rect x="11" y="21" width="6" height="1.5" rx="1" fill="rgba(255,128,0,0.35)"/>
+  <!-- Book right page -->
+  <rect x="21" y="13" width="9" height="12" rx="2" fill="rgba(255,255,255,0.75)"/>
+  <rect x="22" y="15" width="6" height="1.5" rx="1" fill="rgba(255,128,0,0.4)"/>
+  <rect x="22" y="18" width="5" height="1.5" rx="1" fill="rgba(255,128,0,0.3)"/>
+  <!-- Spine -->
+  <rect x="19" y="12" width="2" height="14" rx="1" fill="rgba(255,255,255,0.5)"/>
+  <!-- Cat ear bookmark -->
+  <polygon points="27,10 31,10 31,14 29,12.5" fill="#FFD700"/>
+</svg>`,
+  add: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow -->
+  <rect x="4" y="7" width="32" height="30" rx="9" fill="#2a8a85"/>
+  <!-- Main face -->
+  <rect x="4" y="4" width="32" height="30" rx="9" fill="#45B7B8"/>
+  <!-- Top highlight -->
+  <rect x="8" y="6" width="24" height="9" rx="5" fill="rgba(255,255,255,0.28)"/>
+  <!-- Pencil body -->
+  <rect x="17" y="11" width="6" height="16" rx="2" fill="rgba(255,255,255,0.95)" transform="rotate(15,20,19)"/>
+  <!-- Pencil tip -->
+  <polygon points="15,25 18,28 21,25" fill="#FFD700" transform="rotate(15,18,26)"/>
+  <!-- Pencil eraser top -->
+  <rect x="17" y="10" width="6" height="4" rx="1.5" fill="rgba(255,180,180,0.9)" transform="rotate(15,20,12)"/>
+  <!-- Plus sparkle -->
+  <rect x="24" y="11" width="7" height="2.5" rx="1.2" fill="rgba(255,255,255,0.9)"/>
+  <rect x="26.75" y="8.5" width="2.5" height="7" rx="1.2" fill="rgba(255,255,255,0.9)"/>
+  <!-- Star dot -->
+  <circle cx="12" cy="24" r="2" fill="rgba(255,255,255,0.6)"/>
+</svg>`,
+  progress: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow -->
+  <rect x="4" y="7" width="32" height="30" rx="9" fill="#4a35a0"/>
+  <!-- Main face -->
+  <rect x="4" y="4" width="32" height="30" rx="9" fill="#7C6CF5"/>
+  <!-- Top highlight -->
+  <rect x="8" y="6" width="24" height="9" rx="5" fill="rgba(255,255,255,0.28)"/>
+  <!-- Bar 1 (short) -->
+  <rect x="10" y="22" width="5" height="8" rx="2" fill="rgba(255,255,255,0.6)"/>
+  <!-- Bar 2 (medium) -->
+  <rect x="18" y="18" width="5" height="12" rx="2" fill="rgba(255,255,255,0.8)"/>
+  <!-- Bar 3 (tall) -->
+  <rect x="26" y="13" width="5" height="17" rx="2" fill="rgba(255,255,255,0.95)"/>
+  <!-- Upward arrow -->
+  <polygon points="28.5,10 31,14 26,14" fill="#FFD700"/>
+  <!-- Base line -->
+  <rect x="9" y="30" width="23" height="2" rx="1" fill="rgba(255,255,255,0.4)"/>
+</svg>`,
+  settings: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow -->
+  <rect x="4" y="7" width="32" height="30" rx="9" fill="#666"/>
+  <!-- Main face -->
+  <rect x="4" y="4" width="32" height="30" rx="9" fill="#999"/>
+  <!-- Top highlight -->
+  <rect x="8" y="6" width="24" height="9" rx="5" fill="rgba(255,255,255,0.28)"/>
+  <!-- Gear outer ring -->
+  <circle cx="20" cy="19" r="9" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="20" cy="19" r="9" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="3" stroke-dasharray="4 2"/>
+  <!-- Gear center -->
+  <circle cx="20" cy="19" r="5" fill="rgba(255,255,255,0.9)"/>
+  <!-- Cat ears on gear -->
+  <polygon points="15,12 13,8 17,10" fill="rgba(255,255,255,0.85)"/>
+  <polygon points="25,12 27,8 23,10" fill="rgba(255,255,255,0.85)"/>
+  <!-- Cat face in center -->
+  <circle cx="18.5" cy="18.5" r="1" fill="#888"/>
+  <circle cx="21.5" cy="18.5" r="1" fill="#888"/>
+  <path d="M18.5 21 Q20 22.5 21.5 21" stroke="#888" stroke-width="1" fill="none" stroke-linecap="round"/>
+</svg>`,
+};
+
 const NAV = [
-  { icon: "☰", label: "单词库" },
-  { icon: "+", label: "添加" },
+  { icon: "wordlib", label: "单词库" },
+  { icon: "add", label: "添加" },
   { icon: "◎", label: "Combo" },
-  { icon: "▦", label: "进度" },
-  { icon: "⊙", label: "设置" },
+  { icon: "progress", label: "进度" },
+  { icon: "settings", label: "设置" },
 ];
 
 // Ebbinghaus forgetting curve intervals in days
@@ -1823,7 +1904,7 @@ export default function VocabApp() {
         .nav-center-btn { width: 64px; height: 64px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -22px; border: 3px solid #fff; box-shadow: 0 4px 16px rgba(220,114,134,0.4); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 22px; line-height: 1; color: #fff; font-style: normal; }
-        .nav-icon { font-size: 30px; line-height: 1; color: rgba(255,255,255,0.65); font-style: normal; }
+        .nav-icon { font-size: 30px; line-height: 1; color: rgba(255,255,255,0.65); font-style: normal; display: none; }
         .nav-label { font-size: 10px; color: #888; font-weight: 400; }
         .nav-item.active .nav-icon { color: #fff; }
         .nav-item-center .nav-label { color: #888; font-size: 10px; }
@@ -4737,7 +4818,8 @@ export default function VocabApp() {
           );
           return (
             <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => { haptic("light"); setTab(i); }}>
-              <em className="nav-icon">{item.icon}</em>
+              <div style={{ width:38, height:38, transition:"transform 0.35s cubic-bezier(0.34,1.56,0.64,1)", transform: tab===i?"scale(1.18)":"scale(1)", filter: tab===i?"none":"grayscale(100%) brightness(1.8) opacity(0.7)" }}
+                dangerouslySetInnerHTML={{ __html: NAV_SVGS[item.icon] || item.icon }} />
             </button>
           );
         })}
