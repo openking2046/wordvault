@@ -16,9 +16,9 @@ import COMBOCAT_7 from './combotcat-7.png';
 import COMBOCAT_8 from './combotcat-8.png';
 import COMBOCAT_9 from './combotcat-9.png';
 // SVG stat icons — add files to src/ then uncomment imports below:
-import MAX_WORDS_SVG from './max-words.svg';
-import MAX_COMBOT_SVG from './max-combo.svg';
-import MAX_XP_SVG from './max-xp.svg';
+import MAX_WORDS_PNG from './max-words.png';
+import MAX_COMBO_PNG from './max-combo.png';
+import MAX_XP_PNG from './max-xp.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2420,11 +2420,11 @@ export default function VocabApp() {
               <div style={{ display:"flex", alignItems:"flex-end", gap:0 }}>
                 <div style={{ flex:1, paddingBottom: 20, display:"flex", flexDirection:"column", gap:8 }}>
 
-                  {/* ── 3 stat SVG icons — top one full width, bottom two side by side ── */}
-                  <StatSVG src={MAX_WORDS_SVG}  value={words.length}   size={130} numTop="42%" numLeft="36%" numSize={18} />
+                  {/* ── 3 stat PNG icons — top one full width, bottom two side by side ── */}
+                  <StatPNG src={MAX_WORDS_PNG}  value={words.length}   size={130} />
                   <div style={{ display:"flex", gap:6 }}>
-                    <StatSVG src={MAX_COMBOT_SVG} value={globalMaxCombo} size={90} numTop="38%" numLeft="42%" numSize={14} />
-                    <StatSVG src={MAX_XP_SVG}     value={xp}             size={90} numTop="38%" numLeft="46%" numSize={14} />
+                    <StatPNG src={MAX_COMBO_PNG} value={globalMaxCombo} size={90} />
+                    <StatPNG src={MAX_XP_PNG}    value={xp}             size={90} />
                   </div>
                 </div>
                 <img src={COMBO_CAT} alt="Combo猫" style={{ width: 170, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
@@ -4835,23 +4835,24 @@ export default function VocabApp() {
     </div>
   );
 }
-// ── Stat SVG card — shows SVG image with value overlaid at known position ──
-function StatSVG({ src, value, size = 90, numTop = "38%", numLeft = "50%", numSize = 16 }) {
+// ── Stat PNG card — PNG image with dynamic number centered on top ──
+function StatPNG({ src, value, size = 110 }) {
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", mixBlendMode: "multiply" }} />
+      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
       <div style={{
         position: "absolute",
-        top: numTop, left: numLeft,
+        top: "50%", left: "50%",
         transform: "translate(-50%, -50%)",
-        fontFamily: "DM Serif Display, serif",
-        fontSize: numSize,
+        fontFamily: "'Arial Rounded MT Bold', 'Arial', sans-serif",
+        fontSize: size * 0.27,
         fontWeight: 900,
         color: "#fff",
-        textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+        textShadow: "0 2px 8px rgba(0,0,0,0.5), 0 0 16px rgba(0,0,0,0.3)",
         lineHeight: 1,
         whiteSpace: "nowrap",
         pointerEvents: "none",
+        letterSpacing: "-1px",
       }}>
         {value}
       </div>
