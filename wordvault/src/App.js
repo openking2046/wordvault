@@ -4839,7 +4839,7 @@ export default function VocabApp() {
 function StatSVG({ src, value, size = 90, numTop = "38%", numLeft = "50%", numSize = 16 }) {
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", mixBlendMode: "multiply" }} />
       <div style={{
         position: "absolute",
         top: numTop, left: numLeft,
