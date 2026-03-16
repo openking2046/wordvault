@@ -15,6 +15,9 @@ import COMBOCAT_6 from './combotcat-6.png';
 import COMBOCAT_7 from './combotcat-7.png';
 import COMBOCAT_8 from './combotcat-8.png';
 import COMBOCAT_9 from './combotcat-9.png';
+import MAX_WORDS_SVG from './max-words.svg';
+import MAX_COMBOT_SVG from './max-combot.svg';
+import MAX_XP_SVG from './max-xp.svg';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -2416,30 +2419,60 @@ export default function VocabApp() {
               <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
               <div style={{ position:"absolute", top:10, right:30, width:60, height:60, borderRadius:"50%", background:"rgba(255,255,255,0.08)" }}/>
               <div style={{ display:"flex", alignItems:"flex-end", gap:0 }}>
-                {/* Text left */}
-                <div style={{ flex:1, paddingBottom: 20 }}>
-                  <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.75)", letterSpacing:"1px", textTransform:"uppercase", marginBottom:6 }}>我的词库</div>
-                  <div style={{ fontFamily:"DM Serif Display, serif", fontSize:28, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:12, textShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                    {words.length > 0 ? `${words.length} 个单词` : "开始学习"}
+                {/* Left: 3 SVG stat icons */}
+                <div style={{ flex:1, paddingBottom: 20, display:"flex", flexDirection:"column", gap:10 }}>
+                  {/* max-words.svg — total word count */}
+                  <div style={{ position:"relative" }}>
+                    <img src={MAX_WORDS_SVG} alt="words" style={{ width:110, height:"auto" }}
+                      onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                    <div style={{ display:"none", background:"rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", alignItems:"center", gap:8 }}>
+                      <span style={{ fontSize:20 }}>📚</span>
+                      <div>
+                        <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{words.length}</div>
+                        <div style={{ fontSize:9, color:"rgba(255,255,255,0.8)" }}>总词数</div>
+                      </div>
+                    </div>
+                    {/* Dynamic number overlay */}
+                    <div style={{ position:"absolute", top:"30%", left:"38%", transform:"translate(-50%,-50%)", fontFamily:"DM Serif Display, serif", fontSize:18, fontWeight:900, color:"#fff", textShadow:"0 1px 4px rgba(0,0,0,0.3)", pointerEvents:"none", lineHeight:1 }}>
+                      {words.length}
+                    </div>
                   </div>
-                  {/* 3 stat pills */}
-                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                    {[
-                      { icon:"📚", val: words.length, label:"总词数" },
-                      { icon:"✅", val: words.filter(w=>w.mastery>=4).length, label:"已掌握" },
-                      { icon:"🔥", val: Object.keys(wrongCounts).filter(w=>words.find(x=>x.word===w)&&wrongCounts[w]>0).length, label:"待攻克" },
-                    ].map(s => (
-                      <div key={s.label} style={{ background:"rgba(255,255,255,0.22)", backdropFilter:"blur(8px)", borderRadius:12, padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                        <span style={{ fontSize:13 }}>{s.icon}</span>
+
+                  <div style={{ display:"flex", gap:8 }}>
+                    {/* max-combot.svg — max combo */}
+                    <div style={{ position:"relative", flex:1 }}>
+                      <img src={MAX_COMBOT_SVG} alt="combo" style={{ width:"100%", height:"auto" }}
+                        onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                      <div style={{ display:"none", background:"rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", alignItems:"center", gap:8 }}>
+                        <span style={{ fontSize:20 }}>🔥</span>
                         <div>
-                          <div style={{ fontSize:14, fontWeight:800, color:"#fff", lineHeight:1 }}>{s.val}</div>
-                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", letterSpacing:"0.3px" }}>{s.label}</div>
+                          <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{globalMaxCombo}</div>
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.8)" }}>MAX COMBO</div>
                         </div>
                       </div>
-                    ))}
+                      <div style={{ position:"absolute", top:"35%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"DM Serif Display, serif", fontSize:16, fontWeight:900, color:"#fff", textShadow:"0 1px 4px rgba(0,0,0,0.3)", pointerEvents:"none", lineHeight:1 }}>
+                        {globalMaxCombo}
+                      </div>
+                    </div>
+
+                    {/* max-xp.svg — total XP */}
+                    <div style={{ position:"relative", flex:1 }}>
+                      <img src={MAX_XP_SVG} alt="xp" style={{ width:"100%", height:"auto" }}
+                        onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                      <div style={{ display:"none", background:"rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", alignItems:"center", gap:8 }}>
+                        <span style={{ fontSize:20 }}>⚡</span>
+                        <div>
+                          <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{xp}</div>
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.8)" }}>总XP</div>
+                        </div>
+                      </div>
+                      <div style={{ position:"absolute", top:"35%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"DM Serif Display, serif", fontSize:16, fontWeight:900, color:"#fff", textShadow:"0 1px 4px rgba(0,0,0,0.3)", pointerEvents:"none", lineHeight:1 }}>
+                        {xp}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                {/* Combo Cat SVG - sitting at bottom */}
+                {/* Combo Cat */}
                 <img src={COMBO_CAT} alt="Combo猫" style={{ width: 180, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
               </div>
             </div>
