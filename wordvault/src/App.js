@@ -4809,8 +4809,37 @@ export default function VocabApp() {
           );
           return (
             <button key={i} className={`nav-item ${tab === i ? "active" : ""}`} onClick={() => { haptic("light"); setTab(i); }}>
-              <div style={{ width:38, height:38, transition:"transform 0.35s cubic-bezier(0.34,1.56,0.64,1)", transform: tab===i?"scale(1.18)":"scale(1)", filter: tab===i?"none":"grayscale(100%) brightness(1.8) opacity(0.7)" }}
-                dangerouslySetInnerHTML={{ __html: NAV_SVGS[item.icon] || item.icon }} />
+              {/* Colored selection ring */}
+              <div style={{
+                position: "relative",
+                width: 46, height: 46,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+                transform: tab===i ? "scale(1.12)" : "scale(1)",
+              }}>
+                {/* Circle ring - only when active */}
+                {tab === i && (
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    borderRadius: "50%",
+                    border: "2.5px solid " + (
+                      item.icon === "wordlib" ? "#FF8000" :
+                      item.icon === "add" ? "#45B7B8" :
+                      item.icon === "progress" ? "#7C6CF5" :
+                      "#aaa"
+                    ),
+                    background: (
+                      item.icon === "wordlib" ? "rgba(255,128,0,0.12)" :
+                      item.icon === "add" ? "rgba(69,183,184,0.12)" :
+                      item.icon === "progress" ? "rgba(124,108,245,0.12)" :
+                      "rgba(170,170,170,0.12)"
+                    ),
+                    animation: "unlockBadge 0.3s ease both",
+                  }} />
+                )}
+                <div style={{ width:38, height:38 }}
+                  dangerouslySetInnerHTML={{ __html: NAV_SVGS[item.icon] || item.icon }} />
+              </div>
             </button>
           );
         })}
