@@ -264,36 +264,36 @@ function getCatLv(totalXp) { return getCatStage(totalXp).lv; }
 
 // Rank system - 23 ranks, based on words + streak days
 const RANKS = [
-  // 倔强青铜 (3)  0~100词, 0~60天
-  { id:"b3", tier:"倔强青铜", name:"青铜 Ⅲ", color:"#a0522d", bg:"#fdf3ec", words:0,     days:0   },
-  { id:"b2", tier:"倔强青铜", name:"青铜 Ⅱ", color:"#a0522d", bg:"#fdf3ec", words:34,    days:20  },
-  { id:"b1", tier:"倔强青铜", name:"青铜 Ⅰ", color:"#a0522d", bg:"#fdf3ec", words:67,    days:40  },
-  // 秩序白银 (3)  100~500词, 60~120天
-  { id:"s3", tier:"秩序白银", name:"白银 Ⅲ", color:"#7a8fa6", bg:"#f0f4f8", words:100,   days:60  },
-  { id:"s2", tier:"秩序白银", name:"白银 Ⅱ", color:"#7a8fa6", bg:"#f0f4f8", words:234,   days:80  },
-  { id:"s1", tier:"秩序白银", name:"白银 Ⅰ", color:"#7a8fa6", bg:"#f0f4f8", words:367,   days:100 },
-  // 荣耀黄金 (3)  500~1000词, 120~180天
-  { id:"g3", tier:"荣耀黄金", name:"黄金 Ⅲ", color:"#c8900a", bg:"#fffbec", words:500,   days:120 },
-  { id:"g2", tier:"荣耀黄金", name:"黄金 Ⅱ", color:"#c8900a", bg:"#fffbec", words:667,   days:150 },
-  { id:"g1", tier:"荣耀黄金", name:"黄金 Ⅰ", color:"#c8900a", bg:"#fffbec", words:834,   days:165 },
-  // 尊贵铂金 (3)  1000~5000词, 180~240天
-  { id:"p3", tier:"尊贵铂金", name:"铂金 Ⅲ", color:"#2a9d8f", bg:"#edfaf8", words:1000,  days:180 },
-  { id:"p2", tier:"尊贵铂金", name:"铂金 Ⅱ", color:"#2a9d8f", bg:"#edfaf8", words:2334,  days:200 },
-  { id:"p1", tier:"尊贵铂金", name:"铂金 Ⅰ", color:"#2a9d8f", bg:"#edfaf8", words:3667,  days:220 },
-  // 永恒钻石 (5)  5000~10000词, 240~300天
-  { id:"d5", tier:"永恒钻石", name:"钻石 Ⅴ", color:"#1565c0", bg:"#e8f0fe", words:5000,  days:240 },
-  { id:"d4", tier:"永恒钻石", name:"钻石 Ⅳ", color:"#1565c0", bg:"#e8f0fe", words:6200,  days:252 },
-  { id:"d3", tier:"永恒钻石", name:"钻石 Ⅲ", color:"#1565c0", bg:"#e8f0fe", words:7400,  days:264 },
-  { id:"d2", tier:"永恒钻石", name:"钻石 Ⅱ", color:"#1565c0", bg:"#e8f0fe", words:8600,  days:276 },
-  { id:"d1", tier:"永恒钻石", name:"钻石 Ⅰ", color:"#1565c0", bg:"#e8f0fe", words:9800,  days:288 },
-  // 至尊星耀 (5)  10000~20000词, 300~330天
-  { id:"m5", tier:"至尊星耀", name:"星耀 Ⅴ", color:"#6a1b9a", bg:"#f5eeff", words:10000, days:300 },
-  { id:"m4", tier:"至尊星耀", name:"星耀 Ⅳ", color:"#6a1b9a", bg:"#f5eeff", words:12000, days:306 },
-  { id:"m3", tier:"至尊星耀", name:"星耀 Ⅲ", color:"#6a1b9a", bg:"#f5eeff", words:14000, days:312 },
-  { id:"m2", tier:"至尊星耀", name:"星耀 Ⅱ", color:"#6a1b9a", bg:"#f5eeff", words:16000, days:318 },
-  { id:"m1", tier:"至尊星耀", name:"星耀 Ⅰ", color:"#6a1b9a", bg:"#f5eeff", words:18000, days:324 },
-  // 最强王者 (1)
-  { id:"king", tier:"最强王者", name:"最强王者", color:"#b8860b", bg:"#fffde7", words:20000, days:365 },
+  // 青铜铲屎官 (3)
+  { id:"b3", tier:"青铜铲屎官", name:"铲屎官 Ⅲ", color:"#a0522d", bg:"#fdf3ec", words:0,     days:0   },
+  { id:"b2", tier:"青铜铲屎官", name:"铲屎官 Ⅱ", color:"#a0522d", bg:"#fdf3ec", words:34,    days:20  },
+  { id:"b1", tier:"青铜铲屎官", name:"铲屎官 Ⅰ", color:"#a0522d", bg:"#fdf3ec", words:67,    days:40  },
+  // 白银撸猫师 (3)
+  { id:"s3", tier:"白银撸猫师", name:"撸猫师 Ⅲ", color:"#7a8fa6", bg:"#f0f4f8", words:100,   days:60  },
+  { id:"s2", tier:"白银撸猫师", name:"撸猫师 Ⅱ", color:"#7a8fa6", bg:"#f0f4f8", words:234,   days:80  },
+  { id:"s1", tier:"白银撸猫师", name:"撸猫师 Ⅰ", color:"#7a8fa6", bg:"#f0f4f8", words:367,   days:100 },
+  // 黄金猫语者 (3)
+  { id:"g3", tier:"黄金猫语者", name:"猫语者 Ⅲ", color:"#c8900a", bg:"#fffbec", words:500,   days:120 },
+  { id:"g2", tier:"黄金猫语者", name:"猫语者 Ⅱ", color:"#c8900a", bg:"#fffbec", words:667,   days:150 },
+  { id:"g1", tier:"黄金猫语者", name:"猫语者 Ⅰ", color:"#c8900a", bg:"#fffbec", words:834,   days:165 },
+  // 铂金猫医师 (3)
+  { id:"p3", tier:"铂金猫医师", name:"猫医师 Ⅲ", color:"#2a9d8f", bg:"#edfaf8", words:1000,  days:180 },
+  { id:"p2", tier:"铂金猫医师", name:"猫医师 Ⅱ", color:"#2a9d8f", bg:"#edfaf8", words:2334,  days:200 },
+  { id:"p1", tier:"铂金猫医师", name:"猫医师 Ⅰ", color:"#2a9d8f", bg:"#edfaf8", words:3667,  days:220 },
+  // 钻石繁育专家 (5)
+  { id:"d5", tier:"钻石繁育专家", name:"繁育专家 Ⅴ", color:"#1565c0", bg:"#e8f0fe", words:5000,  days:240 },
+  { id:"d4", tier:"钻石繁育专家", name:"繁育专家 Ⅳ", color:"#1565c0", bg:"#e8f0fe", words:6200,  days:252 },
+  { id:"d3", tier:"钻石繁育专家", name:"繁育专家 Ⅲ", color:"#1565c0", bg:"#e8f0fe", words:7400,  days:264 },
+  { id:"d2", tier:"钻石繁育专家", name:"繁育专家 Ⅱ", color:"#1565c0", bg:"#e8f0fe", words:8600,  days:276 },
+  { id:"d1", tier:"钻石繁育专家", name:"繁育专家 Ⅰ", color:"#1565c0", bg:"#e8f0fe", words:9800,  days:288 },
+  // 星耀训猫大师 (5)
+  { id:"m5", tier:"星耀训猫大师", name:"训猫大师 Ⅴ", color:"#6a1b9a", bg:"#f5eeff", words:10000, days:300 },
+  { id:"m4", tier:"星耀训猫大师", name:"训猫大师 Ⅳ", color:"#6a1b9a", bg:"#f5eeff", words:12000, days:306 },
+  { id:"m3", tier:"星耀训猫大师", name:"训猫大师 Ⅲ", color:"#6a1b9a", bg:"#f5eeff", words:14000, days:312 },
+  { id:"m2", tier:"星耀训猫大师", name:"训猫大师 Ⅱ", color:"#6a1b9a", bg:"#f5eeff", words:16000, days:318 },
+  { id:"m1", tier:"星耀训猫大师", name:"训猫大师 Ⅰ", color:"#6a1b9a", bg:"#f5eeff", words:18000, days:324 },
+  // 最强王者
+  { id:"king", tier:"猫之守护神", name:"猫之守护神", color:"#FF8000", bg:"#fff8ee", words:20000, days:365 },
 ];
 
 function getRank(wordCount, days) {
