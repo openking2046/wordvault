@@ -15,8 +15,9 @@ import COMBOCAT_6 from './combotcat-6.png';
 import COMBOCAT_7 from './combotcat-7.png';
 import COMBOCAT_8 from './combotcat-8.png';
 import COMBOCAT_9 from './combotcat-9.png';
+// SVG stat icons — add files to src/ then uncomment imports below:
 import MAX_WORDS_SVG from './max-words.svg';
-import MAX_COMBOT_SVG from './max-combot.svg';
+import MAX_COMBOT_SVG from './max-combo.svg';
 import MAX_XP_SVG from './max-xp.svg';
 
 const SAMPLE_WORDS = [
@@ -2415,65 +2416,18 @@ export default function VocabApp() {
 
             {/* ── COMBO CAT HERO BANNER ── */}
             <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "20px 20px 0", marginBottom: 18, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
-              {/* Decorative circles */}
               <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
-              <div style={{ position:"absolute", top:10, right:30, width:60, height:60, borderRadius:"50%", background:"rgba(255,255,255,0.08)" }}/>
               <div style={{ display:"flex", alignItems:"flex-end", gap:0 }}>
-                {/* Left: 3 SVG stat icons */}
-                <div style={{ flex:1, paddingBottom: 20, display:"flex", flexDirection:"column", gap:10 }}>
-                  {/* max-words.svg — total word count */}
-                  <div style={{ position:"relative" }}>
-                    <img src={MAX_WORDS_SVG} alt="words" style={{ width:110, height:"auto" }}
-                      onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
-                    <div style={{ display:"none", background:"rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:20 }}>📚</span>
-                      <div>
-                        <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{words.length}</div>
-                        <div style={{ fontSize:9, color:"rgba(255,255,255,0.8)" }}>总词数</div>
-                      </div>
-                    </div>
-                    {/* Dynamic number overlay */}
-                    <div style={{ position:"absolute", top:"30%", left:"38%", transform:"translate(-50%,-50%)", fontFamily:"DM Serif Display, serif", fontSize:18, fontWeight:900, color:"#fff", textShadow:"0 1px 4px rgba(0,0,0,0.3)", pointerEvents:"none", lineHeight:1 }}>
-                      {words.length}
-                    </div>
-                  </div>
+                <div style={{ flex:1, paddingBottom: 20, display:"flex", flexDirection:"column", gap:8 }}>
 
-                  <div style={{ display:"flex", gap:8 }}>
-                    {/* max-combot.svg — max combo */}
-                    <div style={{ position:"relative", flex:1 }}>
-                      <img src={MAX_COMBOT_SVG} alt="combo" style={{ width:"100%", height:"auto" }}
-                        onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
-                      <div style={{ display:"none", background:"rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", alignItems:"center", gap:8 }}>
-                        <span style={{ fontSize:20 }}>🔥</span>
-                        <div>
-                          <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{globalMaxCombo}</div>
-                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.8)" }}>MAX COMBO</div>
-                        </div>
-                      </div>
-                      <div style={{ position:"absolute", top:"35%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"DM Serif Display, serif", fontSize:16, fontWeight:900, color:"#fff", textShadow:"0 1px 4px rgba(0,0,0,0.3)", pointerEvents:"none", lineHeight:1 }}>
-                        {globalMaxCombo}
-                      </div>
-                    </div>
-
-                    {/* max-xp.svg — total XP */}
-                    <div style={{ position:"relative", flex:1 }}>
-                      <img src={MAX_XP_SVG} alt="xp" style={{ width:"100%", height:"auto" }}
-                        onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
-                      <div style={{ display:"none", background:"rgba(255,255,255,0.2)", borderRadius:14, padding:"8px 14px", alignItems:"center", gap:8 }}>
-                        <span style={{ fontSize:20 }}>⚡</span>
-                        <div>
-                          <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{xp}</div>
-                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.8)" }}>总XP</div>
-                        </div>
-                      </div>
-                      <div style={{ position:"absolute", top:"35%", left:"50%", transform:"translate(-50%,-50%)", fontFamily:"DM Serif Display, serif", fontSize:16, fontWeight:900, color:"#fff", textShadow:"0 1px 4px rgba(0,0,0,0.3)", pointerEvents:"none", lineHeight:1 }}>
-                        {xp}
-                      </div>
-                    </div>
+                  {/* ── 3 stat SVG icons, same size, no white border ── */}
+                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                    <StatSVG src={MAX_WORDS_SVG}  value={words.length}   size={110} />
+                    <StatSVG src={MAX_COMBOT_SVG} value={globalMaxCombo} size={110} />
+                    <StatSVG src={MAX_XP_SVG}     value={xp}             size={110} />
                   </div>
                 </div>
-                {/* Combo Cat */}
-                <img src={COMBO_CAT} alt="Combo猫" style={{ width: 180, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
+                <img src={COMBO_CAT} alt="Combo猫" style={{ width: 170, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
               </div>
             </div>
 
@@ -4879,5 +4833,34 @@ export default function VocabApp() {
         </div>
       </nav>
     </div>
+  );
+}
+// ── Inline SVG stat card — replaces SVG text nodes with live data ──────────
+function StatSVG({ src, value, size = 110 }) {
+  const [svgHtml, setSvgHtml] = useState('');
+
+  useEffect(() => {
+    if (!src) return;
+    fetch(src)
+      .then(r => r.text())
+      .then(raw => {
+        // Replace first number-like <text> content with live value
+        const updated = raw
+          .replace(/<rect[^>]*fill="(?:white|#fff|#ffffff|#FFFFFF)"[^>]*\/>/g, '')
+          .replace(/<rect[^>]*fill="(?:white|#fff|#ffffff|#FFFFFF)"[^>]*><\/rect>/g, '')
+          .replace(/(<text[^>]*>)\d[\d,]*(<\/text>)/, `$1${value}$2`);
+        setSvgHtml(updated);
+      })
+      .catch(() => setSvgHtml(''));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src, value]);
+
+  if (!svgHtml) return <div style={{ width: size, height: size }} />;
+
+  return (
+    <div
+      style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      dangerouslySetInnerHTML={{ __html: svgHtml }}
+    />
   );
 }
