@@ -2410,7 +2410,7 @@ export default function VocabApp() {
           </div>
         </div>
       </div>
-        );
+      );
       })()}
       {/* Content */}
       <div className="tab-content">
