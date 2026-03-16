@@ -2420,11 +2420,11 @@ export default function VocabApp() {
               <div style={{ display:"flex", alignItems:"flex-end", gap:0 }}>
                 <div style={{ flex:1, paddingBottom: 20, display:"flex", flexDirection:"column", gap:8 }}>
 
-                  {/* ── 3 stat SVG icons, same size, no white border ── */}
-                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                    <StatSVG src={MAX_WORDS_SVG}  value={words.length}   size={110} />
-                    <StatSVG src={MAX_COMBOT_SVG} value={globalMaxCombo} size={110} />
-                    <StatSVG src={MAX_XP_SVG}     value={xp}             size={110} />
+                  {/* ── 3 stat SVG icons — top one full width, bottom two side by side ── */}
+                  <StatSVG src={MAX_WORDS_SVG}  value={words.length}   size={130} numTop="42%" numLeft="36%" numSize={18} />
+                  <div style={{ display:"flex", gap:6 }}>
+                    <StatSVG src={MAX_COMBOT_SVG} value={globalMaxCombo} size={90} numTop="38%" numLeft="42%" numSize={14} />
+                    <StatSVG src={MAX_XP_SVG}     value={xp}             size={90} numTop="38%" numLeft="46%" numSize={14} />
                   </div>
                 </div>
                 <img src={COMBO_CAT} alt="Combo猫" style={{ width: 170, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
@@ -4835,32 +4835,26 @@ export default function VocabApp() {
     </div>
   );
 }
-// ── Inline SVG stat card — replaces SVG text nodes with live data ──────────
-function StatSVG({ src, value, size = 110 }) {
-  const [svgHtml, setSvgHtml] = useState('');
-
-  useEffect(() => {
-    if (!src) return;
-    fetch(src)
-      .then(r => r.text())
-      .then(raw => {
-        // Replace first number-like <text> content with live value
-        const updated = raw
-          .replace(/<rect[^>]*fill="(?:white|#fff|#ffffff|#FFFFFF)"[^>]*\/>/g, '')
-          .replace(/<rect[^>]*fill="(?:white|#fff|#ffffff|#FFFFFF)"[^>]*><\/rect>/g, '')
-          .replace(/(<text[^>]*>)\d[\d,]*(<\/text>)/, `$1${value}$2`);
-        setSvgHtml(updated);
-      })
-      .catch(() => setSvgHtml(''));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, value]);
-
-  if (!svgHtml) return <div style={{ width: size, height: size }} />;
-
+// ── Stat SVG card — shows SVG image with value overlaid at known position ──
+function StatSVG({ src, value, size = 90, numTop = "38%", numLeft = "50%", numSize = 16 }) {
   return (
-    <div
-      style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      dangerouslySetInnerHTML={{ __html: svgHtml }}
-    />
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+      <div style={{
+        position: "absolute",
+        top: numTop, left: numLeft,
+        transform: "translate(-50%, -50%)",
+        fontFamily: "DM Serif Display, serif",
+        fontSize: numSize,
+        fontWeight: 900,
+        color: "#fff",
+        textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+        lineHeight: 1,
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+      }}>
+        {value}
+      </div>
+    </div>
   );
 }
