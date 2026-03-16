@@ -2327,6 +2327,8 @@ export default function VocabApp() {
               )}
             </div>
           </div>
+        </div>
+      </div>
         );
       })()}
       {/* Content */}
