@@ -2476,7 +2476,7 @@ export default function VocabApp() {
               </div>
 
               {/* Right: search + group-by-tag stacked, matching nav SVG badge style */}
-              <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
+              <div style={{ display:"flex", flexDirection:"row", gap:8, flexShrink:0 }}>
                 {/* Search icon button */}
                 <div style={{ position:"relative" }}>
                   <button onClick={() => setSearchQuery(searchQuery === null ? "" : (searchQuery === "" ? null : ""))}
