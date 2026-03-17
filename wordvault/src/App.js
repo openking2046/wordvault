@@ -2415,20 +2415,25 @@ export default function VocabApp() {
           <div>
 
             {/* ── COMBO CAT HERO BANNER ── */}
-            <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "20px 20px 0", marginBottom: 18, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
-              <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
-              <div style={{ display:"flex", alignItems:"flex-end", gap:0 }}>
-                <div style={{ flex:1, paddingBottom: 20, display:"flex", flexDirection:"column", gap:8 }}>
+            <div style={{ display:"flex", gap:10, marginBottom:18, alignItems:"stretch" }}>
 
-                  {/* ── 3 stat PNG icons — top one full width, bottom two side by side ── */}
-                  <StatPNG src={MAX_WORDS_PNG}  value={words.length}   size={130} />
-                  <div style={{ display:"flex", gap:6 }}>
-                    <StatPNG src={MAX_COMBO_PNG} value={globalMaxCombo} size={90} />
-                    <StatPNG src={MAX_XP_PNG}    value={xp}             size={90} />
-                  </div>
-                </div>
-                <img src={COMBO_CAT} alt="Combo猫" style={{ width: 170, flexShrink: 0, marginBottom: -4, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
+              {/* LEFT: 3 stat icons stacked, equal size */}
+              <div style={{ display:"flex", flexDirection:"column", gap:8, flex:"0 0 auto" }}>
+                {[
+                  { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
+                  { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
+                  { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
+                ].map(s => (
+                  <StatPNG key={s.label} src={s.src} value={s.value} size={100} />
+                ))}
               </div>
+
+              {/* RIGHT: Combo Cat orange card */}
+              <div style={{ flex:1, background:"linear-gradient(135deg,#FF8000 0%,#FFB347 60%,#FFD080 100%)", borderRadius:24, position:"relative", overflow:"hidden", boxShadow:"0 8px 28px rgba(255,128,0,0.35)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+                <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
+                <img src={COMBO_CAT} alt="Combo猫" style={{ width:"100%", maxWidth:180, display:"block", filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
+              </div>
+
             </div>
 
             {/* ── REVIEW REMINDER ── */}
