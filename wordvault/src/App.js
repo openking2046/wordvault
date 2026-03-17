@@ -2414,26 +2414,17 @@ export default function VocabApp() {
         {tab === 0 && (
           <div>
 
-            {/* ── COMBO CAT HERO BANNER ── */}
-            <div style={{ display:"flex", gap:10, marginBottom:18, alignItems:"stretch" }}>
-
-              {/* LEFT: 3 stat icons stacked, equal size */}
-              <div style={{ display:"flex", flexDirection:"column", gap:8, flex:"0 0 auto" }}>
-                {[
-                  { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
-                  { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
-                  { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
-                ].map(s => (
-                  <StatPNG key={s.label} src={s.src} value={s.value} size={100} />
-                ))}
-              </div>
-
-              {/* RIGHT: Combo Cat orange card */}
-              <div style={{ flex:1, background:"linear-gradient(135deg,#FF8000 0%,#FFB347 60%,#FFD080 100%)", borderRadius:24, position:"relative", overflow:"hidden", boxShadow:"0 8px 28px rgba(255,128,0,0.35)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-                <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
-                <img src={COMBO_CAT} alt="Combo猫" style={{ width:"100%", maxWidth:180, display:"block", filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
-              </div>
-
+            {/* ── STAT ICONS ROW ── */}
+            <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+              {[
+                { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
+                { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
+                { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
+              ].map(s => (
+                <div key={s.label} style={{ flex:1 }}>
+                  <StatPNG src={s.src} value={s.value} size="100%" />
+                </div>
+              ))}
             </div>
 
             {/* ── REVIEW REMINDER ── */}
@@ -4842,18 +4833,19 @@ export default function VocabApp() {
 }
 // ── Stat PNG card — PNG image with dynamic number centered on top ──
 function StatPNG({ src, value, size = 110 }) {
+  const isPercent = typeof size === 'string';
   return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+    <div style={{ position: "relative", width: isPercent ? size : size, aspectRatio: "1 / 1", flexShrink: 0 }}>
       <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
       <div style={{
         position: "absolute",
         top: "50%", left: "50%",
         transform: "translate(-50%, -50%)",
         fontFamily: "'Arial Rounded MT Bold', 'Arial', sans-serif",
-        fontSize: size * 0.27,
+        fontSize: isPercent ? "clamp(18px, 6vw, 32px)" : size * 0.27,
         fontWeight: 900,
         color: "#fff",
-        textShadow: "0 2px 8px rgba(0,0,0,0.5), 0 0 16px rgba(0,0,0,0.3)",
+        textShadow: "0 1px 4px rgba(0,0,0,0.18)",
         lineHeight: 1,
         whiteSpace: "nowrap",
         pointerEvents: "none",
