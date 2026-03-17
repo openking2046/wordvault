@@ -2549,33 +2549,35 @@ export default function VocabApp() {
                       <div style={{ width:8, height:8, borderRadius:"50%", background: dot.color, boxShadow: isExpanded ? `0 0 0 2px ${dot.color}44` : "none" }} title={dot.label} />
                     </div>
 
-                    {/* Word + play button on same line */}
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4, paddingRight:20 }}>
-                      <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, color:"#111", lineHeight:1.15 }}>
-                        {w.word}
-                      </div>
+                    {/* Word */}
+                    <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, color:"#111", lineHeight:1.15, marginBottom:4, paddingRight:20 }}>
+                      {w.word}
+                    </div>
+
+                    {/* Phonetic + play */}
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+                      {w.phonetic && <span style={{ fontSize:11, color:"#aaa", fontStyle:"italic" }}>{w.phonetic}</span>}
                       <button onClick={e => { e.stopPropagation(); speak(w.word); }}
-                        style={{ width:26, height:26, borderRadius:"50%", background: isExpanded ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:9, color: isExpanded ? "#fff" : "#555", transition:"all 0.2s" }}>
+                        style={{ width:24, height:24, borderRadius:"50%", background: isExpanded ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:9, color: isExpanded ? "#fff" : "#555", transition:"all 0.2s" }}>
                         ▶
                       </button>
                     </div>
 
-                    {/* Phonetic */}
-                    {w.phonetic && <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", marginBottom:6 }}>{w.phonetic}</div>}
-
-                    {/* Meaning - always visible */}
-                    <div style={{ fontSize:12, color:"#555", lineHeight:1.5 }}>
+                    {/* Meaning */}
+                    <div style={{ fontSize:12, color:"#555", lineHeight:1.5, marginBottom: w.example ? 8 : 0 }}>
                       {w.meaning}
                     </div>
 
-                    {/* Example + Tags — only when expanded */}
-                    {isExpanded && w.example && (
-                      <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", lineHeight:1.5, borderLeft:"2px solid #FFE0A0", paddingLeft:8, marginTop:10 }}>
+                    {/* Example */}
+                    {w.example && (
+                      <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", lineHeight:1.5, borderLeft:"2px solid #FFE0A0", paddingLeft:8, marginBottom:10 }}>
                         {w.example}
                       </div>
                     )}
-                    {isExpanded && (w.tags||[]).length > 0 && (
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:8 }}>
+
+                    {/* Tags */}
+                    {(w.tags||[]).length > 0 && (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:6 }}>
                         {(w.tags||[]).map(t => (
                           <span key={t} style={{ fontSize:10, padding:"2px 7px", borderRadius:8, background:"#fff5e0", color:"#c07000", fontWeight:600 }}>{t}</span>
                         ))}
