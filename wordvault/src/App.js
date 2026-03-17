@@ -2701,7 +2701,6 @@ export default function VocabApp() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <div>
                 <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111", letterSpacing: "-0.5px", fontWeight: 800 }}>收录新词</div>
-                <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>今日已收录 <span style={{ color: "#111", fontWeight: 700 }}>{todayWords}</span> 个词</div>
               </div>
               {/* Combo badge */}
               <div style={{ textAlign: "center", background: todayWords >= 3 ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#f0f0f0", borderRadius: 14, width: 64, height: 64, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.3s", boxShadow: todayWords >= 3 ? "0 4px 14px rgba(255,128,0,0.35)" : "none" }}>
@@ -2745,7 +2744,6 @@ export default function VocabApp() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Word input + AI */}
               <div>
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>英文单词</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input value={newWord} onChange={e => setNewWord(e.target.value)}
                     placeholder="e.g. Tenacious"
@@ -2763,7 +2761,6 @@ export default function VocabApp() {
 
               {/* Meaning */}
               <div>
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>中文释义</div>
                 <input value={newMeaning} onChange={e => setNewMeaning(e.target.value)}
                   placeholder="e.g. 坚韧的，顽强的"
                   style={{ background: "#fff", border: "1.5px solid #ffe0b2", borderRadius: 12, fontSize: 14, color: "#555" }} />
@@ -2771,9 +2768,6 @@ export default function VocabApp() {
 
               {/* Example — collapsible hint */}
               <div>
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 6, textTransform: "uppercase" }}>
-                  例句 <span style={{ color: "#ccc", fontWeight: 400, textTransform: "none" }}>（可选）</span>
-                </div>
                 <textarea value={newExample} onChange={e => setNewExample(e.target.value)}
                   placeholder="e.g. She was tenacious in pursuing her goals." rows={2}
                   style={{ resize: "none", background: "#fff", border: "1.5px solid #ffe0b2", borderRadius: 12, lineHeight: 1.5, fontSize: 13, fontStyle: "italic", color: "#888" }} />
@@ -2806,13 +2800,12 @@ export default function VocabApp() {
                     </span>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <input value={customTag} onChange={e => setCustomTag(e.target.value)}
-                    placeholder="新标签…" style={{ background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 10 }}
+                    placeholder="新标签…" style={{ flex:1, background: "#fff", border: "1.5px solid #ebebeb", borderRadius: 10 }}
                     onKeyDown={e => e.key === "Enter" && addCustomTag()} />
-                  <button onClick={addCustomTag} style={{ background: "linear-gradient(135deg,#FF8000,#FFB347)", color: "#fff", border: "none", borderRadius: 14, width: 64, height: 50, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(255,128,0,0.3)" }}>添加</button>
+                  <button onClick={addCustomTag} style={{ width:38, height:38, borderRadius:"50%", background:"linear-gradient(135deg,#FF8000,#FFB347)", color:"#fff", border:"none", fontSize:22, fontWeight:300, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 3px 10px rgba(255,128,0,0.3)" }}>+</button>
                 </div>
-                <div style={{ fontSize: 10, color: "#ccc", marginTop: 6 }}>双击标签可修改名称</div>
               </div>
 
               {/* Unlock button */}
@@ -2822,7 +2815,7 @@ export default function VocabApp() {
                   background: (!newWord.trim() || !newMeaning.trim()) ? "#f0f0f0" : "linear-gradient(135deg,#FF8000,#FFB347)",
                   color: (!newWord.trim() || !newMeaning.trim()) ? "#ccc" : "#fff",
                   transition: "all 0.2s", letterSpacing: "0.3px" }}>
-                {(!newWord.trim() || !newMeaning.trim()) ? "填写单词和释义后解锁" : `🔓 收录「${newWord.trim()}」`}
+                {(!newWord.trim() || !newMeaning.trim()) ? "单词解锁" : `🔓 收录「${newWord.trim()}」`}
               </button>
 
               {/* Word count bar */}
