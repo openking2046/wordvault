@@ -17,6 +17,7 @@ import COMBOCAT_8 from './combotcat-8.png';
 import COMBOCAT_9 from './combotcat-9.png';
 // SVG stat icons — add files to src/ then uncomment imports below:
 import MAX_WORDS_PNG from './max-words.png';
+import CORRECT_RATE_PNG from './correct-rate.png';
 import MAX_COMBO_PNG from './max-combo.png';
 import MAX_XP_PNG from './max-xp.png';
 
@@ -2847,29 +2848,17 @@ export default function VocabApp() {
                 const pendingCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
                 return (
-                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "22px 20px 0", marginBottom: 20, position: "relative", overflow: "hidden", minHeight: 220, boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
-                    {/* Decorative circles */}
+                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "22px 20px 20px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
                     <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
-                    <div style={{ position:"absolute", top:20, right:40, width:70, height:70, borderRadius:"50%", background:"rgba(255,255,255,0.07)" }}/>
-                    {/* Text content */}
-                    <div style={{ position:"relative", zIndex:2 }}>
-                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", letterSpacing:"0.5px", marginBottom:6, textTransform:"uppercase" }}>今日练习</div>
-                      <div style={{ fontSize:22, fontWeight:800, color:"#fff", lineHeight:1.25, marginBottom:16, textShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                        继续冲！<br/>
-                        <span style={{ fontSize:28 }}>{accuracy}%</span> 正确率 🎯
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      {/* Left: two stat icons */}
+                      <div style={{ display:"flex", gap:10, flex:1 }}>
+                        <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo} size={120} />
+                        <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}  size={120} />
                       </div>
-                      <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.25)", borderRadius:20, padding:"8px 16px", backdropFilter:"blur(8px)" }}>
-                          <span style={{ fontSize:13, color:"rgba(255,255,255,0.85)" }}>Combo答对</span>
-                          <span style={{ fontFamily:"DM Serif Display, serif", fontSize:22, color:"#fff", fontWeight:900, lineHeight:1 }}>
-                            {totalComboSum > 0 ? totalComboSum : "—"}
-                          </span>
-                          <span style={{ fontSize:16 }}>⚡</span>
-                        </div>
-                      </div>
+                      {/* Right: fighting cat */}
+                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ width:130, height:140, objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
                     </div>
-                    {/* Combo cat fighting mascot */}
-                    <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ position:"absolute", bottom:0, right:-8, width:160, height:180, objectFit:"contain", zIndex:1, pointerEvents:"none", filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
                   </div>
                 );
               })()}
