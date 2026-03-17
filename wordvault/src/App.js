@@ -3594,7 +3594,7 @@ export default function VocabApp() {
                 );
               })()}
             </div>
-            <div style={{ background: `linear-gradient(135deg,${GREEN},#5dd6d7)`, borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: `0 6px 20px ${GREEN}44` }}>
+            <div style={{ background: "linear-gradient(135deg,#45B7B8,#5dd6d7)", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 6px 20px #45B7B844" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                 <div>
                   <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff" }}>
