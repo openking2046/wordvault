@@ -2775,7 +2775,6 @@ export default function VocabApp() {
 
               {/* Tags — compact */}
               <div>
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 8, textTransform: "uppercase" }}>标签</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                   {userTags.map(tag => (
                     <span key={tag} style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 4 }} className={`tag-pill ${newTags.includes(tag) ? "active" : ""}`}>
@@ -3497,7 +3496,7 @@ export default function VocabApp() {
 
             {/* Task Tabs */}
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              {[["daily","每日任务"],["achievement","成就"]].map(([key, label]) => (
+              {[["daily","每日任务"]].map(([key, label]) => (
                 <button key={key} onClick={() => setTaskTab(key)}
                   style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1.5px solid " + (taskTab === key ? "#FF8000" : "#e8e8e8"), background: taskTab === key ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#fff", color: taskTab === key ? "#fff" : "#888", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", boxShadow: taskTab === key ? "0 4px 12px rgba(255,128,0,0.3)" : "none" }}>
                   {label}
@@ -3595,14 +3594,13 @@ export default function VocabApp() {
                 );
               })()}
             </div>
-            <div className="sec-title">今日目标</div>
-            <div style={{ border: "1px solid #ebebeb", borderRadius: 12, padding: 20, marginBottom: 28 }}>
+            <div style={{ background: `linear-gradient(135deg,${GREEN},#5dd6d7)`, borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: `0 6px 20px ${GREEN}44` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111" }}>
+                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff" }}>
                     {todayWords >= dailyGoal ? "目标完成 ✓" : `今天还差 ${Math.max(0, dailyGoal - todayWords)} 个单词`}
                   </div>
-                  <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>已添加 {todayWords} / 目标 {dailyGoal} 个新单词</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>已添加 {todayWords} / 目标 {dailyGoal} 个新单词</div>
                 </div>
                 {!editingGoal ? (
                   <button className="btn btn-outline btn-sm" onClick={() => { setTempGoal(dailyGoal); setEditingGoal(true); }}>修改目标</button>
@@ -3635,23 +3633,23 @@ export default function VocabApp() {
 
               {/* Word goal progress bar */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.85)", marginBottom: 6 }}>
                   <span>新增单词</span>
                   <span>{todayWords}/{dailyGoal}</span>
                 </div>
-                <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, todayWords / dailyGoal * 100)}%`, background: todayWords >= dailyGoal ? "#2d8a4e" : "#111", borderRadius: 4, transition: "width 0.4s" }} />
+                <div style={{ height: 8, background: "rgba(255,255,255,0.25)", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, todayWords / dailyGoal * 100)}%`, background: todayWords >= dailyGoal ? "#fff" : "rgba(255,255,255,0.7)", borderRadius: 4, transition: "width 0.4s" }} />
                 </div>
               </div>
 
               {/* Quiz goal progress bar */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.85)", marginBottom: 6 }}>
                   <span>今日答题</span>
                   <span>{todayQuizzes}/{dailyGoal * 4}</span>
                 </div>
-                <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, todayQuizzes / (dailyGoal * 4) * 100)}%`, background: todayQuizzes >= dailyGoal * 4 ? "#2d8a4e" : "#111", borderRadius: 4, transition: "width 0.4s" }} />
+                <div style={{ height: 8, background: "rgba(255,255,255,0.25)", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, todayQuizzes / (dailyGoal * 4) * 100)}%`, background: todayQuizzes >= dailyGoal * 4 ? "#fff" : "rgba(255,255,255,0.7)", borderRadius: 4, transition: "width 0.4s" }} />
                 </div>
               </div>
 
@@ -3670,22 +3668,21 @@ export default function VocabApp() {
               if (due.length === 0 && wrongCount === 0) return null;
               return (
                 <div style={{ marginBottom: 28 }}>
-                  <div className="sec-title">今日待办</div>
                   <div style={{ display: "flex", gap: 10 }}>
                     {due.length > 0 && (
                       <div onClick={() => { setQuizMode("review"); setTab(2); startQuiz("review"); }}
-                        style={{ flex: 1, border: "1.5px solid #c8900a", borderRadius: 12, padding: 14, background: "#fffbec", cursor: "pointer" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#c8900a" }}>{due.length}</div>
-                        <div style={{ fontSize: 11, color: "#b07800", fontWeight: 600 }}>词待复习</div>
-                        <div style={{ fontSize: 10, color: "#c8900a", marginTop: 4 }}>点击开始</div>
+                        style={{ flex: 1, border: "1.5px solid #45B7B8", borderRadius: 12, padding: 14, background: "#45B7B818", cursor: "pointer" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#45B7B8" }}>{due.length}</div>
+                        <div style={{ fontSize: 11, color: "#45B7B8", fontWeight: 600 }}>词待复习</div>
+                        <div style={{ fontSize: 10, color: "#45B7B8", marginTop: 4 }}>点击开始</div>
                       </div>
                     )}
                     {wrongCount > 0 && (
                       <div onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
-                        style={{ flex: 1, border: "1.5px solid #e53e3e", borderRadius: 12, padding: 14, background: "#fff5f5", cursor: "pointer" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#e53e3e" }}>{wrongCount}</div>
-                        <div style={{ fontSize: 11, color: "#c53030", fontWeight: 600 }}>词在错词库</div>
-                        <div style={{ fontSize: 10, color: "#e53e3e", marginTop: 4 }}>点击开始</div>
+                        style={{ flex: 1, border: "1.5px solid #DC7286", borderRadius: 12, padding: 14, background: "#DC728618", cursor: "pointer" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#DC7286" }}>{wrongCount}</div>
+                        <div style={{ fontSize: 11, color: "#DC7286", fontWeight: 600 }}>词在错词库</div>
+                        <div style={{ fontSize: 10, color: "#DC7286", marginTop: 4 }}>点击开始</div>
                       </div>
                     )}
                   </div>
