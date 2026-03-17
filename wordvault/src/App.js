@@ -535,7 +535,7 @@ export default function VocabApp() {
   const [showSummary, setShowSummary] = useState(false);
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [filterTag, setFilterTag] = useState("全部");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(null); // null=hidden, ""=open empty
   const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | alpha
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
@@ -649,7 +649,7 @@ export default function VocabApp() {
   const allTags = ["全部", ...Array.from(new Set(words.flatMap(w => w.tags || [])))];
   const filteredWords = [...words]
     .filter(w => filterTag === "全部" || (w.tags || []).includes(filterTag))
-    .filter(w => !searchQuery.trim() || w.word.toLowerCase().includes(searchQuery.toLowerCase()) || w.meaning.includes(searchQuery))
+    .filter(w => !searchQuery || !searchQuery.trim() || w.word.toLowerCase().includes(searchQuery.toLowerCase()) || w.meaning.includes(searchQuery))
     .sort((a, b) => {
       if (sortOrder === "alpha") return a.word.localeCompare(b.word);
       if (sortOrder === "oldest") return a.id - b.id;
@@ -2458,30 +2458,53 @@ export default function VocabApp() {
               </div>
             )}
 
-            {/* ── SEARCH BAR ── */}
-            <div style={{ position:"relative", marginBottom:14 }}>
-              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="搜索单词或释义…"
-                style={{ paddingLeft:40, background:"#fff", border:"1.5px solid #ffe0b2", borderRadius:14, boxShadow:"0 2px 8px rgba(255,128,0,0.08)" }} />
-              <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"#FF8000", fontSize:16, pointerEvents:"none" }}>⌕</span>
-              {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"#aaa", fontSize:18 }}>×</button>}
-            </div>
+            {/* ── CONTROLS ROW: sort/tags left, search icon right ── */}
+            <div style={{ display:"flex", gap:8, marginBottom:16, alignItems:"flex-start" }}>
 
-            {/* ── TAG FILTER ── */}
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
-              {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
-            </div>
-
-            {/* ── SORT + GROUP ── */}
-            <div style={{ display:"flex", gap:6, marginBottom:16, justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ display:"flex", gap:6 }}>
-                {[["newest","最新"],["oldest","最早"],["alpha","A→Z"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setSortOrder(val)} style={{ fontSize:12, padding:"5px 12px", borderRadius:20, border:"1px solid "+(sortOrder===val ? "#FF8000" : "#e0e0e0"), background: sortOrder===val ? "#FF8000" : "#fff", color: sortOrder===val ? "#fff" : "#777", cursor:"pointer", fontFamily:"inherit", fontWeight: sortOrder===val ? 700 : 400, transition:"all 0.15s" }}>{label}</button>
-                ))}
+              {/* Left: sort pills + tag filter stacked */}
+              <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8 }}>
+                {/* Sort pills */}
+                <div style={{ display:"flex", gap:6 }}>
+                  {[["newest","最新"],["oldest","最早"],["alpha","A→Z"]].map(([val, label]) => (
+                    <button key={val} onClick={() => setSortOrder(val)} style={{ fontSize:12, padding:"5px 12px", borderRadius:20, border:"1px solid "+(sortOrder===val ? "#FF8000" : "#e0e0e0"), background: sortOrder===val ? "#FF8000" : "#fff", color: sortOrder===val ? "#fff" : "#777", cursor:"pointer", fontFamily:"inherit", fontWeight: sortOrder===val ? 700 : 400, transition:"all 0.15s" }}>{label}</button>
+                  ))}
+                </div>
+                {/* Tag filter pills */}
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                  {allTags.map(tag => <span key={tag} className={`tag-pill ${filterTag === tag ? "active" : ""}`} onClick={() => setFilterTag(tag)}>{tag}</span>)}
+                </div>
               </div>
-              <button onClick={() => setGroupByTag(g => !g)} style={{ fontSize:12, padding:"5px 12px", borderRadius:20, border:"1px solid "+(groupByTag ? "#FF8000" : "#e0e0e0"), background: groupByTag ? "#FF8000" : "#fff", color: groupByTag ? "#fff" : "#777", cursor:"pointer", fontFamily:"inherit", transition:"all 0.15s" }}>
-                {groupByTag ? "取消分组" : "按标签"}
-              </button>
+
+              {/* Right: search + group-by-tag stacked, matching nav SVG badge style */}
+              <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
+                {/* Search icon button */}
+                <div style={{ position:"relative" }}>
+                  <button onClick={() => setSearchQuery(searchQuery === null ? "" : (searchQuery === "" ? null : ""))}
+                    style={{ width:42, height:42, borderRadius:14, background: searchQuery !== null ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: searchQuery !== null ? "0 4px 12px rgba(255,128,0,0.35)" : "none" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={searchQuery !== null ? "#fff" : "#888"} strokeWidth="2.5" strokeLinecap="round">
+                      <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+                    </svg>
+                  </button>
+                </div>
+                {/* Group by tag icon button */}
+                <button onClick={() => setGroupByTag(g => !g)}
+                  style={{ width:42, height:42, borderRadius:14, background: groupByTag ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: groupByTag ? "0 4px 12px rgba(255,128,0,0.35)" : "none" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={groupByTag ? "#fff" : "#888"} strokeWidth="2.5" strokeLinecap="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                  </svg>
+                </button>
+              </div>
             </div>
+
+            {/* Search input — shown when search active */}
+            {searchQuery !== null && (
+              <div style={{ position:"relative", marginBottom:14 }}>
+                <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="搜索单词或释义…"
+                  style={{ paddingLeft:40, background:"#fff", border:"1.5px solid #FF8000", borderRadius:14, boxShadow:"0 2px 8px rgba(255,128,0,0.12)" }} />
+                <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"#FF8000", fontSize:16, pointerEvents:"none" }}>⌕</span>
+                {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"#aaa", fontSize:18 }}>×</button>}
+              </div>
+            )}
 
             {/* ── EMPTY STATE ── */}
             {filteredWords.length === 0 && (
@@ -2526,35 +2549,33 @@ export default function VocabApp() {
                       <div style={{ width:8, height:8, borderRadius:"50%", background: dot.color, boxShadow: isExpanded ? `0 0 0 2px ${dot.color}44` : "none" }} title={dot.label} />
                     </div>
 
-                    {/* Word */}
-                    <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, color:"#111", lineHeight:1.15, marginBottom:4, paddingRight:20 }}>
-                      {w.word}
-                    </div>
-
-                    {/* Phonetic + play */}
-                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
-                      {w.phonetic && <span style={{ fontSize:11, color:"#aaa", fontStyle:"italic" }}>{w.phonetic}</span>}
+                    {/* Word + play button on same line */}
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4, paddingRight:20 }}>
+                      <div style={{ fontFamily:"DM Serif Display, serif", fontSize:20, color:"#111", lineHeight:1.15 }}>
+                        {w.word}
+                      </div>
                       <button onClick={e => { e.stopPropagation(); speak(w.word); }}
-                        style={{ width:24, height:24, borderRadius:"50%", background: isExpanded ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:9, color: isExpanded ? "#fff" : "#555", transition:"all 0.2s" }}>
+                        style={{ width:26, height:26, borderRadius:"50%", background: isExpanded ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:9, color: isExpanded ? "#fff" : "#555", transition:"all 0.2s" }}>
                         ▶
                       </button>
                     </div>
 
-                    {/* Meaning */}
-                    <div style={{ fontSize:12, color:"#555", lineHeight:1.5, marginBottom: w.example ? 8 : 0 }}>
+                    {/* Phonetic */}
+                    {w.phonetic && <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", marginBottom:6 }}>{w.phonetic}</div>}
+
+                    {/* Meaning - always visible */}
+                    <div style={{ fontSize:12, color:"#555", lineHeight:1.5 }}>
                       {w.meaning}
                     </div>
 
-                    {/* Example */}
-                    {w.example && (
-                      <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", lineHeight:1.5, borderLeft:"2px solid #FFE0A0", paddingLeft:8, marginBottom:10 }}>
+                    {/* Example + Tags — only when expanded */}
+                    {isExpanded && w.example && (
+                      <div style={{ fontSize:11, color:"#aaa", fontStyle:"italic", lineHeight:1.5, borderLeft:"2px solid #FFE0A0", paddingLeft:8, marginTop:10 }}>
                         {w.example}
                       </div>
                     )}
-
-                    {/* Tags */}
-                    {(w.tags||[]).length > 0 && (
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:6 }}>
+                    {isExpanded && (w.tags||[]).length > 0 && (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:8 }}>
                         {(w.tags||[]).map(t => (
                           <span key={t} style={{ fontSize:10, padding:"2px 7px", borderRadius:8, background:"#fff5e0", color:"#c07000", fontWeight:600 }}>{t}</span>
                         ))}
