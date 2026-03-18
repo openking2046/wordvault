@@ -1906,7 +1906,7 @@ export default function VocabApp() {
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: center; height: 68px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 0 6px; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; height: 68px; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; height: 68px; }
-        .nav-center-btn { width: 64px; height: 64px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -22px; border: 3px solid #fff; box-shadow: 0 4px 16px rgba(220,114,134,0.4); transition: transform 0.15s; }
+        .nav-center-btn { width: 96px; height: 96px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -36px; border: 4px solid #fff; box-shadow: 0 6px 24px rgba(220,114,134,0.5); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 22px; line-height: 1; color: #fff; font-style: normal; }
         .nav-icon { font-size: 30px; line-height: 1; color: rgba(255,255,255,0.65); font-style: normal; display: none; }
@@ -2848,16 +2848,16 @@ export default function VocabApp() {
                 const pendingCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
                 return (
-                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "22px 20px 20px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
+                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "14px 16px 14px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
                     <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
                     <div style={{ display:"flex", alignItems:"center", gap:12 }}>
                       {/* Left: two stat icons */}
-                      <div style={{ display:"flex", gap:10, flex:1 }}>
-                        <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo} size={120} />
-                        <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}  size={120} />
+                      <div style={{ display:"flex", gap:8, flex:1, paddingLeft:0, paddingRight:8 }}>
+                        <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo} size={100} />
+                        <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}  size={100} />
                       </div>
                       {/* Right: fighting cat */}
-                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ width:130, height:140, objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
+                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ width:110, height:120, objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
                     </div>
                   </div>
                 );
@@ -4788,7 +4788,7 @@ export default function VocabApp() {
           if (i === 2) return (
             <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); }}>
               <div className="nav-center-btn">
-                <img src={CAT_CLAW} alt="猫爪" style={{ width: 42, height: 42, objectFit: "contain" }} />
+                <img src={CAT_CLAW} alt="猫爪" style={{ width: 62, height: 62, objectFit: "contain" }} />
               </div>
             </button>
           );
