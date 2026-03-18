@@ -4788,7 +4788,7 @@ export default function VocabApp() {
           if (i === 2) return (
             <button key={i} className={`nav-item-center ${tab === 2 ? "active" : ""}`} onClick={() => { haptic("light"); setTab(2); setQuizLobby(true); setPairActive(false); clearInterval(pairTimerRef.current); }}>
               <div className="nav-center-btn">
-                <img src={CAT_CLAW} alt="猫爪" style={{ width: 62, height: 62, objectFit: "contain" }} />
+                <img src={CAT_CLAW} alt="猫爪" style={{ width: 90, height: 90, objectFit: "contain" }} />
               </div>
             </button>
           );
