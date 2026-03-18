@@ -1906,7 +1906,7 @@ export default function VocabApp() {
         .bottom-nav-inner { display: flex; width: 100%; max-width: 520px; align-items: center; height: 68px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 0 6px; cursor: pointer; gap: 4px; border: none; background: none; font-family: inherit; height: 68px; }
         .nav-item-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 0 6px; cursor: pointer; border: none; background: none; font-family: inherit; position: relative; height: 68px; }
-        .nav-center-btn { width: 96px; height: 96px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -36px; border: 4px solid #fff; box-shadow: 0 6px 24px rgba(220,114,134,0.5); transition: transform 0.15s; }
+        .nav-center-btn { width: 64px; height: 64px; border-radius: 50%; background: #DC7286; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; margin-top: -22px; border: 3px solid #fff; box-shadow: 0 4px 16px rgba(220,114,134,0.4); transition: transform 0.15s; }
         .nav-item-center:active .nav-center-btn { transform: scale(0.9); }
         .nav-center-icon { font-size: 22px; line-height: 1; color: #fff; font-style: normal; }
         .nav-icon { font-size: 30px; line-height: 1; color: rgba(255,255,255,0.65); font-style: normal; display: none; }
