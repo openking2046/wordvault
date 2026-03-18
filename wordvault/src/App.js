@@ -2949,7 +2949,6 @@ export default function VocabApp() {
                       <div style={{ padding:"38px 16px 0", flex:1, position:"relative", zIndex:2 }}>
                         <div style={{ fontSize:26, marginBottom:6, lineHeight:1 }}>{g.icon}</div>
                         <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:4, letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"65%" }}>{g.name}</div>
-                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.78)", lineHeight:1.4, maxWidth:"65%" }}>{g.desc}</div>
                       </div>
                       <div style={{ padding:"0 0 16px" }} />
                     </div>
