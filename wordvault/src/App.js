@@ -3,23 +3,23 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
-import COMBO_CAT from './combo-cat.png';
-import CAT_CLAW from './cat-claw.png';
-import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
-import COMBOCAT_1 from './combocat-1.png';
-import COMBOCAT_2 from './Combocat-2.png';
-import COMBOCAT_3 from './combocat-3.png';
-import COMBOCAT_4 from './combotcat-4.png';
-import COMBOCAT_5 from './combotcat-5.png';
-import COMBOCAT_6 from './combotcat-6.png';
-import COMBOCAT_7 from './combotcat-7.png';
-import COMBOCAT_8 from './combotcat-8.png';
-import COMBOCAT_9 from './combotcat-9.png';
+import COMBO_CAT from './combo-cat.webp';
+import CAT_CLAW from './cat-claw.webp';
+import COMBO_CAT_FIGHTING from './Combo-cat-fighting.webp';
+import COMBOCAT_1 from './combocat-1.webp';
+import COMBOCAT_2 from './combocat-2.webp';
+import COMBOCAT_3 from './combocat-3.webp';
+import COMBOCAT_4 from './combotcat-4.webp';
+import COMBOCAT_5 from './combotcat-5.webp';
+import COMBOCAT_6 from './combotcat-6.webp';
+import COMBOCAT_7 from './combotcat-7.webp';
+import COMBOCAT_8 from './combotcat-8.webp';
+import COMBOCAT_9 from './combotcat-9.webp';
 // SVG stat icons — add files to src/ then uncomment imports below:
-import MAX_WORDS_PNG from './max-words.png';
-import CORRECT_RATE_PNG from './correct-rate.png';
-import MAX_COMBO_PNG from './max-combo.png';
-import MAX_XP_PNG from './max-xp.png';
+import MAX_WORDS_PNG from './max-words.webp';
+import CORRECT_RATE_PNG from './correct-rate.webp';
+import MAX_COMBO_PNG from './max-combo.webp';
+import MAX_XP_PNG from './max-xp.webp';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
