@@ -599,6 +599,16 @@ export default function VocabApp() {
   useEffect(() => { try { localStorage.setItem("wv_user_tags", JSON.stringify(userTags)); } catch {} }, [userTags]);
   useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
 
+  // 预加载 Combo 页所有 PNG，防止点击猫爪后图片才开始加载导致卡顿
+  useEffect(() => {
+    const srcs = [
+      COMBOCAT_1, COMBOCAT_2, COMBOCAT_3, COMBOCAT_4, COMBOCAT_5,
+      COMBOCAT_6, COMBOCAT_7, COMBOCAT_8, COMBOCAT_9,
+      COMBO_CAT_FIGHTING, MAX_COMBO_PNG, CORRECT_RATE_PNG,
+    ];
+    srcs.forEach(src => { const img = new Image(); img.src = src; });
+  }, []);
+
   // Streak logic - runs on mount
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -2915,6 +2925,7 @@ export default function VocabApp() {
                       onClick={() => {
                         haptic("medium");
                         if(g.id==="pair"){startPairGame();setQuizLobby(false);}
+                        else if(g.id==="fill"){startFillGame();}
                         else if(g.id==="challenge"){setShowCreateChallenge(true);setGeneratedLink("");setChallengeSelectedWords([]);}
                         else if(g.id==="battle"){setQuizMode("battle");setQuizLobby(false);if(!battleActive&&!showBattleResult)startBattle();}
                         else{setQuizMode(g.id);setQuizResult(null);setSpellingInput("");setHintRevealed(0);startQuiz(g.id);setQuizLobby(false);}
@@ -2944,7 +2955,7 @@ export default function VocabApp() {
                       {/* Big faded number */}
                       <div style={{ position:"absolute", top:-10, right:8, fontFamily:"DM Serif Display, serif", fontSize:92, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.18)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
                       {/* Mascot illustration */}
-                      <img src={g.catImg} alt="Combo猫" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
+                      <img src={g.catImg} alt="Combo猫" decoding="async" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
                       {/* Content */}
                       <div style={{ padding:"38px 16px 0", flex:1, position:"relative", zIndex:2 }}>
                         <div style={{ fontSize:26, marginBottom:6, lineHeight:1 }}>{g.icon}</div>
