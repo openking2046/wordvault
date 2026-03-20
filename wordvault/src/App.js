@@ -2857,44 +2857,25 @@ export default function VocabApp() {
               {/* ── HERO STATS CARD ── */}
               {(() => {
                 const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
-                const stats = [
-                  { icon: "🔥", value: globalMaxCombo, label: "最高连击" },
-                  { icon: "🎯", value: accuracy + "%",  label: "正确率"   },
-                  { icon: "📚", value: words.length,    label: "词库单词" },
-                ];
                 return (
                   <div style={{ background: "linear-gradient(135deg, #FF7A00 0%, #FFB347 55%, #FFD080 100%)", borderRadius: 24, padding: "16px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
                     {/* Decorative circles */}
                     <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
                     <div style={{ position:"absolute", bottom:-24, left:-16, width:90, height:90, borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }}/>
-                    {/* Top row: label + cat */}
+                    {/* Top row: title + cat */}
                     <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
-                      <div>
-                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:"1.8px", color:"rgba(255,255,255,0.75)", textTransform:"uppercase", marginBottom:5 }}>今日状态</div>
-                        <div style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.5px", lineHeight:1, textShadow:"0 2px 8px rgba(0,0,0,0.12)" }}>COMBO 挑战</div>
-                      </div>
+                      <div style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.5px", lineHeight:1, textShadow:"0 2px 8px rgba(0,0,0,0.12)", marginTop:4 }}>COMBO 挑战</div>
                       <img src={COMBO_CAT_FIGHTING} alt="Combo猫" decoding="async" style={{ width:86, height:94, objectFit:"contain", marginTop:-6, marginRight:-4, flexShrink:0, filter:"drop-shadow(0 4px 14px rgba(0,0,0,0.18))" }} />
                     </div>
-                    {/* Stats row — pure CSS, no image loading */}
+                    {/* Stats row — WebP icons with value overlaid */}
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-                      {stats.map(({ icon, value, label }) => (
-                        <div key={label} style={{ background:"rgba(255,255,255,0.22)", borderRadius:14, padding:"11px 6px 10px", textAlign:"center" }}>
-                          <div style={{ fontSize:17, marginBottom:4, lineHeight:1 }}>{icon}</div>
-                          <div style={{ fontSize:21, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:"-0.5px", fontFamily:"DM Serif Display, serif" }}>{value}</div>
-                          <div style={{ fontSize:10, color:"rgba(255,255,255,0.82)", marginTop:4, letterSpacing:"0.2px", fontWeight:500 }}>{label}</div>
-                        </div>
-                      ))}
+                      <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo}   size="100%" />
+                      <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}   size="100%" />
+                      <StatPNG src={MAX_WORDS_PNG}    value={words.length}     size="100%" />
                     </div>
                   </div>
                 );
               })()}
-
-              {/* ── SECTION HEADER ── */}
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:16, marginTop:4 }}>
-                <div style={{ flex:1, height:1.5, background:"linear-gradient(to right, transparent, #e0e0e0)", borderRadius:2 }}/>
-                <div style={{ fontSize:18, fontWeight:800, color:"#111", letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>选择Combo练习模式</div>
-                <div style={{ flex:1, height:1.5, background:"linear-gradient(to left, transparent, #e0e0e0)", borderRadius:2 }}/>
-              </div>
 
               {/* ── MODE CARDS ── */}
               {(() => {
