@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
 import COMBO_CAT from './combo-cat.webp';
+import COMBO_CAT_HEAD from './combo-cat-head.webp';
 import CAT_CLAW from './cat-claw.webp';
 import COMBO_CAT_FIGHTING from './Combo-cat-fighting.webp';
 import COMBOCAT_1 from './combocat-1.webp';
@@ -2335,8 +2336,7 @@ export default function VocabApp() {
               <div style={{ display: "flex", gap: 10 }}>
 
                 {/* LEFT: User card */}
-                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "14px 14px 12px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", position: "relative", overflow: "hidden" }}
-                  onClick={() => setHeaderExpanded(e => !e)}>
+                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "14px 14px 12px", boxShadow: `0 6px 20px ${GREEN}55`, position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     {profile && (
@@ -2358,13 +2358,9 @@ export default function VocabApp() {
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>{r.name}</div>
                   </div>
-                  <div style={{ height: 4, background: "rgba(0,0,0,0.18)", borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ height: "100%", background: "rgba(255,255,255,0.85)", borderRadius: 2, width: progressPct + "%", transition: "width 0.6s" }} />
+                  <div style={{ height: 5, background: "rgba(0,0,0,0.22)", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: "linear-gradient(90deg, #0a4a25 0%, #16a34a 100%)", borderRadius: 3, width: progressPct + "%", transition: "width 0.6s ease" }} />
                   </div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>
-                    {nextR ? `距 ${nextR.name} 还差 ${Math.max(0, nextR.words - words.length)} 词` : "🏆 已达最高段位"}
-                  </div>
-                  <div style={{ position: "absolute", bottom: 10, right: 12, color: "rgba(255,255,255,0.6)", fontSize: 11, transition: "transform 0.3s", transform: headerExpanded ? "rotate(180deg)" : "rotate(0)" }}>▾</div>
                 </div>
 
                 {/* RIGHT: Pet card */}
@@ -2372,16 +2368,12 @@ export default function VocabApp() {
                   onClick={() => setShowCatRoom(true)}>
                   <div style={{ position: "absolute", top: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <img src={COMBO_CAT} alt="猫" style={{ width: 44, height: 44, objectFit: "contain", filter: catHunger < 30 ? "brightness(0.7) saturate(0.4)" : "none" }} />
+                    <img src={COMBO_CAT_HEAD} alt="猫" decoding="async" style={{ width: 44, height: 44, objectFit: "contain", filter: catHunger < 30 ? "brightness(0.7) saturate(0.4)" : "none" }} />
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{catName}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                        <div style={{ background: "rgba(255,255,255,0.25)", borderRadius: 8, padding: "1px 7px", fontSize: 10, fontWeight: 800, color: "#fff" }}>Lv.{catLv}</div>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>{catStage.name}</div>
-                      </div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{catStage.name}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>今日投喂 {catFeedsToday} 次 🍖</div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                     <span style={{ fontSize: 10, color: "rgba(255,255,255,0.8)" }}>❤️ 综合健康</span>
                     <span style={{ fontSize: 10, color: "#fff", fontWeight: 700 }}>{catOverallHealth}%</span>
@@ -2394,27 +2386,6 @@ export default function VocabApp() {
               </div>
 
               {/* Expanded panel */}
-              {headerExpanded && (
-                <div onClick={e => e.stopPropagation()}
-                  style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN2})`, borderRadius: "0 0 20px 20px", padding: "14px 16px", marginTop: -8, boxShadow: `0 8px 20px ${GREEN}44`, animation: "unlockSub 0.25s ease both" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-                    {[
-                      { val: words.length, unit: "词", label: "词库" },
-                      { val: words.filter(w => w.mastery >= 4).length, unit: "个", label: "已掌握" },
-                      { val: correctRate, unit: "%", label: "正确率" },
-                      { val: globalMaxCombo, unit: "×", label: "最高Combo" },
-                    ].map(({ val, unit, label }) => (
-                      <div key={label} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff", fontWeight: 700, lineHeight: 1 }}>
-                          {val}<span style={{ fontSize: 9, opacity: 0.7, marginLeft: 1 }}>{unit}</span>
-                        </div>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.65)", marginTop: 3 }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 10 }}>加入于 {profile?.joinDate || "—"}</div>
-                </div>
-              )}
             </div>
           </div>
         );
@@ -2954,8 +2925,7 @@ export default function VocabApp() {
                       {/* Content */}
                       <div style={{ padding:"20px 14px 14px", flex:1, position:"relative", zIndex:2, display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
                         <div style={{ fontSize:22, marginBottom:5, lineHeight:1 }}>{g.icon}</div>
-                        <div style={{ fontSize:16, fontWeight:800, color:"#fff", marginBottom:3, letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"68%", lineHeight:1.2 }}>{g.name}</div>
-                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.78)", maxWidth:"70%", lineHeight:1.35, fontWeight:400 }}>{g.desc}</div>
+                        <div style={{ fontSize:16, fontWeight:800, color:"#fff", letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"68%", lineHeight:1.2 }}>{g.name}</div>
                       </div>
                     </div>
                   );
