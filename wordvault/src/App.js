@@ -2015,6 +2015,8 @@ export default function VocabApp() {
         .opt-btn.correct { animation: correctPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
         .opt-btn.wrong   { animation: wrongShake 0.4s ease both; }
         @keyframes unlockSub     { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+        @keyframes cardSlideIn   { 0%{opacity:0;transform:translateY(18px) scale(0.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        .game-card-enter { animation: cardSlideIn 0.38s cubic-bezier(0.22,1,0.36,1) both; }
         @keyframes particleFly {
           0%   { transform: translate(0,0) scale(1); opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
@@ -2854,20 +2856,34 @@ export default function VocabApp() {
 
               {/* ── HERO STATS CARD ── */}
               {(() => {
-                const masteredCount = words.filter(w => (w.correct || 0) >= 3).length;
-                const pendingCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
+                const stats = [
+                  { icon: "🔥", value: globalMaxCombo, label: "最高连击" },
+                  { icon: "🎯", value: accuracy + "%",  label: "正确率"   },
+                  { icon: "📚", value: words.length,    label: "词库单词" },
+                ];
                 return (
-                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "14px 16px 14px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
-                    <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
-                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                      {/* Left: two stat icons */}
-                      <div style={{ display:"flex", gap:8, flex:1, paddingLeft:0, paddingRight:8 }}>
-                        <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo} size={100} />
-                        <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}  size={100} />
+                  <div style={{ background: "linear-gradient(135deg, #FF7A00 0%, #FFB347 55%, #FFD080 100%)", borderRadius: 24, padding: "16px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
+                    {/* Decorative circles */}
+                    <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
+                    <div style={{ position:"absolute", bottom:-24, left:-16, width:90, height:90, borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }}/>
+                    {/* Top row: label + cat */}
+                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
+                      <div>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:"1.8px", color:"rgba(255,255,255,0.75)", textTransform:"uppercase", marginBottom:5 }}>今日状态</div>
+                        <div style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.5px", lineHeight:1, textShadow:"0 2px 8px rgba(0,0,0,0.12)" }}>COMBO 挑战</div>
                       </div>
-                      {/* Right: fighting cat */}
-                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ width:110, height:120, objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
+                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" decoding="async" style={{ width:86, height:94, objectFit:"contain", marginTop:-6, marginRight:-4, flexShrink:0, filter:"drop-shadow(0 4px 14px rgba(0,0,0,0.18))" }} />
+                    </div>
+                    {/* Stats row — pure CSS, no image loading */}
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                      {stats.map(({ icon, value, label }) => (
+                        <div key={label} style={{ background:"rgba(255,255,255,0.22)", borderRadius:14, padding:"11px 6px 10px", textAlign:"center" }}>
+                          <div style={{ fontSize:17, marginBottom:4, lineHeight:1 }}>{icon}</div>
+                          <div style={{ fontSize:21, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:"-0.5px", fontFamily:"DM Serif Display, serif" }}>{value}</div>
+                          <div style={{ fontSize:10, color:"rgba(255,255,255,0.82)", marginTop:4, letterSpacing:"0.2px", fontWeight:500 }}>{label}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
@@ -2908,8 +2924,10 @@ export default function VocabApp() {
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
-                const renderCard = (g) => {
+                const renderCard = (g, colIdx) => {
                   let touchStartY = 0, touchStartX = 0, touchMoved = false;
+                  // stagger: left col uses odd steps, right col uses even steps
+                  const delay = (g.num - 1) * 45;
                   return (
                     <div key={g.id}
                       onTouchStart={e => { touchStartY=e.touches[0].clientY; touchStartX=e.touches[0].clientX; touchMoved=false; }}
@@ -2931,44 +2949,40 @@ export default function VocabApp() {
                         else{setQuizMode(g.id);setQuizResult(null);setSpellingInput("");setHintRevealed(0);startQuiz(g.id);setQuizLobby(false);}
                       }}
                       role="button"
-                      className="game-card-btn"
+                      className="game-card-btn game-card-enter"
                       style={{
                         width:"100%", fontFamily:"inherit", background: g.color,
                         borderRadius:20, marginBottom:10, cursor:"pointer",
                         position:"relative", overflow:"hidden", userSelect:"none",
                         display:"flex", flexDirection:"column",
                         boxShadow: `0 6px 20px ${g.color}55`,
-                        minHeight: 168,
+                        minHeight: 160,
+                        animationDelay: `${delay}ms`,
                       }}
                     >
                       {/* Badge (alert) */}
                       {g.badge && (
-                        <div style={{ position:"absolute", top:12, left:"50%", transform:"translateX(-50%)", background:"#fff", borderRadius:20, padding:"4px 10px", fontSize:10, fontWeight:700, color:g.color, whiteSpace:"nowrap", boxShadow:"0 2px 8px rgba(0,0,0,0.12)", zIndex:3 }}>
+                        <div style={{ position:"absolute", top:10, left:"50%", transform:"translateX(-50%)", background:"#fff", borderRadius:20, padding:"3px 10px", fontSize:10, fontWeight:700, color:g.color, whiteSpace:"nowrap", boxShadow:"0 2px 8px rgba(0,0,0,0.12)", zIndex:3 }}>
                           {g.badge}
                         </div>
                       )}
-                      {/* Decorative lines top-left */}
-                      <div style={{ position:"absolute", top:14, left:14, zIndex:2, pointerEvents:"none" }}>
-                        <div style={{ width:22, height:3, borderRadius:2, background:"rgba(255,255,255,0.45)", marginBottom:4 }}/>
-                        <div style={{ width:14, height:3, borderRadius:2, background:"rgba(255,255,255,0.3)" }}/>
-                      </div>
                       {/* Big faded number */}
-                      <div style={{ position:"absolute", top:-10, right:8, fontFamily:"DM Serif Display, serif", fontSize:92, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.18)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
+                      <div style={{ position:"absolute", top:-12, right:6, fontFamily:"DM Serif Display, serif", fontSize:88, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.15)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
                       {/* Mascot illustration */}
-                      <img src={g.catImg} alt="Combo猫" decoding="async" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
+                      <img src={g.catImg} alt="Combo猫" decoding="async" style={{ position:"absolute", bottom:-4, right:-4, width:88, height:88, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
                       {/* Content */}
-                      <div style={{ padding:"38px 16px 0", flex:1, position:"relative", zIndex:2 }}>
-                        <div style={{ fontSize:26, marginBottom:6, lineHeight:1 }}>{g.icon}</div>
-                        <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:4, letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"65%" }}>{g.name}</div>
+                      <div style={{ padding:"20px 14px 14px", flex:1, position:"relative", zIndex:2, display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
+                        <div style={{ fontSize:22, marginBottom:5, lineHeight:1 }}>{g.icon}</div>
+                        <div style={{ fontSize:16, fontWeight:800, color:"#fff", marginBottom:3, letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"68%", lineHeight:1.2 }}>{g.name}</div>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.78)", maxWidth:"70%", lineHeight:1.35, fontWeight:400 }}>{g.desc}</div>
                       </div>
-                      <div style={{ padding:"0 0 16px" }} />
                     </div>
                   );
                 };
                 return (
                   <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                    <div style={{ flex:1 }}>{left.map(renderCard)}</div>
-                    <div style={{ flex:1 }}>{right.map(renderCard)}</div>
+                    <div style={{ flex:1 }}>{left.map((g, i) => renderCard(g, i))}</div>
+                    <div style={{ flex:1 }}>{right.map((g, i) => renderCard(g, i))}</div>
                   </div>
                 );
               })()}
