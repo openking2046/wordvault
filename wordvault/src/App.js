@@ -2018,6 +2018,26 @@ export default function VocabApp() {
         @keyframes unlockSub     { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
         @keyframes cardSlideIn   { 0%{opacity:0;transform:translateY(18px) scale(0.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
         .game-card-enter { animation: cardSlideIn 0.38s cubic-bezier(0.22,1,0.36,1) both; }
+
+        /* Fire glow animation for max-combo icon */
+        @keyframes fireGlow {
+          0%   { filter: drop-shadow(0 0 4px rgba(255,120,0,0.5)) drop-shadow(0 0 10px rgba(255,60,0,0.3)); transform: scale(1); }
+          25%  { filter: drop-shadow(0 0 10px rgba(255,160,0,0.8)) drop-shadow(0 0 22px rgba(255,80,0,0.5)); transform: scale(1.04) translateY(-2px); }
+          50%  { filter: drop-shadow(0 0 6px rgba(255,100,0,0.6)) drop-shadow(0 0 16px rgba(255,40,0,0.4)); transform: scale(1.01); }
+          75%  { filter: drop-shadow(0 0 12px rgba(255,180,0,0.9)) drop-shadow(0 0 26px rgba(255,90,0,0.5)); transform: scale(1.05) translateY(-3px); }
+          100% { filter: drop-shadow(0 0 4px rgba(255,120,0,0.5)) drop-shadow(0 0 10px rgba(255,60,0,0.3)); transform: scale(1); }
+        }
+        @keyframes starPulse {
+          0%,100% { filter: drop-shadow(0 0 4px rgba(100,180,255,0.5)) drop-shadow(0 0 10px rgba(60,120,255,0.3)); transform: scale(1); }
+          50%      { filter: drop-shadow(0 0 10px rgba(120,200,255,0.9)) drop-shadow(0 0 22px rgba(80,140,255,0.6)); transform: scale(1.04); }
+        }
+        @keyframes bookFloat {
+          0%,100% { filter: drop-shadow(0 0 4px rgba(80,200,120,0.5)) drop-shadow(0 0 10px rgba(40,160,80,0.3)); transform: scale(1) translateY(0); }
+          50%      { filter: drop-shadow(0 0 10px rgba(100,220,140,0.8)) drop-shadow(0 0 20px rgba(60,180,100,0.5)); transform: scale(1.03) translateY(-3px); }
+        }
+        .stat-anim-fire { animation: fireGlow 1.8s ease-in-out infinite; transform-origin: center bottom; }
+        .stat-anim-star { animation: starPulse 2.2s ease-in-out infinite; transform-origin: center; }
+        .stat-anim-book { animation: bookFloat 2.6s ease-in-out infinite; transform-origin: center; }
         @keyframes particleFly {
           0%   { transform: translate(0,0) scale(1); opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
@@ -2840,9 +2860,9 @@ export default function VocabApp() {
                     </div>
                     {/* Stats row — WebP icons with value overlaid */}
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-                      <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo}   size="100%" />
-                      <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}   size="100%" />
-                      <StatPNG src={MAX_WORDS_PNG}    value={words.length}     size="100%" />
+                      <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo}   size="100%" anim="fire" />
+                      <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}   size="100%" anim="star" />
+                      <StatPNG src={MAX_WORDS_PNG}    value={words.length}     size="100%" anim="book" />
                     </div>
                   </div>
                 );
@@ -4809,11 +4829,13 @@ export default function VocabApp() {
   );
 }
 // ── Stat PNG card — PNG image with dynamic number centered on top ──
-function StatPNG({ src, value, size = 110 }) {
+// anim: "fire" | "star" | "book" | undefined
+function StatPNG({ src, value, size = 110, anim }) {
   const isPercent = typeof size === 'string';
+  const animClass = anim === "fire" ? "stat-anim-fire" : anim === "star" ? "stat-anim-star" : anim === "book" ? "stat-anim-book" : "";
   return (
     <div style={{ position: "relative", width: isPercent ? size : size, aspectRatio: "1 / 1", flexShrink: 0 }}>
-      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+      <img src={src} alt="" className={animClass} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
       <div style={{
         position: "absolute",
         top: "50%", left: "50%",
