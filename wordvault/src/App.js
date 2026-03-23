@@ -488,6 +488,7 @@ export default function VocabApp() {
     } catch { return { count: 0, lastDate: null, showBroken: false }; }
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [flippedBadges, setFlippedBadges] = useState(new Set());
   const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong" | "listen" | "spell"
   const [quizLobby, setQuizLobby] = useState(true); // true = show game selection cards
 
@@ -2023,8 +2024,14 @@ export default function VocabApp() {
         .badge-scroll { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; padding-bottom:6px; margin-bottom:18px; scrollbar-width:none; -ms-overflow-style:none; }
         .badge-scroll::-webkit-scrollbar { display:none; }
         @keyframes badgePop { 0%{opacity:0;transform:scale(0.82) translateY(8px)} 70%{transform:scale(1.04) translateY(-2px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
-        .badge-card { scroll-snap-align:start; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; width:82px; padding:10px 6px 9px; border-radius:20px; cursor:default; transition:transform 0.18s; animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .badge-card:active { transform:scale(0.93); }
+
+        /* Badge 3D flip card */
+        .badge-flip-wrap { scroll-snap-align:start; flex-shrink:0; width:82px; height:96px; perspective:600px; cursor:pointer; animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .badge-flip-wrap:active .badge-flip-inner { transform: scale(0.93) rotateY(var(--flip-deg,0deg)); }
+        .badge-flip-inner { position:relative; width:100%; height:100%; transition:transform 0.52s cubic-bezier(0.34,1.2,0.64,1); transform-style:preserve-3d; }
+        .badge-flip-inner.flipped { transform:rotateY(180deg); }
+        .badge-flip-front, .badge-flip-back { position:absolute; inset:0; border-radius:20px; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 6px; }
+        .badge-flip-back { transform:rotateY(180deg); }
 
         /* Fire glow animation for max-combo icon */
         @keyframes fireGlow {
@@ -2491,26 +2498,55 @@ export default function VocabApp() {
                   delay: 450,
                 },
               ];
+              const toggleBadge = (label) => {
+                setFlippedBadges(prev => {
+                  const next = new Set(prev);
+                  next.has(label) ? next.delete(label) : next.add(label);
+                  return next;
+                });
+              };
               return (
                 <div className="badge-scroll">
-                  {badges.map((b, i) => (
-                    <div key={b.label} className="badge-card" style={{ background: b.bg, opacity: b.locked ? 0.55 : 1, animationDelay: b.delay + "ms" }}>
-                      <div style={{ fontSize: 22, lineHeight: 1, marginBottom: 4 }}>{b.icon}</div>
-                      <div style={{
-                        fontSize: b.isText ? 9 : 20,
-                        fontWeight: 900,
-                        color: "#fff",
-                        lineHeight: 1.1,
-                        textAlign: "center",
-                        textShadow: "0 1px 4px rgba(0,0,0,0.22)",
-                        letterSpacing: b.isText ? "-0.2px" : "-1px",
-                        wordBreak: "keep-all",
-                      }}>{b.value}</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", marginTop: 4, textAlign: "center", lineHeight: 1.2 }}>
-                        {b.label}{b.locked ? " 🔒" : ""}
+                  {badges.map((b) => {
+                    const isFlipped = flippedBadges.has(b.label);
+                    return (
+                      <div
+                        key={b.label}
+                        className="badge-flip-wrap"
+                        style={{ animationDelay: b.delay + "ms", opacity: b.locked ? 0.55 : 1 }}
+                        onClick={() => !b.locked && toggleBadge(b.label)}
+                      >
+                        <div className={`badge-flip-inner${isFlipped ? " flipped" : ""}`}>
+                          {/* FRONT — icon only */}
+                          <div className="badge-flip-front" style={{ background: b.bg }}>
+                            <div style={{ fontSize: 36, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.18))" }}>
+                              {b.icon}
+                            </div>
+                            {b.locked && (
+                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>🔒 即将开放</div>
+                            )}
+                          </div>
+                          {/* BACK — value + label */}
+                          <div className="badge-flip-back" style={{ background: b.bg }}>
+                            <div style={{
+                              fontSize: b.isText ? 9 : 22,
+                              fontWeight: 900,
+                              color: "#fff",
+                              lineHeight: 1,
+                              textAlign: "center",
+                              textShadow: "0 1px 6px rgba(0,0,0,0.25)",
+                              letterSpacing: b.isText ? 0 : "-1px",
+                              wordBreak: "keep-all",
+                              maxWidth: 70,
+                            }}>{b.value}</div>
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.88)", textAlign: "center", lineHeight: 1.3 }}>
+                              {b.label}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
