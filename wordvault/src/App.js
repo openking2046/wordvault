@@ -2026,7 +2026,7 @@ export default function VocabApp() {
         @keyframes badgePop { 0%{opacity:0;transform:scale(0.82) translateY(8px)} 70%{transform:scale(1.04) translateY(-2px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
 
         /* Badge 3D flip card */
-        .badge-flip-wrap { scroll-snap-align:start; flex-shrink:0; width:82px; height:96px; perspective:600px; cursor:pointer; animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .badge-flip-wrap { scroll-snap-align:start; flex-shrink:0; width:84px; height:84px; perspective:600px; cursor:pointer; animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
         .badge-flip-wrap:active .badge-flip-inner { transform: scale(0.93) rotateY(var(--flip-deg,0deg)); }
         .badge-flip-inner { position:relative; width:100%; height:100%; transition:transform 0.52s cubic-bezier(0.34,1.2,0.64,1); transform-style:preserve-3d; }
         .badge-flip-inner.flipped { transform:rotateY(180deg); }
