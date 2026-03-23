@@ -509,6 +509,7 @@ export default function VocabApp() {
   const pairCardCounterRef = useRef(0);
   const pairSoundRef = useRef(null);
   const quizSoundRef = useRef(null);
+  const flipSoundRef = useRef(null);
 
   // Fill-in-the-blank game state
   const [fillActive, setFillActive] = useState(false);
@@ -1246,6 +1247,41 @@ export default function VocabApp() {
         });
       }
     } catch {}
+  }
+
+  function playFlipSound() {
+    try {
+      if (!flipSoundRef.current) flipSoundRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = flipSoundRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const t = ctx.currentTime;
+      // Layer 1: crisp noise swoosh
+      const bufLen = Math.floor(ctx.sampleRate * 0.07);
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 1.8);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buf;
+      const hpf = ctx.createBiquadFilter();
+      hpf.type = "highpass"; hpf.frequency.value = 1800;
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.28, t);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+      noise.connect(hpf); hpf.connect(noiseGain); noiseGain.connect(ctx.destination);
+      noise.start(t); noise.stop(t + 0.08);
+      // Layer 2: short tonal click
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(900, t);
+      osc.frequency.exponentialRampToValueAtTime(400, t + 0.04);
+      const oscGain = ctx.createGain();
+      oscGain.gain.setValueAtTime(0.12, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      osc.connect(oscGain); oscGain.connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.05);
+    } catch(e) {}
   }
 
   function playCelebrationSound() {
@@ -2498,47 +2534,6 @@ export default function VocabApp() {
                   delay: 450,
                 },
               ];
-              const playFlipSound = () => {
-                try {
-                  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                  const play = () => {
-                    const t = ctx.currentTime;
-                    // Layer 1: crisp noise swoosh
-                    const bufLen = Math.floor(ctx.sampleRate * 0.07);
-                    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-                    const data = buf.getChannelData(0);
-                    for (let i = 0; i < bufLen; i++) {
-                      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 1.8);
-                    }
-                    const noise = ctx.createBufferSource();
-                    noise.buffer = buf;
-                    const hpf = ctx.createBiquadFilter();
-                    hpf.type = "highpass";
-                    hpf.frequency.value = 1800;
-                    const noiseGain = ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.28, t);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
-                    noise.connect(hpf); hpf.connect(noiseGain); noiseGain.connect(ctx.destination);
-                    noise.start(t); noise.stop(t + 0.08);
-                    // Layer 2: short tonal click
-                    const osc = ctx.createOscillator();
-                    osc.type = "sine";
-                    osc.frequency.setValueAtTime(900, t);
-                    osc.frequency.exponentialRampToValueAtTime(400, t + 0.04);
-                    const oscGain = ctx.createGain();
-                    oscGain.gain.setValueAtTime(0.12, t);
-                    oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-                    osc.connect(oscGain); oscGain.connect(ctx.destination);
-                    osc.start(t); osc.stop(t + 0.05);
-                  };
-                  // resume() 解决浏览器默认 suspended 状态
-                  if (ctx.state === "suspended") {
-                    ctx.resume().then(play);
-                  } else {
-                    play();
-                  }
-                } catch(e) {}
-              };
               const toggleBadge = (label) => {
                 playFlipSound();
                 setFlippedBadges(prev => {
