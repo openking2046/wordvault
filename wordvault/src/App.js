@@ -2019,6 +2019,13 @@ export default function VocabApp() {
         @keyframes cardSlideIn   { 0%{opacity:0;transform:translateY(18px) scale(0.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
         .game-card-enter { animation: cardSlideIn 0.38s cubic-bezier(0.22,1,0.36,1) both; }
 
+        /* Badge scroll strip */
+        .badge-scroll { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; padding-bottom:6px; margin-bottom:18px; scrollbar-width:none; -ms-overflow-style:none; }
+        .badge-scroll::-webkit-scrollbar { display:none; }
+        @keyframes badgePop { 0%{opacity:0;transform:scale(0.82) translateY(8px)} 70%{transform:scale(1.04) translateY(-2px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+        .badge-card { scroll-snap-align:start; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; width:82px; padding:10px 6px 9px; border-radius:20px; cursor:default; transition:transform 0.18s; animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .badge-card:active { transform:scale(0.93); }
+
         /* Fire glow animation for max-combo icon */
         @keyframes fireGlow {
           0%   { filter: drop-shadow(0 0 4px rgba(255,120,0,0.5)) drop-shadow(0 0 10px rgba(255,60,0,0.3)); transform: scale(1); }
@@ -2418,18 +2425,95 @@ export default function VocabApp() {
         {tab === 0 && (
           <div>
 
-            {/* ── STAT ICONS ROW ── */}
-            <div style={{ display:"flex", gap:10, marginBottom:18 }}>
-              {[
-                { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
-                { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
-                { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
-              ].map(s => (
-                <div key={s.label} style={{ flex:1 }}>
-                  <StatPNG src={s.src} value={s.value} size="100%" />
+            {/* ── BADGE SCROLL STRIP ── */}
+            {(() => {
+              const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
+              const masteredCount = words.filter(w => w.mastery >= 5).length;
+              const catHealth = Math.round((catHunger + catMood) / 2);
+              const currentRank = getRank(words.length, streakData.count);
+              const badges = [
+                {
+                  icon: "📚", value: words.length, label: "总词数",
+                  bg: "linear-gradient(145deg,#667eea,#764ba2)",
+                  delay: 0,
+                },
+                {
+                  icon: "🔥", value: globalMaxCombo, label: "最高连击",
+                  bg: "linear-gradient(145deg,#f7971e,#ff4e50)",
+                  delay: 50,
+                },
+                {
+                  icon: "⭐", value: xp, label: "总 XP",
+                  bg: "linear-gradient(145deg,#f6c90e,#e8a000)",
+                  delay: 100,
+                },
+                {
+                  icon: "🎯", value: accuracy + "%", label: "正确率",
+                  bg: "linear-gradient(145deg,#11998e,#38ef7d)",
+                  delay: 150,
+                },
+                {
+                  icon: "📅", value: streakData.count, label: "连续天数",
+                  bg: "linear-gradient(145deg,#4facfe,#00f2fe)",
+                  delay: 200,
+                },
+                {
+                  icon: "📕", value: wrongBank.length, label: "错词数",
+                  bg: wrongBank.length === 0
+                    ? "linear-gradient(145deg,#a8edea,#78c7c7)"
+                    : "linear-gradient(145deg,#fc5c7d,#6a3093)",
+                  delay: 250,
+                },
+                {
+                  icon: "😺", value: catHealth + "%", label: "猫咪状态",
+                  bg: catHealth >= 60
+                    ? "linear-gradient(145deg,#56ab2f,#a8e063)"
+                    : catHealth >= 30
+                    ? "linear-gradient(145deg,#f7b733,#fc4a1a)"
+                    : "linear-gradient(145deg,#bdc3c7,#2c3e50)",
+                  delay: 300,
+                },
+                {
+                  icon: "🏆", value: masteredCount, label: "精通词数",
+                  bg: "linear-gradient(145deg,#c471f5,#fa71cd)",
+                  delay: 350,
+                },
+                {
+                  icon: "🎖️", value: currentRank.name, label: "主人等级",
+                  bg: "linear-gradient(145deg,#373b44,#4286f4)",
+                  isText: true,
+                  delay: 400,
+                },
+                {
+                  icon: "👥", value: "—", label: "好友排名",
+                  bg: "linear-gradient(145deg,#d3cce3,#9fa8da)",
+                  locked: true,
+                  delay: 450,
+                },
+              ];
+              return (
+                <div className="badge-scroll">
+                  {badges.map((b, i) => (
+                    <div key={b.label} className="badge-card" style={{ background: b.bg, opacity: b.locked ? 0.55 : 1, animationDelay: b.delay + "ms" }}>
+                      <div style={{ fontSize: 22, lineHeight: 1, marginBottom: 4 }}>{b.icon}</div>
+                      <div style={{
+                        fontSize: b.isText ? 9 : 20,
+                        fontWeight: 900,
+                        color: "#fff",
+                        lineHeight: 1.1,
+                        textAlign: "center",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.22)",
+                        letterSpacing: b.isText ? "-0.2px" : "-1px",
+                        wordBreak: "keep-all",
+                      }}>{b.value}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", marginTop: 4, textAlign: "center", lineHeight: 1.2 }}>
+                        {b.label}{b.locked ? " 🔒" : ""}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* ── REVIEW REMINDER ── */}
             {(() => {
