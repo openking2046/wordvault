@@ -3,24 +3,23 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, useRef } from "react";
 import LOGO_VIDEO from './WordCombo Logo 动画.mp4';
-import COMBO_CAT from './combo-cat.webp';
-import COMBO_CAT_HEAD from './combo-cat-head.webp';
-import CAT_CLAW from './cat-claw.webp';
-import COMBO_CAT_FIGHTING from './Combo-cat-fighting.webp';
-import COMBOCAT_1 from './combocat-1.webp';
-import COMBOCAT_2 from './combocat-2.webp';
-import COMBOCAT_3 from './combocat-3.webp';
-import COMBOCAT_4 from './combotcat-4.webp';
-import COMBOCAT_5 from './combotcat-5.webp';
-import COMBOCAT_6 from './combotcat-6.webp';
-import COMBOCAT_7 from './combotcat-7.webp';
-import COMBOCAT_8 from './combotcat-8.webp';
-import COMBOCAT_9 from './combotcat-9.webp';
+import COMBO_CAT from './combo-cat.png';
+import CAT_CLAW from './cat-claw.png';
+import COMBO_CAT_FIGHTING from './Combo-cat-fighting.png';
+import COMBOCAT_1 from './combocat-1.png';
+import COMBOCAT_2 from './Combocat-2.png';
+import COMBOCAT_3 from './combocat-3.png';
+import COMBOCAT_4 from './combotcat-4.png';
+import COMBOCAT_5 from './combotcat-5.png';
+import COMBOCAT_6 from './combotcat-6.png';
+import COMBOCAT_7 from './combotcat-7.png';
+import COMBOCAT_8 from './combotcat-8.png';
+import COMBOCAT_9 from './combotcat-9.png';
 // SVG stat icons — add files to src/ then uncomment imports below:
-import MAX_WORDS_PNG from './max-words.webp';
-import CORRECT_RATE_PNG from './correct-rate.webp';
-import MAX_COMBO_PNG from './max-combo.webp';
-import MAX_XP_PNG from './max-xp.webp';
+import MAX_WORDS_PNG from './max-words.png';
+import CORRECT_RATE_PNG from './correct-rate.png';
+import MAX_COMBO_PNG from './max-combo.png';
+import MAX_XP_PNG from './max-xp.png';
 
 const SAMPLE_WORDS = [
   { id: 1, word: "Serendipity", meaning: "意外发现美好事物的运气", example: "Finding that book was pure serendipity.", mastery: 0, tags: ["生活"] },
@@ -488,7 +487,6 @@ export default function VocabApp() {
     } catch { return { count: 0, lastDate: null, showBroken: false }; }
   });
   const [showStreakModal, setShowStreakModal] = useState(false);
-  const [flippedBadges, setFlippedBadges] = useState(new Set());
   const [quizMode, setQuizMode] = useState("normal"); // "normal" | "review" | "wrong" | "listen" | "spell"
   const [quizLobby, setQuizLobby] = useState(true); // true = show game selection cards
 
@@ -509,7 +507,6 @@ export default function VocabApp() {
   const pairCardCounterRef = useRef(0);
   const pairSoundRef = useRef(null);
   const quizSoundRef = useRef(null);
-  const flipSoundRef = useRef(null);
 
   // Fill-in-the-blank game state
   const [fillActive, setFillActive] = useState(false);
@@ -601,16 +598,6 @@ export default function VocabApp() {
   useEffect(() => { try { localStorage.setItem("wv_ntime", notifTime); } catch {} }, [notifTime]);
   useEffect(() => { try { localStorage.setItem("wv_user_tags", JSON.stringify(userTags)); } catch {} }, [userTags]);
   useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
-
-  // 预加载 Combo 页所有 PNG，防止点击猫爪后图片才开始加载导致卡顿
-  useEffect(() => {
-    const srcs = [
-      COMBOCAT_1, COMBOCAT_2, COMBOCAT_3, COMBOCAT_4, COMBOCAT_5,
-      COMBOCAT_6, COMBOCAT_7, COMBOCAT_8, COMBOCAT_9,
-      COMBO_CAT_FIGHTING, MAX_COMBO_PNG, CORRECT_RATE_PNG,
-    ];
-    srcs.forEach(src => { const img = new Image(); img.src = src; });
-  }, []);
 
   // Streak logic - runs on mount
   useEffect(() => {
@@ -1247,41 +1234,6 @@ export default function VocabApp() {
         });
       }
     } catch {}
-  }
-
-  function playFlipSound() {
-    try {
-      if (!flipSoundRef.current) flipSoundRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      const ctx = flipSoundRef.current;
-      if (ctx.state === "suspended") ctx.resume();
-      const t = ctx.currentTime;
-      // Layer 1: crisp noise swoosh
-      const bufLen = Math.floor(ctx.sampleRate * 0.07);
-      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < bufLen; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 1.8);
-      }
-      const noise = ctx.createBufferSource();
-      noise.buffer = buf;
-      const hpf = ctx.createBiquadFilter();
-      hpf.type = "highpass"; hpf.frequency.value = 1800;
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.28, t);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
-      noise.connect(hpf); hpf.connect(noiseGain); noiseGain.connect(ctx.destination);
-      noise.start(t); noise.stop(t + 0.08);
-      // Layer 2: short tonal click
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(900, t);
-      osc.frequency.exponentialRampToValueAtTime(400, t + 0.04);
-      const oscGain = ctx.createGain();
-      oscGain.gain.setValueAtTime(0.12, t);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-      osc.connect(oscGain); oscGain.connect(ctx.destination);
-      osc.start(t); osc.stop(t + 0.05);
-    } catch(e) {}
   }
 
   function playCelebrationSound() {
@@ -2047,47 +1999,45 @@ export default function VocabApp() {
         @keyframes unlockBgIn    { from { opacity:0 } to { opacity:1 } }
         @keyframes unlockBgOut   { from { opacity:1 } to { opacity:0 } }
         @keyframes unlockWordIn  { 0%{opacity:0;transform:scale(0.4) translateY(20px)} 60%{transform:scale(1.08) translateY(-4px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes catBounceIn {
+          0%   { opacity:0; transform: translateY(60px) scale(0.5); }
+          50%  { transform: translateY(-18px) scale(1.12); }
+          70%  { transform: translateY(8px) scale(0.96); }
+          85%  { transform: translateY(-6px) scale(1.04); }
+          100% { opacity:1; transform: translateY(0) scale(1); }
+        }
+        @keyframes catWiggle {
+          0%,100% { transform: rotate(0deg) scale(1); }
+          20%     { transform: rotate(-8deg) scale(1.05); }
+          40%     { transform: rotate(8deg) scale(1.05); }
+          60%     { transform: rotate(-5deg) scale(1.02); }
+          80%     { transform: rotate(5deg) scale(1.02); }
+        }
+        @keyframes starPop {
+          0%   { opacity:0; transform: scale(0) rotate(-30deg); }
+          60%  { opacity:1; transform: scale(1.3) rotate(10deg); }
+          100% { opacity:1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes streakNum {
+          0%   { opacity:0; transform: scale(0.3) translateY(20px); }
+          60%  { transform: scale(1.15) translateY(-4px); }
+          100% { opacity:1; transform: scale(1) translateY(0); }
+        }
+        @keyframes confettiFall {
+          0%   { opacity:1; transform: translateY(0) rotate(0deg) scale(1); }
+          100% { opacity:0; transform: translateY(120px) rotate(720deg) scale(0.5); }
+        }
+        @keyframes ringPulse {
+          0%   { transform: scale(0.8); opacity:0.8; }
+          50%  { transform: scale(1.2); opacity:0.4; }
+          100% { transform: scale(1.6); opacity:0; }
+        }
         @keyframes unlockBadge   { 0%{opacity:0;transform:scale(0) rotate(-15deg)} 60%{transform:scale(1.15) rotate(4deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
         @keyframes correctPop    { 0%{transform:scale(1)} 30%{transform:scale(1.06)} 60%{transform:scale(0.97)} 100%{transform:scale(1)} }
         @keyframes wrongShake    { 0%{transform:translateX(0)} 18%{transform:translateX(-7px)} 36%{transform:translateX(7px)} 54%{transform:translateX(-5px)} 72%{transform:translateX(5px)} 100%{transform:translateX(0)} }
         .opt-btn.correct { animation: correctPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
         .opt-btn.wrong   { animation: wrongShake 0.4s ease both; }
         @keyframes unlockSub     { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
-        @keyframes cardSlideIn   { 0%{opacity:0;transform:translateY(18px) scale(0.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
-        .game-card-enter { animation: cardSlideIn 0.38s cubic-bezier(0.22,1,0.36,1) both; }
-
-        /* Badge scroll strip */
-        .badge-scroll { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; padding-bottom:6px; margin-bottom:18px; scrollbar-width:none; -ms-overflow-style:none; }
-        .badge-scroll::-webkit-scrollbar { display:none; }
-        @keyframes badgePop { 0%{opacity:0;transform:scale(0.82) translateY(8px)} 70%{transform:scale(1.04) translateY(-2px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
-
-        /* Badge 3D flip card */
-        .badge-flip-wrap { scroll-snap-align:start; flex-shrink:0; width:84px; height:84px; perspective:600px; cursor:pointer; animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .badge-flip-wrap:active .badge-flip-inner { transform: scale(0.93) rotateY(var(--flip-deg,0deg)); }
-        .badge-flip-inner { position:relative; width:100%; height:100%; transition:transform 0.52s cubic-bezier(0.34,1.2,0.64,1); transform-style:preserve-3d; }
-        .badge-flip-inner.flipped { transform:rotateY(180deg); }
-        .badge-flip-front, .badge-flip-back { position:absolute; inset:0; border-radius:20px; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 6px; }
-        .badge-flip-back { transform:rotateY(180deg); }
-
-        /* Fire glow animation for max-combo icon */
-        @keyframes fireGlow {
-          0%   { filter: drop-shadow(0 0 4px rgba(255,120,0,0.5)) drop-shadow(0 0 10px rgba(255,60,0,0.3)); transform: scale(1); }
-          25%  { filter: drop-shadow(0 0 10px rgba(255,160,0,0.8)) drop-shadow(0 0 22px rgba(255,80,0,0.5)); transform: scale(1.04) translateY(-2px); }
-          50%  { filter: drop-shadow(0 0 6px rgba(255,100,0,0.6)) drop-shadow(0 0 16px rgba(255,40,0,0.4)); transform: scale(1.01); }
-          75%  { filter: drop-shadow(0 0 12px rgba(255,180,0,0.9)) drop-shadow(0 0 26px rgba(255,90,0,0.5)); transform: scale(1.05) translateY(-3px); }
-          100% { filter: drop-shadow(0 0 4px rgba(255,120,0,0.5)) drop-shadow(0 0 10px rgba(255,60,0,0.3)); transform: scale(1); }
-        }
-        @keyframes starPulse {
-          0%,100% { filter: drop-shadow(0 0 4px rgba(100,180,255,0.5)) drop-shadow(0 0 10px rgba(60,120,255,0.3)); transform: scale(1); }
-          50%      { filter: drop-shadow(0 0 10px rgba(120,200,255,0.9)) drop-shadow(0 0 22px rgba(80,140,255,0.6)); transform: scale(1.04); }
-        }
-        @keyframes bookFloat {
-          0%,100% { filter: drop-shadow(0 0 4px rgba(80,200,120,0.5)) drop-shadow(0 0 10px rgba(40,160,80,0.3)); transform: scale(1) translateY(0); }
-          50%      { filter: drop-shadow(0 0 10px rgba(100,220,140,0.8)) drop-shadow(0 0 20px rgba(60,180,100,0.5)); transform: scale(1.03) translateY(-3px); }
-        }
-        .stat-anim-fire { animation: fireGlow 1.8s ease-in-out infinite; transform-origin: center bottom; }
-        .stat-anim-star { animation: starPulse 2.2s ease-in-out infinite; transform-origin: center; }
-        .stat-anim-book { animation: bookFloat 2.6s ease-in-out infinite; transform-origin: center; }
         @keyframes particleFly {
           0%   { transform: translate(0,0) scale(1); opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
@@ -2406,7 +2356,8 @@ export default function VocabApp() {
               <div style={{ display: "flex", gap: 10 }}>
 
                 {/* LEFT: User card */}
-                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "14px 14px 12px", boxShadow: `0 6px 20px ${GREEN}55`, position: "relative", overflow: "hidden" }}>
+                <div style={{ flex: 1, background: `linear-gradient(145deg, ${GREEN}, ${GREEN2})`, borderRadius: 22, padding: "14px 14px 12px", boxShadow: `0 6px 20px ${GREEN}55`, cursor: "pointer", position: "relative", overflow: "hidden" }}
+                  onClick={() => setHeaderExpanded(e => !e)}>
                   <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     {profile && (
@@ -2428,9 +2379,13 @@ export default function VocabApp() {
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>{r.name}</div>
                   </div>
-                  <div style={{ height: 5, background: "rgba(0,0,0,0.22)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", background: "linear-gradient(90deg, #0a4a25 0%, #16a34a 100%)", borderRadius: 3, width: progressPct + "%", transition: "width 0.6s ease" }} />
+                  <div style={{ height: 4, background: "rgba(0,0,0,0.18)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: "rgba(255,255,255,0.85)", borderRadius: 2, width: progressPct + "%", transition: "width 0.6s" }} />
                   </div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>
+                    {nextR ? `距 ${nextR.name} 还差 ${Math.max(0, nextR.words - words.length)} 词` : "🏆 已达最高段位"}
+                  </div>
+                  <div style={{ position: "absolute", bottom: 10, right: 12, color: "rgba(255,255,255,0.6)", fontSize: 11, transition: "transform 0.3s", transform: headerExpanded ? "rotate(180deg)" : "rotate(0)" }}>▾</div>
                 </div>
 
                 {/* RIGHT: Pet card */}
@@ -2438,12 +2393,16 @@ export default function VocabApp() {
                   onClick={() => setShowCatRoom(true)}>
                   <div style={{ position: "absolute", top: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.1)", pointerEvents: "none" }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <img src={COMBO_CAT_HEAD} alt="猫" decoding="async" style={{ width: 44, height: 44, objectFit: "contain", filter: catHunger < 30 ? "brightness(0.7) saturate(0.4)" : "none" }} />
+                    <img src={COMBO_CAT} alt="猫" style={{ width: 44, height: 44, objectFit: "contain", filter: catHunger < 30 ? "brightness(0.7) saturate(0.4)" : "none" }} />
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>{catName}</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{catStage.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                        <div style={{ background: "rgba(255,255,255,0.25)", borderRadius: 8, padding: "1px 7px", fontSize: 10, fontWeight: 800, color: "#fff" }}>Lv.{catLv}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>{catStage.name}</div>
+                      </div>
                     </div>
                   </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>今日投喂 {catFeedsToday} 次 🍖</div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                     <span style={{ fontSize: 10, color: "rgba(255,255,255,0.8)" }}>❤️ 综合健康</span>
                     <span style={{ fontSize: 10, color: "#fff", fontWeight: 700 }}>{catOverallHealth}%</span>
@@ -2456,6 +2415,27 @@ export default function VocabApp() {
               </div>
 
               {/* Expanded panel */}
+              {headerExpanded && (
+                <div onClick={e => e.stopPropagation()}
+                  style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN2})`, borderRadius: "0 0 20px 20px", padding: "14px 16px", marginTop: -8, boxShadow: `0 8px 20px ${GREEN}44`, animation: "unlockSub 0.25s ease both" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                    {[
+                      { val: words.length, unit: "词", label: "词库" },
+                      { val: words.filter(w => w.mastery >= 4).length, unit: "个", label: "已掌握" },
+                      { val: correctRate, unit: "%", label: "正确率" },
+                      { val: globalMaxCombo, unit: "×", label: "最高Combo" },
+                    ].map(({ val, unit, label }) => (
+                      <div key={label} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
+                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff", fontWeight: 700, lineHeight: 1 }}>
+                          {val}<span style={{ fontSize: 9, opacity: 0.7, marginLeft: 1 }}>{unit}</span>
+                        </div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.65)", marginTop: 3 }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 10 }}>加入于 {profile?.joinDate || "—"}</div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -2468,125 +2448,18 @@ export default function VocabApp() {
         {tab === 0 && (
           <div>
 
-            {/* ── BADGE SCROLL STRIP ── */}
-            {(() => {
-              const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
-              const masteredCount = words.filter(w => w.mastery >= 5).length;
-              const catHealth = Math.round((catHunger + catMood) / 2);
-              const currentRank = getRank(words.length, streakData.count);
-              const badges = [
-                {
-                  icon: "📚", value: words.length, label: "总词数",
-                  bg: "linear-gradient(145deg,#667eea,#764ba2)",
-                  delay: 0,
-                },
-                {
-                  icon: "🔥", value: globalMaxCombo, label: "最高连击",
-                  bg: "linear-gradient(145deg,#f7971e,#ff4e50)",
-                  delay: 50,
-                },
-                {
-                  icon: "⭐", value: xp, label: "总 XP",
-                  bg: "linear-gradient(145deg,#f6c90e,#e8a000)",
-                  delay: 100,
-                },
-                {
-                  icon: "🎯", value: accuracy + "%", label: "正确率",
-                  bg: "linear-gradient(145deg,#11998e,#38ef7d)",
-                  delay: 150,
-                },
-                {
-                  icon: "📅", value: streakData.count, label: "连续天数",
-                  bg: "linear-gradient(145deg,#4facfe,#00f2fe)",
-                  delay: 200,
-                },
-                {
-                  icon: "📕", value: wrongBank.length, label: "错词数",
-                  bg: wrongBank.length === 0
-                    ? "linear-gradient(145deg,#a8edea,#78c7c7)"
-                    : "linear-gradient(145deg,#fc5c7d,#6a3093)",
-                  delay: 250,
-                },
-                {
-                  icon: "😺", value: catHealth + "%", label: "猫咪状态",
-                  bg: catHealth >= 60
-                    ? "linear-gradient(145deg,#56ab2f,#a8e063)"
-                    : catHealth >= 30
-                    ? "linear-gradient(145deg,#f7b733,#fc4a1a)"
-                    : "linear-gradient(145deg,#bdc3c7,#2c3e50)",
-                  delay: 300,
-                },
-                {
-                  icon: "🏆", value: masteredCount, label: "精通词数",
-                  bg: "linear-gradient(145deg,#c471f5,#fa71cd)",
-                  delay: 350,
-                },
-                {
-                  icon: "🎖️", value: currentRank.name, label: "主人等级",
-                  bg: "linear-gradient(145deg,#373b44,#4286f4)",
-                  isText: true,
-                  delay: 400,
-                },
-                {
-                  icon: "👥", value: "—", label: "好友排名",
-                  bg: "linear-gradient(145deg,#d3cce3,#9fa8da)",
-                  locked: true,
-                  delay: 450,
-                },
-              ];
-              const toggleBadge = (label) => {
-                playFlipSound();
-                setFlippedBadges(prev => {
-                  const next = new Set(prev);
-                  next.has(label) ? next.delete(label) : next.add(label);
-                  return next;
-                });
-              };
-              return (
-                <div className="badge-scroll">
-                  {badges.map((b) => {
-                    const isFlipped = flippedBadges.has(b.label);
-                    return (
-                      <div
-                        key={b.label}
-                        className="badge-flip-wrap"
-                        style={{ animationDelay: b.delay + "ms", opacity: b.locked ? 0.55 : 1 }}
-                        onClick={() => !b.locked && toggleBadge(b.label)}
-                      >
-                        <div className={`badge-flip-inner${isFlipped ? " flipped" : ""}`}>
-                          {/* FRONT — icon only */}
-                          <div className="badge-flip-front" style={{ background: b.bg }}>
-                            <div style={{ fontSize: 36, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.18))" }}>
-                              {b.icon}
-                            </div>
-                            {b.locked && (
-                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>🔒 即将开放</div>
-                            )}
-                          </div>
-                          {/* BACK — value + label */}
-                          <div className="badge-flip-back" style={{ background: b.bg }}>
-                            <div style={{
-                              fontSize: b.isText ? 9 : 22,
-                              fontWeight: 900,
-                              color: "#fff",
-                              lineHeight: 1,
-                              textAlign: "center",
-                              textShadow: "0 1px 6px rgba(0,0,0,0.25)",
-                              letterSpacing: b.isText ? 0 : "-1px",
-                              wordBreak: "keep-all",
-                              maxWidth: 70,
-                            }}>{b.value}</div>
-                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.88)", textAlign: "center", lineHeight: 1.3 }}>
-                              {b.label}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+            {/* ── STAT ICONS ROW ── */}
+            <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+              {[
+                { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
+                { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
+                { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
+              ].map(s => (
+                <div key={s.label} style={{ flex:1 }}>
+                  <StatPNG src={s.src} value={s.value} size="100%" />
                 </div>
-              );
-            })()}
+              ))}
+            </div>
 
             {/* ── REVIEW REMINDER ── */}
             {(() => {
@@ -3004,26 +2877,31 @@ export default function VocabApp() {
 
               {/* ── HERO STATS CARD ── */}
               {(() => {
+                const masteredCount = words.filter(w => (w.correct || 0) >= 3).length;
+                const pendingCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
                 const accuracy = score.total > 0 ? Math.round(score.correct / score.total * 100) : 0;
                 return (
-                  <div style={{ background: "linear-gradient(135deg, #FF7A00 0%, #FFB347 55%, #FFD080 100%)", borderRadius: 24, padding: "16px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
-                    {/* Decorative circles */}
-                    <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)", pointerEvents:"none" }}/>
-                    <div style={{ position:"absolute", bottom:-24, left:-16, width:90, height:90, borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }}/>
-                    {/* Top row: title + cat */}
-                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
-                      <div style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.5px", lineHeight:1, textShadow:"0 2px 8px rgba(0,0,0,0.12)", marginTop:4 }}>COMBO 挑战</div>
-                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" decoding="async" style={{ width:86, height:94, objectFit:"contain", marginTop:-6, marginRight:-4, flexShrink:0, filter:"drop-shadow(0 4px 14px rgba(0,0,0,0.18))" }} />
-                    </div>
-                    {/* Stats row — WebP icons with value overlaid */}
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-                      <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo}   size="100%" anim="fire" />
-                      <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}   size="100%" anim="star" />
-                      <StatPNG src={MAX_WORDS_PNG}    value={words.length}     size="100%" anim="book" />
+                  <div style={{ background: "linear-gradient(135deg, #FF8000 0%, #FFB347 60%, #FFD080 100%)", borderRadius: 24, padding: "14px 16px 14px", marginBottom: 20, position: "relative", overflow: "hidden", boxShadow: "0 8px 28px rgba(255,128,0,0.35)" }}>
+                    <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.1)" }}/>
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      {/* Left: two stat icons */}
+                      <div style={{ display:"flex", gap:8, flex:1, paddingLeft:0, paddingRight:8 }}>
+                        <StatPNG src={MAX_COMBO_PNG}    value={globalMaxCombo} size={100} />
+                        <StatPNG src={CORRECT_RATE_PNG} value={accuracy + "%"}  size={100} />
+                      </div>
+                      {/* Right: fighting cat */}
+                      <img src={COMBO_CAT_FIGHTING} alt="Combo猫" style={{ width:110, height:120, objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }} />
                     </div>
                   </div>
                 );
               })()}
+
+              {/* ── SECTION HEADER ── */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:16, marginTop:4 }}>
+                <div style={{ flex:1, height:1.5, background:"linear-gradient(to right, transparent, #e0e0e0)", borderRadius:2 }}/>
+                <div style={{ fontSize:18, fontWeight:800, color:"#111", letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>选择Combo练习模式</div>
+                <div style={{ flex:1, height:1.5, background:"linear-gradient(to left, transparent, #e0e0e0)", borderRadius:2 }}/>
+              </div>
 
               {/* ── MODE CARDS ── */}
               {(() => {
@@ -3053,10 +2931,8 @@ export default function VocabApp() {
                 ];
                 const left = games.filter((_, i) => i % 2 === 0);
                 const right = games.filter((_, i) => i % 2 === 1);
-                const renderCard = (g, colIdx) => {
+                const renderCard = (g) => {
                   let touchStartY = 0, touchStartX = 0, touchMoved = false;
-                  // stagger: left col uses odd steps, right col uses even steps
-                  const delay = (g.num - 1) * 45;
                   return (
                     <div key={g.id}
                       onTouchStart={e => { touchStartY=e.touches[0].clientY; touchStartX=e.touches[0].clientX; touchMoved=false; }}
@@ -3072,45 +2948,49 @@ export default function VocabApp() {
                       onClick={() => {
                         haptic("medium");
                         if(g.id==="pair"){startPairGame();setQuizLobby(false);}
-                        else if(g.id==="fill"){startFillGame();}
                         else if(g.id==="challenge"){setShowCreateChallenge(true);setGeneratedLink("");setChallengeSelectedWords([]);}
                         else if(g.id==="battle"){setQuizMode("battle");setQuizLobby(false);if(!battleActive&&!showBattleResult)startBattle();}
                         else{setQuizMode(g.id);setQuizResult(null);setSpellingInput("");setHintRevealed(0);startQuiz(g.id);setQuizLobby(false);}
                       }}
                       role="button"
-                      className="game-card-btn game-card-enter"
+                      className="game-card-btn"
                       style={{
                         width:"100%", fontFamily:"inherit", background: g.color,
                         borderRadius:20, marginBottom:10, cursor:"pointer",
                         position:"relative", overflow:"hidden", userSelect:"none",
                         display:"flex", flexDirection:"column",
                         boxShadow: `0 6px 20px ${g.color}55`,
-                        minHeight: 160,
-                        animationDelay: `${delay}ms`,
+                        minHeight: 168,
                       }}
                     >
                       {/* Badge (alert) */}
                       {g.badge && (
-                        <div style={{ position:"absolute", top:10, left:"50%", transform:"translateX(-50%)", background:"#fff", borderRadius:20, padding:"3px 10px", fontSize:10, fontWeight:700, color:g.color, whiteSpace:"nowrap", boxShadow:"0 2px 8px rgba(0,0,0,0.12)", zIndex:3 }}>
+                        <div style={{ position:"absolute", top:12, left:"50%", transform:"translateX(-50%)", background:"#fff", borderRadius:20, padding:"4px 10px", fontSize:10, fontWeight:700, color:g.color, whiteSpace:"nowrap", boxShadow:"0 2px 8px rgba(0,0,0,0.12)", zIndex:3 }}>
                           {g.badge}
                         </div>
                       )}
-                      {/* Big faded number */}
-                      <div style={{ position:"absolute", top:-12, right:6, fontFamily:"DM Serif Display, serif", fontSize:88, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.15)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
-                      {/* Mascot illustration */}
-                      <img src={g.catImg} alt="Combo猫" decoding="async" style={{ position:"absolute", bottom:-4, right:-4, width:88, height:88, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
-                      {/* Content */}
-                      <div style={{ padding:"20px 14px 14px", flex:1, position:"relative", zIndex:2, display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
-                        <div style={{ fontSize:22, marginBottom:5, lineHeight:1 }}>{g.icon}</div>
-                        <div style={{ fontSize:16, fontWeight:800, color:"#fff", letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"68%", lineHeight:1.2 }}>{g.name}</div>
+                      {/* Decorative lines top-left */}
+                      <div style={{ position:"absolute", top:14, left:14, zIndex:2, pointerEvents:"none" }}>
+                        <div style={{ width:22, height:3, borderRadius:2, background:"rgba(255,255,255,0.45)", marginBottom:4 }}/>
+                        <div style={{ width:14, height:3, borderRadius:2, background:"rgba(255,255,255,0.3)" }}/>
                       </div>
+                      {/* Big faded number */}
+                      <div style={{ position:"absolute", top:-10, right:8, fontFamily:"DM Serif Display, serif", fontSize:92, fontWeight:900, lineHeight:1, color:"rgba(255,255,255,0.18)", userSelect:"none", pointerEvents:"none" }}>{g.num}</div>
+                      {/* Mascot illustration */}
+                      <img src={g.catImg} alt="Combo猫" style={{ position:"absolute", bottom:-6, right:-6, width:95, height:95, objectFit:"contain", pointerEvents:"none", zIndex:1, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.18))" }} />
+                      {/* Content */}
+                      <div style={{ padding:"38px 16px 0", flex:1, position:"relative", zIndex:2 }}>
+                        <div style={{ fontSize:26, marginBottom:6, lineHeight:1 }}>{g.icon}</div>
+                        <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:4, letterSpacing:"-0.3px", textShadow:"0 1px 3px rgba(0,0,0,0.15)", maxWidth:"65%" }}>{g.name}</div>
+                      </div>
+                      <div style={{ padding:"0 0 16px" }} />
                     </div>
                   );
                 };
                 return (
                   <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                    <div style={{ flex:1 }}>{left.map((g, i) => renderCard(g, i))}</div>
-                    <div style={{ flex:1 }}>{right.map((g, i) => renderCard(g, i))}</div>
+                    <div style={{ flex:1 }}>{left.map(renderCard)}</div>
+                    <div style={{ flex:1 }}>{right.map(renderCard)}</div>
                   </div>
                 );
               })()}
@@ -3612,28 +3492,6 @@ export default function VocabApp() {
         {/* Tab 3 */}
         {tab === 3 && (
           <div style={{ maxWidth: 480 }}>
-
-            {/* XP Bar */}
-            {(() => {
-              const level = Math.floor(xp / 100) + 1;
-              const progress = xp % 100;
-              return (
-                <div style={{ background: "linear-gradient(135deg, #FF8000, #FFB347)", borderRadius: 16, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 6px 20px rgba(255,128,0,0.35)" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff" }}>Lv{level}</div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{xp} XP</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>下一级 {100 - progress} XP</div>
-                    </div>
-                    <div style={{ height: 5, background: "rgba(255,255,255,0.3)", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: progress + "%", background: "#fff", borderRadius: 3, transition: "width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Task Tabs */}
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -4893,45 +4751,132 @@ export default function VocabApp() {
       })()}
 
       {/* Session Summary Modal */}
-      {showSummary && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 380 }}>
-            <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#111", marginBottom: 4 }}>
-              {sessionStats.correct >= 8 ? "太棒了！" : sessionStats.correct >= 6 ? "不错！继续加油" : "再练练这些词 "}
-            </div>
-            <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>🎉 连续答对 20 题！共 {sessionStats.total} 题</div>
+      {showSummary && (() => {
+        const acc = sessionStats.total > 0 ? Math.round(sessionStats.correct / sessionStats.total * 100) : 0;
+        // Confetti pieces
+        const CONFETTI_COLORS = ["#FF8000","#FFD166","#45B7B8","#DC7286","#7C6CF5","#6BCB77","#FF6B6B"];
+        const confettiPieces = Array.from({ length: 24 }, (_, i) => ({
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+          left: 8 + (i * 3.6) % 84,
+          delay: (i * 0.06).toFixed(2),
+          size: 6 + (i % 4) * 3,
+          shape: i % 3,
+        }));
+        return (
+          <div style={{ position:"fixed", inset:0, zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
+            onClick={() => setShowSummary(false)}>
+            {/* Blurred backdrop */}
+            <div style={{ position:"absolute", inset:0, background:"rgba(255,200,100,0.25)", backdropFilter:"blur(12px)" }} />
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
-              {[
-                ["答对", sessionStats.correct],
-                ["答错", sessionStats.total - sessionStats.correct],
-                ["正确率", Math.round(sessionStats.correct / sessionStats.total * 100) + "%"]
-              ].map(([label, val]) => (
-                <div key={label} style={{ textAlign: "center", border: "1px solid #ebebeb", borderRadius: 10, padding: "12px 8px" }}>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 24, color: "#111" }}>{val}</div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{label}</div>
-                </div>
+            {/* Confetti rain */}
+            <div style={{ position:"absolute", top:0, left:0, right:0, height:300, pointerEvents:"none", overflow:"hidden" }}>
+              {confettiPieces.map((p, i) => (
+                <div key={i} style={{
+                  position:"absolute", top:-20, left:`${p.left}%`,
+                  width: p.shape === 0 ? p.size : p.size * 1.6,
+                  height: p.shape === 0 ? p.size : p.size * 0.6,
+                  borderRadius: p.shape === 0 ? "50%" : p.shape === 1 ? 2 : "50% 0",
+                  background: p.color,
+                  opacity: 0.9,
+                  animation: `confettiFall 1.8s cubic-bezier(0.25,0.46,0.45,0.94) ${p.delay}s both`,
+                }} />
               ))}
             </div>
 
-            {sessionStats.wrongWords.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>需要加强</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {sessionStats.wrongWords.map(w => (
-                    <span key={w} style={{ fontSize: 13, padding: "4px 12px", borderRadius: 20, background: "#fff5f5", color: "#e53e3e", border: "1px solid #fecaca", fontFamily: "DM Serif Display, serif" }}>{w}</span>
-                  ))}
+            {/* Main card */}
+            <div style={{ position:"relative", background:"#fff", borderRadius:32, padding:"0 0 28px", width:"100%", maxWidth:340, boxShadow:"0 32px 64px rgba(0,0,0,0.18)", overflow:"hidden" }}
+              onClick={e => e.stopPropagation()}>
+
+              {/* Orange gradient header */}
+              <div style={{ background:"linear-gradient(135deg,#FF8000,#FFD166)", padding:"24px 28px 80px", position:"relative", overflow:"hidden" }}>
+                {/* Ripple rings */}
+                {[0,1,2].map(i => (
+                  <div key={i} style={{
+                    position:"absolute", top:"50%", left:"50%",
+                    width:200, height:200,
+                    marginTop:-100, marginLeft:-100,
+                    borderRadius:"50%",
+                    border:"2px solid rgba(255,255,255,0.4)",
+                    animation: `ringPulse 2s ease-out ${i * 0.4}s infinite`,
+                    pointerEvents:"none",
+                  }} />
+                ))}
+                <div style={{ fontSize:13, fontWeight:800, color:"rgba(255,255,255,0.85)", letterSpacing:"2px", textTransform:"uppercase", marginBottom:4, position:"relative", zIndex:2 }}>
+                  🔥 连续答对 20 题
+                </div>
+                <div style={{ fontFamily:"DM Serif Display, serif", fontSize:32, fontWeight:900, color:"#fff", textShadow:"0 2px 12px rgba(0,0,0,0.15)", position:"relative", zIndex:2, lineHeight:1.2 }}>
+                  太厉害了！
                 </div>
               </div>
-            )}
 
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn btn-dark" style={{ flex: 1 }} onClick={resetSession}>继续答题</button>
-              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setShowSummary(false); setTab(3); }}>查看进度</button>
+              {/* Cat hero — overlapping header and body */}
+              <div style={{ display:"flex", justifyContent:"center", marginTop:-68, marginBottom:4, position:"relative", zIndex:10 }}>
+                {/* Glow ring behind cat */}
+                <div style={{
+                  position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)",
+                  width:130, height:130, borderRadius:"50%",
+                  background:"radial-gradient(circle, rgba(255,200,50,0.6) 0%, rgba(255,128,0,0.2) 60%, transparent 100%)",
+                  animation:"ringPulse 1.5s ease-out 0.3s infinite",
+                }} />
+                <img src={COMBO_CAT} alt="Combo猫"
+                  style={{ width:120, height:120, objectFit:"contain", animation:"catBounceIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both", filter:"drop-shadow(0 8px 24px rgba(255,128,0,0.5))", position:"relative", zIndex:2 }} />
+                {/* Star decorations */}
+                {["⭐","✨","🌟"].map((s, i) => (
+                  <div key={i} style={{
+                    position:"absolute",
+                    top: i === 0 ? "10%" : i === 1 ? "5%" : "20%",
+                    left: i === 0 ? "8%" : i === 1 ? "72%" : "78%",
+                    fontSize: i === 1 ? 18 : 14,
+                    animation: `starPop 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + i * 0.15}s both`,
+                  }}>{s}</div>
+                ))}
+              </div>
+
+              {/* Stats row */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, padding:"0 20px 20px" }}>
+                {[
+                  { val: 20, label:"连续答对", color:"#FF8000" },
+                  { val: acc + "%", label:"正确率", color:"#45B7B8" },
+                  { val: "+" + Math.round(sessionStats.correct * 2) + " XP", label:"本轮获得", color:"#7C6CF5" },
+                ].map((s, i) => (
+                  <div key={s.label} style={{
+                    textAlign:"center", borderRadius:16, padding:"12px 8px",
+                    background: s.color + "14",
+                    animation: `streakNum 0.5s cubic-bezier(0.34,1.56,0.64,1) ${0.2 + i * 0.1}s both`,
+                  }}>
+                    <div style={{ fontFamily:"DM Serif Display, serif", fontSize:22, fontWeight:900, color:s.color, lineHeight:1 }}>{s.val}</div>
+                    <div style={{ fontSize:10, color:"#888", marginTop:4, fontWeight:600 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Wrong words */}
+              {sessionStats.wrongWords.length > 0 && (
+                <div style={{ padding:"0 20px 16px" }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:"#aaa", letterSpacing:"1px", textTransform:"uppercase", marginBottom:8 }}>需要加强</div>
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                    {sessionStats.wrongWords.map(w => (
+                      <span key={w} style={{ fontSize:12, padding:"3px 10px", borderRadius:16, background:"#fff5f5", color:"#e53e3e", border:"1px solid #fecaca" }}>{w}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div style={{ display:"flex", gap:10, padding:"0 20px" }}>
+                <button onClick={resetSession}
+                  style={{ flex:1, padding:"14px 0", borderRadius:16, border:"none", background:"linear-gradient(135deg,#FF8000,#FFB347)", color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit", boxShadow:"0 6px 20px rgba(255,128,0,0.4)", letterSpacing:"0.3px", animation:"catBounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.5s both" }}>
+                  继续冲！🔥
+                </button>
+                <button onClick={() => { setShowSummary(false); setTab(3); }}
+                  style={{ width:52, height:52, borderRadius:16, border:"1.5px solid #e0e0e0", background:"#f8f8f8", cursor:"pointer", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, animation:"catBounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.6s both" }}>
+                  📊
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Bottom Nav */}
       <nav className="bottom-nav">
@@ -4986,13 +4931,11 @@ export default function VocabApp() {
   );
 }
 // ── Stat PNG card — PNG image with dynamic number centered on top ──
-// anim: "fire" | "star" | "book" | undefined
-function StatPNG({ src, value, size = 110, anim }) {
+function StatPNG({ src, value, size = 110 }) {
   const isPercent = typeof size === 'string';
-  const animClass = anim === "fire" ? "stat-anim-fire" : anim === "star" ? "stat-anim-star" : anim === "book" ? "stat-anim-book" : "";
   return (
     <div style={{ position: "relative", width: isPercent ? size : size, aspectRatio: "1 / 1", flexShrink: 0 }}>
-      <img src={src} alt="" className={animClass} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+      <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
       <div style={{
         position: "absolute",
         top: "50%", left: "50%",
