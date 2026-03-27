@@ -3868,7 +3868,7 @@ export default function VocabApp() {
                               {/* value */}
                               <div style={{ fontSize:11, fontWeight:800, color: activeCfg.color }}>{p[sortKey]}<span style={{ fontSize:9, opacity:0.7, marginLeft:1 }}>{sortKey==="combo"?"连":sortKey==="words"?"词":"天"}</span></div>
                               {/* podium block */}
-                              <div style={{ width:"100%", height, background:"linear-gradient(180deg,"+podiumColors[colIdx]+"cc,"+podiumColors[colIdx]+"66)", borderRadius:"8px 8px 0 0", display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:6 }}>
+                              <div style={{ width:"100%", height:h, background:"linear-gradient(180deg,"+podiumColors[colIdx]+"cc,"+podiumColors[colIdx]+"66)", borderRadius:"8px 8px 0 0", display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:6 }}>
                                 <span style={{ fontSize:16 }}>{["🥈","🥇","🥉"][colIdx]}</span>
                               </div>
                             </div>
