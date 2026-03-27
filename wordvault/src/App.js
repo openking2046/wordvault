@@ -543,6 +543,8 @@ export default function VocabApp() {
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem("wv_sound") !== "0");
   const [flippedStatCards, setFlippedStatCards] = useState({});
+  const [leaderboardTab, setLeaderboardTab] = useState("combo"); // "combo"|"words"|"streak"
+  const [showInviteToast, setShowInviteToast] = useState(false);
   
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
@@ -3754,6 +3756,174 @@ export default function VocabApp() {
                     )}
                   </div>
 
+                </div>
+              );
+            })()}
+
+            {/* ── COMBO CAT 好友排行榜 ── */}
+            {(() => {
+              const currentRank = getRank(words.length, streakData.count);
+              const catStage    = getCatStage(xp);
+
+              // 模拟好友数据（含当前用户真实数据）
+              const me = {
+                id: "me", isMe: true,
+                name: profile?.name || "你",
+                avatar: profile?.avatar ?? 0,
+                catEmoji: catStage.emoji,
+                rankName: currentRank.name,
+                rankColor: currentRank.color,
+                combo: globalMaxCombo,
+                words: words.length,
+                streak: streakData.count,
+                xp,
+              };
+              const mockFriends = [
+                { id:"f1", name:"Luna 🐱",   avatar:3,  catEmoji:"😸", rankName:"撸猫师 Ⅱ", rankColor:"#7a8fa6", combo:47, words:182, streak:21, xp:1840 },
+                { id:"f2", name:"Max",       avatar:7,  catEmoji:"😺", rankName:"铲屎官 Ⅱ", rankColor:"#a0522d", combo:12, words:55,  streak:5,  xp:420  },
+                { id:"f3", name:"Aria ✨",   avatar:11, catEmoji:"🦁", rankName:"猫语者 Ⅲ", rankColor:"#c8900a", combo:88, words:530, streak:62, xp:3200 },
+                { id:"f4", name:"Kai",       avatar:19, catEmoji:"🐣", rankName:"铲屎官 Ⅲ", rankColor:"#a0522d", combo:3,  words:8,   streak:1,  xp:60   },
+                { id:"f5", name:"Sophie 🌙", avatar:24, catEmoji:"👑", rankName:"猫医师 Ⅰ", rankColor:"#2a9d8f", combo:134,words:1200,streak:90, xp:5600 },
+              ];
+              const allPlayers = [...mockFriends, me];
+
+              const sortKey = leaderboardTab;
+              const sorted  = [...allPlayers].sort((a, b) => b[sortKey] - a[sortKey]);
+              const myRankIdx = sorted.findIndex(p => p.id === "me");
+
+              const tabCfg = [
+                { key:"combo",  label:"连击王",   icon:"⚡", color:"#f59e0b" },
+                { key:"words",  label:"词汇王",   icon:"📚", color:"#45B7B8" },
+                { key:"streak", label:"打卡王",   icon:"🔥", color:"#e53e3e" },
+              ];
+              const activeCfg = tabCfg.find(t => t.key === leaderboardTab);
+
+              const medalOf = (i) => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+
+              return (
+                <div style={{ marginBottom: 28 }}>
+                  {/* 标题行 */}
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                      <img src={COMBO_CAT_HEAD} alt="" style={{ width:26, height:26, objectFit:"contain" }}/>
+                      <span style={{ fontSize:13, fontWeight:700, color:"#111" }}>Combo Cat 排行榜</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowInviteToast(true);
+                        setTimeout(() => setShowInviteToast(false), 2200);
+                      }}
+                      style={{ fontSize:11, fontWeight:700, color:"#7C6CF5", background:"rgba(124,108,245,0.1)", border:"1px solid rgba(124,108,245,0.25)", borderRadius:10, padding:"4px 10px", cursor:"pointer", fontFamily:"inherit" }}>
+                      📨 邀请好友
+                    </button>
+                  </div>
+
+                  {/* 邀请 Toast */}
+                  {showInviteToast && (
+                    <div style={{ textAlign:"center", fontSize:12, color:"#7C6CF5", background:"rgba(124,108,245,0.08)", border:"1px solid rgba(124,108,245,0.2)", borderRadius:12, padding:"8px 14px", marginBottom:10, animation:"unlockBadge 0.3s ease both" }}>
+                      🔗 邀请链接已复制！发给好友一起比拼吧
+                    </div>
+                  )}
+
+                  {/* 分类 Tab */}
+                  <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                    {tabCfg.map(t => (
+                      <button key={t.key} onClick={() => setLeaderboardTab(t.key)}
+                        style={{ flex:1, padding:"7px 0", borderRadius:12, border:"1.5px solid "+(leaderboardTab===t.key ? t.color : "#ebebeb"),
+                          background: leaderboardTab===t.key ? t.color : "#fff",
+                          color: leaderboardTab===t.key ? "#fff" : "#888",
+                          fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                          transition:"all 0.18s",
+                          boxShadow: leaderboardTab===t.key ? "0 3px 10px "+t.color+"55" : "none",
+                        }}>
+                        {t.icon} {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 前三名 podium */}
+                  {(() => {
+                    const top3 = sorted.slice(0, 3);
+                    const order = [1, 0, 2]; // 银 金 铜 排布
+                    const heights = [80, 100, 64];
+                    const podiumColors = ["#C0C0C0","#FFD700","#CD7F32"];
+                    return (
+                      <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"center", gap:8, marginBottom:16, padding:"0 8px" }}>
+                        {order.map((rankIdx, colIdx) => {
+                          const p = top3[rankIdx];
+                          if (!p) return null;
+                          const h = heights[colIdx];
+                          const isGold = rankIdx === 0;
+                          return (
+                            <div key={p.id} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                              {/* cat emoji */}
+                              <div style={{ fontSize: isGold ? 28 : 22, filter: isGold ? "drop-shadow(0 2px 6px rgba(255,200,0,0.6))" : "none" }}>{p.catEmoji}</div>
+                              {/* avatar ring */}
+                              <div style={{ width: isGold?52:42, height: isGold?52:42, borderRadius:"50%", border:"2.5px solid "+podiumColors[colIdx], overflow:"hidden", background:"#f5f5f5", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+                                <SpriteAvatar id={p.avatar} size={isGold?48:38}/>
+                                {p.isMe && <div style={{ position:"absolute", bottom:0, right:0, fontSize:8, background:"#FF8000", color:"#fff", borderRadius:4, padding:"0 2px", fontWeight:700 }}>ME</div>}
+                              </div>
+                              {/* name */}
+                              <div style={{ fontSize:10, fontWeight:700, color:"#333", textAlign:"center", maxWidth:72, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name}</div>
+                              {/* value */}
+                              <div style={{ fontSize:11, fontWeight:800, color: activeCfg.color }}>{p[sortKey]}<span style={{ fontSize:9, opacity:0.7, marginLeft:1 }}>{sortKey==="combo"?"连":sortKey==="words"?"词":"天"}</span></div>
+                              {/* podium block */}
+                              <div style={{ width:"100%", height, background:"linear-gradient(180deg,"+podiumColors[colIdx]+"cc,"+podiumColors[colIdx]+"66)", borderRadius:"8px 8px 0 0", display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:6 }}>
+                                <span style={{ fontSize:16 }}>{["🥈","🥇","🥉"][colIdx]}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 4名以后列表 */}
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {sorted.slice(3).map((p, i) => {
+                      const rank = i + 4;
+                      const isMe = p.id === "me";
+                      return (
+                        <div key={p.id} style={{
+                          display:"flex", alignItems:"center", gap:10,
+                          background: isMe ? "linear-gradient(135deg,#fff8ee,#ffe5c2)" : "#fff",
+                          border:"1.5px solid "+(isMe ? "#FFB347" : "#f0f0f0"),
+                          borderRadius:14, padding:"10px 12px",
+                          boxShadow: isMe ? "0 3px 10px rgba(255,128,0,0.15)" : "0 1px 4px rgba(0,0,0,0.04)",
+                        }}>
+                          <div style={{ width:22, fontSize:12, fontWeight:800, color:"#bbb", textAlign:"center", flexShrink:0 }}>{rank}</div>
+                          <div style={{ position:"relative", flexShrink:0 }}>
+                            <SpriteAvatar id={p.avatar} size={36}/>
+                            {isMe && <div style={{ position:"absolute", bottom:-2, right:-2, fontSize:7, background:"#FF8000", color:"#fff", borderRadius:4, padding:"0 2px", fontWeight:700 }}>ME</div>}
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:12, fontWeight:700, color: isMe?"#FF8000":"#111", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name}</div>
+                            <div style={{ fontSize:10, color:p.rankColor, fontWeight:600 }}>{p.catEmoji} {p.rankName}</div>
+                          </div>
+                          <div style={{ textAlign:"right", flexShrink:0 }}>
+                            <div style={{ fontSize:14, fontWeight:800, color:activeCfg.color }}>{p[sortKey]}</div>
+                            <div style={{ fontSize:9, color:"#bbb" }}>{sortKey==="combo"?"MAX连击":sortKey==="words"?"词数":"连续天"}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 我的排名浮条（若在前3外） */}
+                  {myRankIdx >= 3 && (
+                    <div style={{ marginTop:10, background:"linear-gradient(135deg,#FF8000,#FFB347)", borderRadius:14, padding:"10px 14px", display:"flex", alignItems:"center", gap:10, boxShadow:"0 4px 14px rgba(255,128,0,0.3)" }}>
+                      <div style={{ fontSize:13, fontWeight:800, color:"#fff", width:28, textAlign:"center" }}>#{myRankIdx+1}</div>
+                      <SpriteAvatar id={me.avatar} size={34}/>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#fff" }}>你的排名</div>
+                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)" }}>再努力一下就能超过前一名！</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontSize:15, fontWeight:800, color:"#fff" }}>{me[sortKey]}</div>
+                        <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)" }}>{sortKey==="combo"?"MAX连击":sortKey==="words"?"词数":"连续天"}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
