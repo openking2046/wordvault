@@ -542,7 +542,6 @@ export default function VocabApp() {
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem("wv_sound") !== "0");
-  const [flippedStatCards, setFlippedStatCards] = useState({});
   
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
@@ -2399,195 +2398,18 @@ export default function VocabApp() {
         {tab === 0 && (
           <div>
 
-            {/* ── STAT CARD CAROUSEL ── */}
-            {(() => {
-              const wrongCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
-              const catOverallHealth = Math.round((catHunger + catThirst + catMood + catHealth) / 4);
-              const currentRank = getRank(words.length, streakData.count);
-              const catStage = getCatStage(xp);
-              const nextRank = getNextRank(words.length, streakData.count);
-
-              const playFlipSound = () => {
-                if (!soundEnabled) return;
-                try {
-                  const actx = new (window.AudioContext || window.webkitAudioContext)();
-                  const osc = actx.createOscillator();
-                  const gain = actx.createGain();
-                  osc.connect(gain); gain.connect(actx.destination);
-                  osc.type = "sine";
-                  osc.frequency.setValueAtTime(880, actx.currentTime);
-                  osc.frequency.exponentialRampToValueAtTime(440, actx.currentTime + 0.18);
-                  gain.gain.setValueAtTime(0.18, actx.currentTime);
-                  gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.22);
-                  osc.start(actx.currentTime); osc.stop(actx.currentTime + 0.22);
-                } catch {}
-              };
-
-              const healthColor = catOverallHealth > 60 ? "#22c55e" : catOverallHealth > 30 ? "#f59e0b" : "#e53e3e";
-              const healthBg    = catOverallHealth > 60 ? "linear-gradient(135deg,#f0fdf4,#bbf7d0)" : catOverallHealth > 30 ? "linear-gradient(135deg,#fffbeb,#fde68a)" : "linear-gradient(135deg,#fff5f5,#fecaca)";
-              const healthBorder= catOverallHealth > 60 ? "#4ade80" : catOverallHealth > 30 ? "#fbbf24" : "#f87171";
-
-              const statCards = [
-                {
-                  id:"streak", emoji:"🗓️", label:"连续打卡", value: streakData.count, unit:"天",
-                  color:"#FF8000", bg:"linear-gradient(135deg,#fff8ee,#ffe5c2)", border:"#FFB347",
-                  backTitle:"打卡记录",
-                  backLines:[
-                    { k:"连续天数", v: streakData.count + " 天" },
-                    { k:"今日状态", v: streakData.lastDate === new Date().toISOString().slice(0,10) ? "✅ 已打卡" : "⏳ 未打卡" },
-                    { k:"目标", v:"坚持30天 🔥" },
-                  ],
-                },
-                {
-                  id:"words", emoji:"📚", label:"单词总数", value: words.length, unit:"词",
-                  color:"#45B7B8", bg:"linear-gradient(135deg,#f0fffe,#c8f5f5)", border:"#45B7B8",
-                  backTitle:"词库数据",
-                  backLines:[
-                    { k:"总词数", v: words.length + " 词" },
-                    { k:"已掌握", v: words.filter(w => w.mastery >= 4).length + " 词" },
-                    { k:"待复习", v: getDueWords(words).length + " 词" },
-                  ],
-                },
-                {
-                  id:"wrong", emoji:"🎯", label:"错题数", value: wrongCount, unit:"题",
-                  color:"#e53e3e", bg:"linear-gradient(135deg,#fff5f5,#fecaca)", border:"#FC8181",
-                  backTitle:"错题分析",
-                  backLines:[
-                    { k:"当前错题", v: wrongCount + " 题" },
-                    { k:"总答题", v: score.total + " 题" },
-                    { k:"正确率", v: score.total > 0 ? Math.round(score.correct/score.total*100) + "%" : "—" },
-                  ],
-                },
-                {
-                  id:"combo", emoji:"⚡", label:"MAX COMBO", value: globalMaxCombo, unit:"连",
-                  color:"#f59e0b", bg:"linear-gradient(135deg,#fffbeb,#fde68a)", border:"#fbbf24",
-                  backTitle:"连击记录",
-                  backLines:[
-                    { k:"最高连击", v: globalMaxCombo + " 连" },
-                    { k:"当前连击", v: globalCombo + " 连" },
-                    { k:"总连击数", v: totalComboSum + " 次" },
-                  ],
-                },
-                {
-                  id:"xp", emoji:"✨", label:"总 XP", value: xp, unit:"XP",
-                  color:"#7C6CF5", bg:"linear-gradient(135deg,#f5f0ff,#ddd6fe)", border:"#a78bfa",
-                  backTitle:"成长等级",
-                  backLines:[
-                    { k:"总 XP", v: xp + " XP" },
-                    { k:"猫咪阶段", v: catStage.emoji + " " + catStage.name },
-                    { k:"距下阶段", v: catStage.lv < 8 && CAT_STAGES[catStage.lv] ? (CAT_STAGES[catStage.lv].minXp - xp) + " XP" : "已满级 🎉" },
-                  ],
-                },
-                {
-                  id:"health", emoji:"💚", label:"健康指数", value: catOverallHealth, unit:"%",
-                  color: healthColor, bg: healthBg, border: healthBorder,
-                  backTitle:"猫咪状态",
-                  backLines:[
-                    { k:"🍖 饥饿度", v: catHunger + "%" },
-                    { k:"💧 口渴度", v: catThirst + "%" },
-                    { k:"😊 心情值", v: catMood + "%" },
-                  ],
-                },
-                {
-                  id:"badge", emoji:"🏅", label:"主人徽章", value: currentRank.name, unit:"",
-                  color: currentRank.color, bg:"linear-gradient(135deg,#fff," + currentRank.bg + ")", border: currentRank.color,
-                  backTitle:"荣耀段位",
-                  backLines:[
-                    { k:"段位名称", v: currentRank.name },
-                    { k:"所属阶层", v: currentRank.tier },
-                    { k:"下一段位", v: nextRank ? nextRank.name : "🏆 已封顶" },
-                  ],
-                },
-              ];
-
-              return (
-                <div style={{ marginBottom:18 }}>
-                  {/* Swipe hint */}
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", marginBottom:6, gap:3, opacity:0.45 }}>
-                    <span style={{ fontSize:10, color:"#aaa", letterSpacing:"0.3px" }}>左滑查看更多</span>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M13 6l6 6-6 6"/>
-                    </svg>
-                  </div>
-
-                  {/* Card scroll row */}
-                  <div style={{
-                    display:"flex", gap:10,
-                    overflowX:"auto", paddingBottom:2,
-                    scrollSnapType:"x mandatory",
-                    WebkitOverflowScrolling:"touch",
-                    msOverflowStyle:"none", scrollbarWidth:"none",
-                  }}>
-                    {statCards.map(card => {
-                      const flipped = !!flippedStatCards[card.id];
-                      return (
-                        <div key={card.id}
-                          onClick={() => { playFlipSound(); setFlippedStatCards(prev => ({ ...prev, [card.id]: !prev[card.id] })); }}
-                          style={{ flexShrink:0, width:128, height:118, scrollSnapAlign:"start", perspective:"700px", cursor:"pointer" }}
-                        >
-                          <div style={{
-                            width:"100%", height:"100%", position:"relative",
-                            transformStyle:"preserve-3d",
-                            transition:"transform 0.48s cubic-bezier(0.4,0.2,0.2,1)",
-                            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-                          }}>
-                            {/* ─ FRONT ─ */}
-                            <div style={{
-                              position:"absolute", inset:0,
-                              backfaceVisibility:"hidden", WebkitBackfaceVisibility:"hidden",
-                              background: card.bg,
-                              border:"1.5px solid " + card.border,
-                              borderRadius:18, padding:"12px 10px",
-                              display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3,
-                              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-                            }}>
-                              <div style={{ fontSize:26 }}>{card.emoji}</div>
-                              <div style={{ fontFamily:"DM Serif Display, serif", fontSize: card.unit ? 20 : 13, fontWeight:700, color:card.color, lineHeight:1.1, textAlign:"center" }}>
-                                {card.value}
-                                {card.unit && <span style={{ fontSize:10, fontWeight:400, marginLeft:2, opacity:0.8 }}>{card.unit}</span>}
-                              </div>
-                              <div style={{ fontSize:10, color:"#888", fontWeight:500 }}>{card.label}</div>
-                              <div style={{ fontSize:9, color:"#ccc", marginTop:1 }}>点击翻转</div>
-                            </div>
-                            {/* ─ BACK ─ */}
-                            <div style={{
-                              position:"absolute", inset:0,
-                              backfaceVisibility:"hidden", WebkitBackfaceVisibility:"hidden",
-                              transform:"rotateY(180deg)",
-                              background:"#fff",
-                              border:"1.5px solid " + card.border,
-                              borderRadius:18, padding:"12px 13px",
-                              display:"flex", flexDirection:"column", justifyContent:"center", gap:5,
-                              boxShadow:"0 2px 14px rgba(0,0,0,0.07)",
-                            }}>
-                              <div style={{ fontSize:11, fontWeight:700, color:card.color, marginBottom:1, letterSpacing:"0.4px" }}>{card.backTitle}</div>
-                              {card.backLines.map(line => (
-                                <div key={line.k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:4 }}>
-                                  <span style={{ fontSize:10, color:"#aaa", flexShrink:0 }}>{line.k}</span>
-                                  <span style={{ fontSize:10, fontWeight:700, color:"#333", textAlign:"right" }}>{line.v}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Dot indicators */}
-                  <div style={{ display:"flex", justifyContent:"center", gap:4, marginTop:7 }}>
-                    {statCards.map(card => (
-                      <div key={card.id} style={{
-                        height:4, borderRadius:3,
-                        width: flippedStatCards[card.id] ? 14 : 4,
-                        background: flippedStatCards[card.id] ? card.color : "#e0e0e0",
-                        transition:"all 0.3s ease",
-                      }}/>
-                    ))}
-                  </div>
+            {/* ── STAT ICONS ROW ── */}
+            <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+              {[
+                { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
+                { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
+                { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
+              ].map(s => (
+                <div key={s.label} style={{ flex:1 }}>
+                  <StatPNG src={s.src} value={s.value} size="100%" />
                 </div>
-              );
-            })()}
+              ))}
+            </div>
 
             {/* ── REVIEW REMINDER ── */}
             {(() => {
@@ -3614,233 +3436,110 @@ export default function VocabApp() {
         {tab === 3 && (
           <div style={{ maxWidth: 480 }}>
 
-            {/* XP Bar */}
-            {(() => {
-              const level = Math.floor(xp / 100) + 1;
-              const progress = xp % 100;
-              return (
-                <div style={{ background: "linear-gradient(135deg, #FF8000, #FFB347)", borderRadius: 16, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 6px 20px rgba(255,128,0,0.35)" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 18, color: "#fff" }}>Lv{level}</div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{xp} XP</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>下一级 {100 - progress} XP</div>
-                    </div>
-                    <div style={{ height: 5, background: "rgba(255,255,255,0.3)", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: progress + "%", background: "#fff", borderRadius: 3, transition: "width 0.6s cubic-bezier(0.34,1.56,0.64,1)" }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
-            {/* Task Tabs */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              {[["daily","每日任务"]].map(([key, label]) => (
-                <button key={key} onClick={() => setTaskTab(key)}
-                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1.5px solid " + (taskTab === key ? "#FF8000" : "#e8e8e8"), background: taskTab === key ? "linear-gradient(135deg,#FF8000,#FFB347)" : "#fff", color: taskTab === key ? "#fff" : "#888", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", boxShadow: taskTab === key ? "0 4px 12px rgba(255,128,0,0.3)" : "none" }}>
-                  {label}
-                  {key === "daily" && (() => {
-                    const ctx = getTaskCtx();
-                    const claimable = TASKS.filter(t => t.type === "daily" && !isTaskDone(t) && t.progress(ctx) >= t.target).length;
-                    return claimable > 0 ? <span style={{ marginLeft: 6, background: "#e53e3e", color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10 }}>{claimable}</span> : null;
-                  })()}
-                </button>
-              ))}
-            </div>
 
-            {/* Task List — 4-per-row grid for daily, list for achievement */}
-            <div style={{ marginBottom: 28 }}>
-              {(() => {
-                const ctx = getTaskCtx();
-                const tasks = TASKS.filter(t => t.type === taskTab);
-                if (taskTab === "daily") {
-                  return (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, width: "100%" }}>
-                      {tasks.map(task => {
-                        const done = isTaskDone(task);
-                        const prog = Math.min(task.progress(ctx), task.target);
-                        const pct = Math.round(prog / task.target * 100);
-                        const claimable = !done && prog >= task.target;
-                        return (
-                          <div key={task.id}
-                            onClick={() => claimable && claimTask(task)}
-                            style={{
-                              borderRadius: 16, padding: "12px 8px 10px",
-                              background: done ? "linear-gradient(135deg,#6BCB77,#8FD16A)" : claimable ? "#fff8ee" : "#fff",
-                              border: "1.5px solid " + (done ? "transparent" : claimable ? "#FF8000" : "#ebebeb"),
-                              opacity: 1, transition: "all 0.2s",
-                              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                              cursor: claimable ? "pointer" : "default",
-                              boxShadow: done ? "0 4px 14px rgba(107,203,119,0.45)" : claimable ? "0 4px 12px rgba(255,128,0,0.15)" : "0 2px 8px rgba(0,0,0,0.05)",
-                              aspectRatio: "1",
-                            }}>
-                            {/* Icon */}
-                            <div style={{ fontSize: 26, lineHeight: 1 }}>{task.icon}</div>
-                            {/* Title */}
-                            <div style={{ fontSize: 10, fontWeight: 700, color: done ? "#fff" : "#111", textAlign: "center", lineHeight: 1.2 }}>{task.title}</div>
-                            {/* Progress ring / bar */}
-                            <div style={{ width: "100%", height: 3, background: done ? "rgba(255,255,255,0.3)" : "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
-                              <div style={{ height: "100%", width: pct + "%", background: done ? "#fff" : "#FF8000", borderRadius: 2, transition: "width 0.5s ease" }} />
-                            </div>
-                            {/* XP or done */}
-                            {done
-                              ? <div style={{ fontSize: 9, fontWeight: 800, color: "#fff" }}>✓ 完成</div>
-                              : <div style={{ fontSize: 9, fontWeight: 700, color: "#FF8000", background: "rgba(255,128,0,0.1)", borderRadius: 6, padding: "2px 6px" }}>+{task.xp} XP</div>
-                            }
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                }
-                // Achievement tab: keep list layout
-                return (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {tasks.map(task => {
-                      const done = isTaskDone(task);
-                      const prog = Math.min(task.progress(ctx), task.target);
-                      const pct = Math.round(prog / task.target * 100);
-                      const claimable = !done && prog >= task.target;
-                      return (
-                        <div key={task.id} style={{ border: "1.5px solid " + (done ? "#ffe0b2" : claimable ? "#FF8000" : "#ebebeb"), borderRadius: 14, padding: "14px 16px", background: done ? "#fff8ee" : "#fff", opacity: done ? 0.85 : 1, transition: "all 0.2s" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ fontSize: 28, flexShrink: 0, width: 40, textAlign: "center" }}>{task.icon}</div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                                <div style={{ fontSize: 14, fontWeight: 600, color: done ? "#FF8000" : "#111" }}>{task.title}</div>
-                                {done && <span style={{ fontSize: 11, color: "#FF8000" }}>✓ 已完成</span>}
-                              </div>
-                              <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>{task.desc}</div>
-                              <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
-                                <div style={{ height: "100%", width: pct + "%", background: done ? "#FF8000" : claimable ? "#FF8000" : "#ddd", borderRadius: 2, transition: "width 0.5s ease" }} />
-                              </div>
-                              <div style={{ fontSize: 11, color: "#aaa" }}>{prog} / {task.target}</div>
-                            </div>
-                            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#FF8000,#FFB347)", borderRadius: 8, padding: "3px 8px" }}>+{task.xp} XP</div>
-                              {claimable && (
-                                <button onClick={() => claimTask(task)}
-                                  style={{ background: "linear-gradient(135deg,#FF8000,#FFB347)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                                  领取
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-            <div style={{ background: "linear-gradient(135deg,#45B7B8,#5dd6d7)", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 6px 20px #45B7B844" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 22, color: "#fff" }}>
-                    {todayWords >= dailyGoal ? "目标完成 ✓" : `今天还差 ${Math.max(0, dailyGoal - todayWords)} 个单词`}
-                  </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>已添加 {todayWords} / 目标 {dailyGoal} 个新单词</div>
-                </div>
-                {!editingGoal ? (
-                  <button className="btn btn-outline btn-sm" onClick={() => { setTempGoal(dailyGoal); setEditingGoal(true); }}>修改目标</button>
-                ) : (
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input
-                      type="number" min="1" max="50"
-                      value={tempGoal === 0 ? "" : tempGoal}
-                      onChange={e => {
-                        const val = e.target.value;
-                        if (val === "" || val === "0") { setTempGoal(0); return; }
-                        const n = parseInt(val);
-                        if (!isNaN(n)) setTempGoal(Math.min(50, n));
-                      }}
-                      onBlur={e => { if (!tempGoal || tempGoal < 1) setTempGoal(1); }}
-                      style={{ width: 64, textAlign: "center", padding: "6px 8px", fontSize: 16, fontWeight: 500 }}
-                    />
-                    <button className="btn btn-dark btn-sm" onClick={() => {
-                      const g = Math.max(1, Math.min(50, tempGoal || 1));
-                      setDailyGoal(g);
-                      setTempGoal(g);
-                      localStorage.setItem("wv_daily_goal", g);
-                      setEditingGoal(false);
-                      showMsg("目标已保存");
-                    }}>保存</button>
-                    <button className="btn btn-outline btn-sm" onClick={() => { setTempGoal(dailyGoal); setEditingGoal(false); }}>取消</button>
-                  </div>
-                )}
-              </div>
-
-              {/* Word goal progress bar */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.85)", marginBottom: 6 }}>
-                  <span>新增单词</span>
-                  <span>{todayWords}/{dailyGoal}</span>
-                </div>
-                <div style={{ height: 8, background: "rgba(255,255,255,0.25)", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, todayWords / dailyGoal * 100)}%`, background: todayWords >= dailyGoal ? "#fff" : "rgba(255,255,255,0.7)", borderRadius: 4, transition: "width 0.4s" }} />
-                </div>
-              </div>
-
-              {/* Quiz goal progress bar */}
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.85)", marginBottom: 6 }}>
-                  <span>今日答题</span>
-                  <span>{todayQuizzes}/{dailyGoal * 4}</span>
-                </div>
-                <div style={{ height: 8, background: "rgba(255,255,255,0.25)", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, todayQuizzes / (dailyGoal * 4) * 100)}%`, background: todayQuizzes >= dailyGoal * 4 ? "#fff" : "rgba(255,255,255,0.7)", borderRadius: 4, transition: "width 0.4s" }} />
-                </div>
-              </div>
-
-              {todayWords >= dailyGoal && todayQuizzes >= dailyGoal * 4 && (
-                <div style={{ marginTop: 14, fontSize: 13, color: "#2d8a4e", fontWeight: 500, textAlign: "center" }}>
-                   今日所有目标已完成！
-                </div>
-              )}
-            </div>
-
-            {/* Stats */}
-            {/* Review Stats */}
+            {/* ── 每日目标 & 错题库 并排卡片 ── */}
             {(() => {
               const due = getDueWords(words);
               const wrongCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
-              if (due.length === 0 && wrongCount === 0) return null;
+              const wordPct  = Math.min(100, todayWords / dailyGoal * 100);
+              const quizPct  = Math.min(100, todayQuizzes / (dailyGoal * 4) * 100);
+              const goalDone = todayWords >= dailyGoal && todayQuizzes >= dailyGoal * 4;
               return (
-                <div style={{ marginBottom: 28 }}>
-                  <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ display: "flex", gap: 10, marginBottom: 22, alignItems: "stretch" }}>
+
+                  {/* ── 每日目标卡 ── */}
+                  <div style={{ flex: 1, background: "linear-gradient(150deg,#45B7B8,#5dd6d7)", borderRadius: 18, padding: "16px 14px", boxShadow: "0 6px 20px #45B7B840", display: "flex", flexDirection: "column", gap: 10 }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 16 }}>📋</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>每日目标</span>
+                      </div>
+                      {!editingGoal ? (
+                        <button onClick={() => { setTempGoal(dailyGoal); setEditingGoal(true); }}
+                          style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", cursor: "pointer", fontFamily: "inherit" }}>
+                          修改
+                        </button>
+                      ) : (
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                          <input type="number" min="1" max="50"
+                            value={tempGoal === 0 ? "" : tempGoal}
+                            onChange={e => { const v = e.target.value; if (v === "" || v === "0") { setTempGoal(0); return; } const n = parseInt(v); if (!isNaN(n)) setTempGoal(Math.min(50, n)); }}
+                            onBlur={() => { if (!tempGoal || tempGoal < 1) setTempGoal(1); }}
+                            style={{ width: 44, textAlign: "center", padding: "3px 4px", fontSize: 13, borderRadius: 6, border: "none" }}
+                          />
+                          <button onClick={() => { const g = Math.max(1, Math.min(50, tempGoal || 1)); setDailyGoal(g); setTempGoal(g); localStorage.setItem("wv_daily_goal", g); setEditingGoal(false); showMsg("目标已保存"); }}
+                            style={{ fontSize: 10, color: "#45B7B8", background: "#fff", border: "none", borderRadius: 7, padding: "3px 7px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>保存</button>
+                          <button onClick={() => { setTempGoal(dailyGoal); setEditingGoal(false); }}
+                            style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 7, padding: "3px 7px", cursor: "pointer", fontFamily: "inherit" }}>取消</button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status line */}
+                    <div style={{ fontSize: 18, fontFamily: "DM Serif Display, serif", color: "#fff", lineHeight: 1.1 }}>
+                      {goalDone ? "全部完成 🎉" : `还差 ${Math.max(0, dailyGoal - todayWords)} 词`}
+                    </div>
+
+                    {/* Word bar */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>
+                        <span>新增单词</span><span>{todayWords}/{dailyGoal}</span>
+                      </div>
+                      <div style={{ height: 6, background: "rgba(255,255,255,0.25)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: wordPct + "%", background: "#fff", borderRadius: 3, transition: "width 0.4s" }} />
+                      </div>
+                    </div>
+
+                    {/* Quiz bar */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>
+                        <span>今日答题</span><span>{todayQuizzes}/{dailyGoal * 4}</span>
+                      </div>
+                      <div style={{ height: 6, background: "rgba(255,255,255,0.25)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: quizPct + "%", background: "#fff", borderRadius: 3, transition: "width 0.4s" }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── 错题库卡 ── */}
+                  <div style={{ flex: 1, background: wrongCount > 0 ? "linear-gradient(150deg,#FF6B8A,#DC7286)" : "linear-gradient(150deg,#f0f0f0,#e8e8e8)", borderRadius: 18, padding: "16px 14px", boxShadow: wrongCount > 0 ? "0 6px 20px #DC728640" : "none", display: "flex", flexDirection: "column", gap: 10, cursor: wrongCount > 0 ? "pointer" : "default" }}
+                    onClick={() => { if (wrongCount > 0) { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); } }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 16 }}>🎯</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: wrongCount > 0 ? "#fff" : "#aaa" }}>错题库</span>
+                    </div>
+
+                    {/* Big number */}
+                    <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 40, color: wrongCount > 0 ? "#fff" : "#ccc", lineHeight: 1 }}>
+                      {wrongCount}
+                    </div>
+
+                    <div style={{ fontSize: 11, color: wrongCount > 0 ? "rgba(255,255,255,0.9)" : "#bbb", fontWeight: 600 }}>
+                      {wrongCount > 0 ? "词需攻克" : "暂无错题 🎉"}
+                    </div>
+
+                    {/* Review words pending too */}
                     {due.length > 0 && (
-                      <div onClick={() => { setQuizMode("review"); setTab(2); startQuiz("review"); }}
-                        style={{ flex: 1, border: "1.5px solid #45B7B8", borderRadius: 12, padding: 14, background: "#45B7B818", cursor: "pointer" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#45B7B8" }}>{due.length}</div>
-                        <div style={{ fontSize: 11, color: "#45B7B8", fontWeight: 600 }}>词待复习</div>
-                        <div style={{ fontSize: 10, color: "#45B7B8", marginTop: 4 }}>点击开始</div>
+                      <div onClick={e => { e.stopPropagation(); setQuizMode("review"); setTab(2); startQuiz("review"); }}
+                        style={{ marginTop: "auto", background: "rgba(255,255,255,0.2)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                        <span style={{ fontSize: 10, color: wrongCount > 0 ? "rgba(255,255,255,0.9)" : "#aaa" }}>🧠 {due.length} 词待复习</span>
+                        <span style={{ fontSize: 10, color: wrongCount > 0 ? "rgba(255,255,255,0.7)" : "#bbb" }}>开始 ›</span>
                       </div>
                     )}
-                    {wrongCount > 0 && (
-                      <div onClick={() => { setQuizMode("wrong"); setTab(2); startQuiz("wrong"); }}
-                        style={{ flex: 1, border: "1.5px solid #DC7286", borderRadius: 12, padding: 14, background: "#DC728618", cursor: "pointer" }}>
-                        <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 28, color: "#DC7286" }}>{wrongCount}</div>
-                        <div style={{ fontSize: 11, color: "#DC7286", fontWeight: 600 }}>词在错词库</div>
-                        <div style={{ fontSize: 10, color: "#DC7286", marginTop: 4 }}>点击开始</div>
+
+                    {wrongCount > 0 && due.length === 0 && (
+                      <div style={{ marginTop: "auto", fontSize: 10, color: "rgba(255,255,255,0.7)", textAlign: "center" }}>
+                        点击开始练习 →
                       </div>
                     )}
                   </div>
+
                 </div>
               );
             })()}
-
-            <div className="sec-title">学习概览</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 28 }}>
-              {[["单词总数", words.length], ["答题总数", score.total], ["正确率", score.total ? correctRate+"%" : "—"], ["连续天数", streakData.count + "天"]].map(([label, val]) => (
-                <div key={label} style={{ border: "1px solid #ebebeb", borderRadius: 10, padding: 16 }}>
-                  <div style={{ fontFamily: "DM Serif Display, serif", fontSize: 30, color: "#111" }}>{val}</div>
-                  <div style={{ fontSize: 11, color: "#666", marginTop: 4, fontWeight: 500, letterSpacing: "0.3px" }}>{label}</div>
-                </div>
-              ))}
-            </div>
 
             <div className="sec-title">掌握情况</div>
             {words.length === 0 ? <div style={{ color: "#888", fontSize: 14 }}>还没有单词</div> : (() => {
