@@ -542,6 +542,7 @@ export default function VocabApp() {
   const [notifStatus, setNotifStatus] = useState("unknown");
   const [notifTime, setNotifTime] = useState(() => localStorage.getItem("wv_ntime") || "09:00");
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem("wv_sound") !== "0");
+  const [flippedStatCards, setFlippedStatCards] = useState({});
   
   const [importMsg, setImportMsg] = useState("");
   const [importSnapshot, setImportSnapshot] = useState(null);
@@ -2398,18 +2399,185 @@ export default function VocabApp() {
         {tab === 0 && (
           <div>
 
-            {/* ── STAT ICONS ROW ── */}
-            <div style={{ display:"flex", gap:10, marginBottom:18 }}>
-              {[
-                { src: MAX_WORDS_PNG,  value: words.length,   label: "总词数"    },
-                { src: MAX_COMBO_PNG,  value: globalMaxCombo, label: "MAX COMBO" },
-                { src: MAX_XP_PNG,     value: xp,             label: "总 XP"     },
-              ].map(s => (
-                <div key={s.label} style={{ flex:1 }}>
-                  <StatPNG src={s.src} value={s.value} size="100%" />
+            {/* ── STAT CARD CAROUSEL ── */}
+            {(() => {
+              const wrongCount = Object.keys(wrongCounts).filter(w => words.find(x => x.word === w) && wrongCounts[w] > 0).length;
+              const catOverallHealth = Math.round((catHunger + catThirst + catMood + catHealth) / 4);
+              const currentRank = getRank(words.length, streakData.count);
+              const catStage = getCatStage(xp);
+              const nextRank = getNextRank(words.length, streakData.count);
+
+              const playFlipSound = () => {
+                if (!soundEnabled) return;
+                try {
+                  const actx = new (window.AudioContext || window.webkitAudioContext)();
+                  const osc = actx.createOscillator();
+                  const gain = actx.createGain();
+                  osc.connect(gain); gain.connect(actx.destination);
+                  osc.type = "sine";
+                  osc.frequency.setValueAtTime(880, actx.currentTime);
+                  osc.frequency.exponentialRampToValueAtTime(440, actx.currentTime + 0.18);
+                  gain.gain.setValueAtTime(0.18, actx.currentTime);
+                  gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.22);
+                  osc.start(actx.currentTime); osc.stop(actx.currentTime + 0.22);
+                } catch {}
+              };
+
+              const healthColor  = catOverallHealth > 60 ? "#22c55e" : catOverallHealth > 30 ? "#f59e0b" : "#e53e3e";
+              const healthBg     = catOverallHealth > 60 ? "linear-gradient(135deg,#f0fdf4,#bbf7d0)" : catOverallHealth > 30 ? "linear-gradient(135deg,#fffbeb,#fde68a)" : "linear-gradient(135deg,#fff5f5,#fecaca)";
+              const healthBorder = catOverallHealth > 60 ? "#4ade80" : catOverallHealth > 30 ? "#fbbf24" : "#f87171";
+
+              const statCards = [
+                { id:"streak", emoji:"🗓️", label:"连续打卡", value:streakData.count, unit:"天",
+                  color:"#FF8000", bg:"linear-gradient(135deg,#fff8ee,#ffe5c2)", border:"#FFB347",
+                  backTitle:"打卡记录",
+                  backLines:[
+                    { k:"连续天数", v:streakData.count+" 天" },
+                    { k:"今日状态", v:streakData.lastDate===new Date().toISOString().slice(0,10)?"✅ 已打卡":"⏳ 未打卡" },
+                    { k:"目标", v:"坚持30天 🔥" },
+                  ],
+                },
+                { id:"words", emoji:"📚", label:"单词总数", value:words.length, unit:"词",
+                  color:"#45B7B8", bg:"linear-gradient(135deg,#f0fffe,#c8f5f5)", border:"#45B7B8",
+                  backTitle:"词库数据",
+                  backLines:[
+                    { k:"总词数", v:words.length+" 词" },
+                    { k:"已掌握", v:words.filter(w=>w.mastery>=4).length+" 词" },
+                    { k:"待复习", v:getDueWords(words).length+" 词" },
+                  ],
+                },
+                { id:"wrong", emoji:"🎯", label:"错题数", value:wrongCount, unit:"题",
+                  color:"#e53e3e", bg:"linear-gradient(135deg,#fff5f5,#fecaca)", border:"#FC8181",
+                  backTitle:"错题分析",
+                  backLines:[
+                    { k:"当前错题", v:wrongCount+" 题" },
+                    { k:"总答题", v:score.total+" 题" },
+                    { k:"正确率", v:score.total>0?Math.round(score.correct/score.total*100)+"%":"—" },
+                  ],
+                },
+                { id:"combo", emoji:"⚡", label:"MAX COMBO", value:globalMaxCombo, unit:"连",
+                  color:"#f59e0b", bg:"linear-gradient(135deg,#fffbeb,#fde68a)", border:"#fbbf24",
+                  backTitle:"连击记录",
+                  backLines:[
+                    { k:"最高连击", v:globalMaxCombo+" 连" },
+                    { k:"当前连击", v:globalCombo+" 连" },
+                    { k:"总连击数", v:totalComboSum+" 次" },
+                  ],
+                },
+                { id:"xp", emoji:"✨", label:"总 XP", value:xp, unit:"XP",
+                  color:"#7C6CF5", bg:"linear-gradient(135deg,#f5f0ff,#ddd6fe)", border:"#a78bfa",
+                  backTitle:"成长等级",
+                  backLines:[
+                    { k:"总 XP", v:xp+" XP" },
+                    { k:"猫咪阶段", v:catStage.emoji+" "+catStage.name },
+                    { k:"距下阶段", v:catStage.lv<8&&CAT_STAGES[catStage.lv]?(CAT_STAGES[catStage.lv].minXp-xp)+" XP":"已满级 🎉" },
+                  ],
+                },
+                { id:"health", emoji:"💚", label:"健康指数", value:catOverallHealth, unit:"%",
+                  color:healthColor, bg:healthBg, border:healthBorder,
+                  backTitle:"猫咪状态",
+                  backLines:[
+                    { k:"🍖 饥饿度", v:catHunger+"%" },
+                    { k:"💧 口渴度", v:catThirst+"%" },
+                    { k:"😊 心情值", v:catMood+"%" },
+                  ],
+                },
+                { id:"badge", emoji:"🏅", label:"主人徽章", value:currentRank.name, unit:"",
+                  color:currentRank.color, bg:"linear-gradient(135deg,#fff,"+currentRank.bg+")", border:currentRank.color,
+                  backTitle:"荣耀段位",
+                  backLines:[
+                    { k:"段位名称", v:currentRank.name },
+                    { k:"所属阶层", v:currentRank.tier },
+                    { k:"下一段位", v:nextRank?nextRank.name:"🏆 已封顶" },
+                  ],
+                },
+              ];
+
+              return (
+                <div style={{ marginBottom:18 }}>
+                  {/* 左滑提示 */}
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", marginBottom:5, gap:3, opacity:0.4 }}>
+                    <span style={{ fontSize:10, color:"#aaa" }}>左滑查看更多</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M5 12h14M13 6l6 6-6 6"/>
+                    </svg>
+                  </div>
+
+                  {/* 滑动卡片行 */}
+                  <div style={{
+                    display:"flex", gap:10,
+                    overflowX:"auto", paddingBottom:4,
+                    scrollSnapType:"x mandatory",
+                    WebkitOverflowScrolling:"touch",
+                    msOverflowStyle:"none", scrollbarWidth:"none",
+                  }}>
+                    {statCards.map(card => {
+                      const flipped = !!flippedStatCards[card.id];
+                      return (
+                        <div key={card.id}
+                          onClick={() => { playFlipSound(); setFlippedStatCards(prev=>({...prev,[card.id]:!prev[card.id]})); }}
+                          style={{ flexShrink:0, width:126, height:116, scrollSnapAlign:"start", perspective:"700px", cursor:"pointer" }}
+                        >
+                          <div style={{
+                            width:"100%", height:"100%", position:"relative",
+                            transformStyle:"preserve-3d",
+                            transition:"transform 0.45s cubic-bezier(0.4,0.2,0.2,1)",
+                            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                          }}>
+                            {/* 正面 */}
+                            <div style={{
+                              position:"absolute", inset:0,
+                              backfaceVisibility:"hidden", WebkitBackfaceVisibility:"hidden",
+                              background:card.bg, border:"1.5px solid "+card.border,
+                              borderRadius:18, padding:"12px 10px",
+                              display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3,
+                              boxShadow:"0 2px 12px rgba(0,0,0,0.07)",
+                            }}>
+                              <div style={{ fontSize:26 }}>{card.emoji}</div>
+                              <div style={{ fontFamily:"DM Serif Display, serif", fontSize:card.unit?20:13, fontWeight:700, color:card.color, lineHeight:1.1, textAlign:"center" }}>
+                                {card.value}{card.unit&&<span style={{ fontSize:10, fontWeight:400, marginLeft:2, opacity:0.8 }}>{card.unit}</span>}
+                              </div>
+                              <div style={{ fontSize:10, color:"#888", fontWeight:500 }}>{card.label}</div>
+                              <div style={{ fontSize:9, color:"#ccc", marginTop:1 }}>点击翻转</div>
+                            </div>
+                            {/* 背面 */}
+                            <div style={{
+                              position:"absolute", inset:0,
+                              backfaceVisibility:"hidden", WebkitBackfaceVisibility:"hidden",
+                              transform:"rotateY(180deg)",
+                              background:"#fff", border:"1.5px solid "+card.border,
+                              borderRadius:18, padding:"12px 13px",
+                              display:"flex", flexDirection:"column", justifyContent:"center", gap:6,
+                              boxShadow:"0 2px 12px rgba(0,0,0,0.07)",
+                            }}>
+                              <div style={{ fontSize:11, fontWeight:700, color:card.color, marginBottom:1 }}>{card.backTitle}</div>
+                              {card.backLines.map(line=>(
+                                <div key={line.k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                                  <span style={{ fontSize:10, color:"#aaa" }}>{line.k}</span>
+                                  <span style={{ fontSize:10, fontWeight:700, color:"#333" }}>{line.v}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 小圆点指示器 */}
+                  <div style={{ display:"flex", justifyContent:"center", gap:4, marginTop:7 }}>
+                    {statCards.map(card=>(
+                      <div key={card.id} style={{
+                        height:4, borderRadius:3,
+                        width: flippedStatCards[card.id] ? 14 : 4,
+                        background: flippedStatCards[card.id] ? card.color : "#e0e0e0",
+                        transition:"all 0.3s ease",
+                      }}/>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* ── REVIEW REMINDER ── */}
             {(() => {
@@ -3437,6 +3605,55 @@ export default function VocabApp() {
           <div style={{ maxWidth: 480 }}>
 
 
+
+            {/* ── 每日任务 6格卡片 ── */}
+            {(() => {
+              const ctx = getTaskCtx();
+              const tasks = TASKS.filter(t => t.type === "daily");
+              return (
+                <div style={{ marginBottom: 22 }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#111", letterSpacing:"0.2px" }}>每日任务</div>
+                    {(() => {
+                      const claimable = tasks.filter(t => !isTaskDone(t) && t.progress(ctx) >= t.target).length;
+                      return claimable > 0 ? (
+                        <span style={{ fontSize:11, background:"#e53e3e", color:"#fff", borderRadius:10, padding:"2px 8px", fontWeight:700 }}>{claimable} 可领取</span>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:10 }}>
+                    {tasks.map(task => {
+                      const done = isTaskDone(task);
+                      const prog = Math.min(task.progress(ctx), task.target);
+                      const pct  = Math.round(prog / task.target * 100);
+                      const claimable = !done && prog >= task.target;
+                      return (
+                        <div key={task.id} onClick={() => claimable && claimTask(task)}
+                          style={{
+                            borderRadius:16, padding:"12px 8px 10px",
+                            background: done ? "linear-gradient(135deg,#6BCB77,#8FD16A)" : claimable ? "#fff8ee" : "#fff",
+                            border:"1.5px solid "+(done ? "transparent" : claimable ? "#FF8000" : "#ebebeb"),
+                            display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+                            cursor: claimable ? "pointer" : "default",
+                            boxShadow: done ? "0 4px 14px rgba(107,203,119,0.45)" : claimable ? "0 4px 12px rgba(255,128,0,0.15)" : "0 2px 8px rgba(0,0,0,0.05)",
+                            aspectRatio:"1", transition:"all 0.2s",
+                          }}>
+                          <div style={{ fontSize:26, lineHeight:1 }}>{task.icon}</div>
+                          <div style={{ fontSize:10, fontWeight:700, color:done?"#fff":"#111", textAlign:"center", lineHeight:1.2 }}>{task.title}</div>
+                          <div style={{ width:"100%", height:3, background:done?"rgba(255,255,255,0.3)":"#f0f0f0", borderRadius:2, overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:pct+"%", background:done?"#fff":"#FF8000", borderRadius:2, transition:"width 0.5s ease" }}/>
+                          </div>
+                          {done
+                            ? <div style={{ fontSize:9, fontWeight:800, color:"#fff" }}>✓ 完成</div>
+                            : <div style={{ fontSize:9, fontWeight:700, color:"#FF8000", background:"rgba(255,128,0,0.1)", borderRadius:6, padding:"2px 6px" }}>+{task.xp} XP</div>
+                          }
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── 每日目标 & 错题库 并排卡片 ── */}
             {(() => {
