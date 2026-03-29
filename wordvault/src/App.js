@@ -2025,6 +2025,9 @@ export default function VocabApp() {
           0%   { transform: translate(0,0) scale(1); opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
         }
+        @keyframes pulseBar {
+          0%,100% { opacity:1; } 50% { opacity:0.45; }
+        }
 
         /* Splash */
         @keyframes splashLogoIn {
@@ -2582,21 +2585,6 @@ export default function VocabApp() {
             })()}
 
             {/* ── REVIEW REMINDER ── */}
-            {(() => {
-              const due = getDueWords(words);
-              if (due.length === 0) return null;
-              return (
-                <div onClick={() => { setQuizMode("review"); setTab(2); startQuiz("review"); }}
-                  style={{ display:"flex", alignItems:"center", gap:12, background:"#fff8ee", border:"1.5px solid #FFB347", borderRadius:16, padding:"12px 16px", marginBottom:14, cursor:"pointer", boxShadow:"0 2px 10px rgba(255,128,0,0.12)" }}>
-                  <div style={{ width:36, height:36, borderRadius:12, background:"linear-gradient(135deg,#FF8000,#FFB347)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🧠</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:"#c05800" }}>{due.length} 个单词待复习</div>
-                    <div style={{ fontSize:11, color:"#e07800", marginTop:1 }}>艾宾浩斯曲线 · 现在复习效果最佳</div>
-                  </div>
-                  <div style={{ fontSize:18, color:"#FF8000" }}>›</div>
-                </div>
-              );
-            })()}
 
             {/* ── FREE LIMIT BANNER ── */}
             {!isPro && words.length >= FREE_LIMIT - 3 && (
@@ -2629,24 +2617,46 @@ export default function VocabApp() {
                 </div>
               </div>
 
-              {/* Right: search + group-by-tag stacked, matching nav SVG badge style */}
-              <div style={{ display:"flex", flexDirection:"row", gap:8, flexShrink:0 }}>
-                {/* Search icon button */}
-                <div style={{ position:"relative" }}>
-                  <button onClick={() => setSearchQuery(searchQuery === null ? "" : (searchQuery === "" ? null : ""))}
-                    style={{ width:42, height:42, borderRadius:14, background: searchQuery !== null ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: searchQuery !== null ? "0 4px 12px rgba(255,128,0,0.35)" : "none" }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={searchQuery !== null ? "#fff" : "#888"} strokeWidth="2.5" strokeLinecap="round">
-                      <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+              {/* Right: search + group-by-tag + review reminder stacked */}
+              <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
+                {/* Icon buttons row */}
+                <div style={{ display:"flex", flexDirection:"row", gap:8 }}>
+                  {/* Search icon button */}
+                  <div style={{ position:"relative" }}>
+                    <button onClick={() => setSearchQuery(searchQuery === null ? "" : (searchQuery === "" ? null : ""))}
+                      style={{ width:42, height:42, borderRadius:14, background: searchQuery !== null ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: searchQuery !== null ? "0 4px 12px rgba(255,128,0,0.35)" : "none" }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={searchQuery !== null ? "#fff" : "#888"} strokeWidth="2.5" strokeLinecap="round">
+                        <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Group by tag icon button */}
+                  <button onClick={() => setGroupByTag(g => !g)}
+                    style={{ width:42, height:42, borderRadius:14, background: groupByTag ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: groupByTag ? "0 4px 12px rgba(255,128,0,0.35)" : "none" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={groupByTag ? "#fff" : "#888"} strokeWidth="2.5" strokeLinecap="round">
+                      <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
                     </svg>
                   </button>
                 </div>
-                {/* Group by tag icon button */}
-                <button onClick={() => setGroupByTag(g => !g)}
-                  style={{ width:42, height:42, borderRadius:14, background: groupByTag ? "#FF8000" : "#f5f5f5", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: groupByTag ? "0 4px 12px rgba(255,128,0,0.35)" : "none" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={groupByTag ? "#fff" : "#888"} strokeWidth="2.5" strokeLinecap="round">
-                    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
-                  </svg>
-                </button>
+
+                {/* Review reminder — only when due words exist, width = 42+8+42 = 92px */}
+                {(() => {
+                  const due = getDueWords(words);
+                  if (due.length === 0) return null;
+                  return (
+                    <div onClick={() => { setQuizMode("review"); setTab(2); setQuizLobby(false); startQuiz("review"); }}
+                      style={{ width:92, borderRadius:12, background:"linear-gradient(135deg,#fff8ee,#ffe5c2)", border:"1.5px solid #FFB347", padding:"8px 8px", cursor:"pointer", boxShadow:"0 3px 10px rgba(255,128,0,0.18)", animation:"unlockBadge 0.3s ease both" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:3 }}>
+                        <span style={{ fontSize:14 }}>🧠</span>
+                        <span style={{ fontSize:11, fontWeight:800, color:"#c05800", lineHeight:1.1 }}>{due.length} 词待复习</span>
+                      </div>
+                      <div style={{ fontSize:9, color:"#e07800", lineHeight:1.3 }}>艾宾浩斯 · 点击开始</div>
+                      <div style={{ marginTop:5, height:3, background:"rgba(255,128,0,0.15)", borderRadius:2 }}>
+                        <div style={{ height:"100%", width:"100%", background:"linear-gradient(90deg,#FF8000,#FFB347)", borderRadius:2, animation:"pulseBar 1.8s ease-in-out infinite" }}/>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
