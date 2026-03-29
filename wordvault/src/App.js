@@ -2644,7 +2644,7 @@ export default function VocabApp() {
                   const due = getDueWords(words);
                   if (due.length === 0) return null;
                   return (
-                    <div onClick={() => { setQuizMode("review"); setTab(2); setQuizLobby(false); startQuiz("review"); }}
+                    <div onClick={() => { setQuizMode("review"); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz("review"); setQuizLobby(false); setTab(2); }}
                       style={{ width:92, borderRadius:12, background:"linear-gradient(135deg,#fff8ee,#ffe5c2)", border:"1.5px solid #FFB347", padding:"8px 8px", cursor:"pointer", boxShadow:"0 3px 10px rgba(255,128,0,0.18)", animation:"unlockBadge 0.3s ease both" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:3 }}>
                         <span style={{ fontSize:14 }}>🧠</span>
