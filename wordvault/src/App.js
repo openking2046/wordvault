@@ -503,6 +503,7 @@ export default function VocabApp() {
   const [pairScore, setPairScore] = useState(0);
   const [pairTotalMatched, setPairTotalMatched] = useState(0);
   const pairTimerRef = useRef(null);
+  const skipLobbyResetRef = useRef(false);
   const pairPoolRef = useRef([]);
   const pairPoolIdxRef = useRef(0);
   const pairCardCounterRef = useRef(0);
@@ -710,7 +711,11 @@ export default function VocabApp() {
   const prevTabRef = useRef(tab);
   useEffect(() => {
     if (tab === 2 && prevTabRef.current !== 2) {
-      setQuizLobby(true);
+      if (skipLobbyResetRef.current) {
+        skipLobbyResetRef.current = false; // 消费掉标记
+      } else {
+        setQuizLobby(true);
+      }
       setPairActive(false);
       setFillActive(false);
       clearInterval(pairTimerRef.current);
@@ -2644,7 +2649,7 @@ export default function VocabApp() {
                   const due = getDueWords(words);
                   if (due.length === 0) return null;
                   return (
-                    <div onClick={() => { setQuizMode("review"); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); startQuiz("review"); setQuizLobby(false); setTab(2); }}
+                    <div onClick={() => { skipLobbyResetRef.current = true; setQuizMode("review"); setQuizResult(null); setSpellingInput(""); setHintRevealed(0); setQuizLobby(false); startQuiz("review"); setTab(2); }}
                       style={{ width:92, borderRadius:12, background:"linear-gradient(135deg,#fff8ee,#ffe5c2)", border:"1.5px solid #FFB347", padding:"8px 8px", cursor:"pointer", boxShadow:"0 3px 10px rgba(255,128,0,0.18)", animation:"unlockBadge 0.3s ease both" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:3 }}>
                         <span style={{ fontSize:14 }}>🧠</span>
